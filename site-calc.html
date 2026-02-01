@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TourPulse — Site Calculator</title>
+
+  <!-- Sitewide CSS -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Page-specific polish -->
+  <style>
+    .kpiGrid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:12px;
+      margin-top:12px;
+    }
+    .kpiTile{
+      border:1px solid rgba(15,23,42,.12);
+      background: rgba(255,255,255,.78);
+      border-radius: 18px;
+      padding:14px 14px;
+      box-shadow: 0 16px 40px rgba(2,6,23,.08);
+      min-height: 110px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+    .kpiLabel{
+      font-size:12px;
+      font-weight:1100;
+      letter-spacing:.22px;
+      text-transform:uppercase;
+      color: rgba(15,23,42,.62);
+    }
+    .kpiValue{
+      font-size:26px;
+      font-weight:1200;
+      letter-spacing:.2px;
+      color: rgba(15,23,42,.92);
+      line-height:1.1;
+      margin-top:6px;
+    }
+    .kpiHint{
+      font-size:12px;
+      font-weight:800;
+      color: rgba(15,23,42,.55);
+      margin-top:8px;
+    }
+
+    /* Manager Override input: looks like the stat value */
+    .kpiInput{
+      width:100%;
+      border:0;
+      background:transparent;
+      padding:0;
+      margin:6px 0 0;
+      font-size:26px;
+      font-weight:1200;
+      letter-spacing:.2px;
+      line-height:1.1;
+      color: rgba(15,23,42,.92);
+      outline:none;
+    }
+    .kpiInput::placeholder{
+      color: rgba(15,23,42,.30);
+      font-weight:1100;
+    }
+    .kpiInput:focus{
+      outline: 3px solid rgba(10,166,181,.28);
+      outline-offset: 4px;
+      border-radius: 10px;
+    }
+
+    @media (max-width: 520px){
+      .kpiGrid{ grid-template-columns: 1fr; }
+    }
+  </style>
+
+  <!-- Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <div class="wrap">
+    <section class="panel" aria-label="Site Calculator">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logoBox" aria-hidden="true">
+            <img src="images/MTK-logo.png" alt="TourPulse Logo" />
+          </div>
+          <div class="brandText">
+            <p class="title">TourPulse</p>
+            <p class="sub">Powered by F8</p>
+          </div>
+        </div>
+
+        <div class="rightStack">
+          <div class="userPill" title="Signed-in account">
+            <div class="name" id="userName">—</div>
+            <div class="emp" id="userEmp">—</div>
+          </div>
+
+          <button class="btnGhost" type="button" id="btnChangeSite" style="display:none;">Change Site</button>
+          <button class="btnGhost" type="button" id="btnChooseSite">Choose Site</button>
+
+          <button class="btnGhost" type="button" id="btnBack">← Back</button>
+          <button class="btnGhost" type="button" id="btnSignOut">Sign Out</button>
+        </div>
+      </div>
+
+      <!-- Banner -->
+      <div class="banner" aria-label="Selected site banner">
+        <div class="bannerBg" aria-hidden="true"></div>
+        <img id="bannerImg" class="bannerImg" alt="" />
+        <div class="bannerShade" aria-hidden="true"></div>
+
+        <div class="bannerInner">
+          <div class="bannerLeft">
+            <p class="k">Selected Site</p>
+            <p class="site" id="bannerSite">—</p>
+          </div>
+
+          <div class="bannerActions">
+            <select class="monthSelect" id="monthSelect" aria-label="Select month"></select>
+            <button class="btn" type="button" id="btnDailyInputs">Daily Inputs</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main area -->
+      <div class="grid">
+        <!-- LEFT: KPI tiles -->
+        <div class="card">
+          <h1>Month-to-Date Tracker</h1>
+          <p class="muted" id="mtdLine">Up to: —</p>
+
+          <div class="kpiGrid">
+            <div class="kpiTile">
+              <div>
+                <div class="kpiLabel">Actual to Date</div>
+                <div class="kpiValue mono" id="tileActualToDate">0</div>
+              </div>
+              <div class="kpiHint">Tours in so far</div>
+            </div>
+
+            <div class="kpiTile">
+              <div>
+                <div class="kpiLabel">Budget to Date</div>
+                <div class="kpiValue mono" id="tileBudgetToDate">0</div>
+              </div>
+              <div class="kpiHint">Planned tours so far</div>
+            </div>
+
+            <div class="kpiTile">
+              <div>
+                <div class="kpiLabel">Variance</div>
+                <div class="kpiValue mono" id="tileVariance">0</div>
+              </div>
+              <div class="kpiHint" id="tileVarianceHint">Actual vs budget</div>
+            </div>
+
+            <div class="kpiTile">
+              <div>
+                <div class="kpiLabel">% to Date</div>
+                <div class="kpiValue mono" id="tilePctToDate">0%</div>
+              </div>
+              <div class="kpiHint">Actual / budget (to date)</div>
+            </div>
+
+            <div class="kpiTile">
+              <div>
+                <div class="kpiLabel">Needed / Day</div>
+                <div class="kpiValue mono" id="tileNeededPerDay">0.0</div>
+              </div>
+              <div class="kpiHint" id="tileNeededHint">To hit monthly budget</div>
+            </div>
+
+            <div class="kpiTile">
+              <div>
+                <div class="kpiLabel">Team Goal</div>
+                <div class="kpiValue mono" id="tileTeamGoal">0</div>
+              </div>
+              <div class="kpiHint">115% of monthly budget</div>
+            </div>
+
+            <!-- Tight + uniform: Manager Override ($/tour) -->
+            <div class="kpiTile">
+              <div>
+                <div class="kpiLabel">Manager Override ($/Tour)</div>
+                <input
+                  class="kpiInput mono"
+                  id="mgrOverrideRate"
+                  inputmode="decimal"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  aria-label="Manager override dollars per tour"
+                />
+              </div>
+              <div class="kpiHint">Used for manager pay</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: summary -->
+        <div class="card summaryCard">
+          <div class="summaryTop">
+            <p class="summaryTitle"><span>Summary</span></p>
+          </div>
+
+          <div class="summaryBody">
+            <div class="sumRow">
+              <div class="sumLabel strong">Monthly Budget</div>
+              <div class="sumValue big mono" id="sumBudget">0</div>
+            </div>
+
+            <div class="sumRow">
+              <div class="sumLabel">Tours In (Month)</div>
+              <div class="sumValue mono" id="sumActual">0</div>
+            </div>
+
+            <div class="sumRow">
+              <div class="sumLabel">Remaining (Month)</div>
+              <div class="sumValue mono" id="sumRemaining">0</div>
+            </div>
+
+            <div class="sumRow">
+              <div class="sumLabel strong">% of Monthly Budget Completed</div>
+              <div class="sumValue mono" id="sumPct">0%</div>
+            </div>
+
+            <div class="sumRow">
+              <div class="sumLabel strong">Manager Pay (Month-to-Date)</div>
+              <div class="sumValue mono" id="sumMgrPay">$0.00</div>
+            </div>
+
+            <p class="muted" style="margin-top:10px;">
+              Inputs live inside <b>Daily Inputs</b>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- PASSWORD GATE -->
+  <div class="settingsOverlay" id="pwOverlay" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
+    <div class="settingsModal" style="max-width:620px;">
+      <div class="settingsHeader">
+        <h2 id="pwTitle">Restricted Calculator</h2>
+        <button class="x" type="button" id="closePwX" aria-label="Close">×</button>
+      </div>
+      <div class="settingsBody">
+        <div class="sectionCard">
+          <p class="muted" style="margin:0 0 12px;">
+            This calculator requires the universal password.
+          </p>
+          <div class="row" style="align-items:flex-end;">
+            <div class="field" style="min-width:260px; flex:1 1 260px;">
+              <div class="label">Password</div>
+              <input class="input" id="pwInput" type="password" placeholder="Enter password" />
+            </div>
+            <button class="btn" type="button" id="btnPwUnlock">Unlock</button>
+          </div>
+          <p class="muted" style="margin-top:10px;" id="pwHint"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SITE PICKER MODAL -->
+  <div class="modalOverlay" id="siteOverlay" role="dialog" aria-modal="true" aria-labelledby="siteTitle">
+    <div class="modal">
+      <div class="modalHeader">
+        <div>
+          <h2 id="siteTitle">Select Your Site</h2>
+          <p>Pick your location.</p>
+        </div>
+        <button class="x" type="button" id="closeSiteX" aria-label="Close">×</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="search" role="search" aria-label="Search sites">
+          <span class="searchIcon" aria-hidden="true"></span>
+          <input id="siteSearch" type="text" placeholder="Search sites…" autocomplete="off" />
+        </div>
+
+        <div class="sitesGrid" id="sitesGrid"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:2px;">
+          <button class="btnGhost" type="button" id="siteCancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAILY INPUTS MODAL -->
+  <div class="settingsOverlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="settingsModal">
+      <div class="settingsHeader">
+        <h2 id="settingsTitle">Daily Inputs</h2>
+        <button class="x" type="button" id="closeSettingsX" aria-label="Close">×</button>
+      </div>
+
+      <div class="settingsBody">
+        <div class="sectionCard">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <div class="muted">
+              Import CSV: <span class="mono">TheDate,Budget</span>
+            </div>
+            <div class="row" style="gap:10px;">
+              <button class="iconBtn" type="button" id="btnImportCsv">Import CSV</button>
+              <button class="iconBtn" type="button" id="btnExportCsv">Export CSV</button>
+              <button class="iconBtn" type="button" id="btnResetMonth">Reset (This Month)</button>
+            </div>
+          </div>
+
+          <div style="height:12px;"></div>
+
+          <div class="tableWrap" aria-label="Daily budget and actual table">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:42%;">DATE</th>
+                  <th style="width:29%;">BUDGET</th>
+                  <th style="width:29%;">TOURS IN</th>
+                </tr>
+              </thead>
+              <tbody id="dailyBodyModal"></tbody>
+            </table>
+          </div>
+
+          <input class="hidden" type="file" id="csvFile" accept=".csv,text/csv" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
+    const SIGNIN_PAGE = "signin.html";
+    const BACK_PAGE = "choose-calc.html";
+    const UNIVERSAL_PASSWORD = "BookEmAll";
+
+    const sb = (window.supabase && window.supabase.createClient)
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    const $ = (id) => document.getElementById(id);
+
+    function showToast(msg, ms = 1600){
+      const t = $("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      window.clearTimeout(showToast._timer);
+      showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
+    }
+    function goSignin(){ window.location.replace(SIGNIN_PAGE); }
+    function getEmpFromEmail(email){ return String(email || "").split("@")[0] || ""; }
+
+    const SITES = [
+      { key:"cape-canaveral", title:"Cape Canaveral", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltd5e047ac82ec503c/61a794c237c855238d66ec0c/cape-canaveral-resort-property-building-sunset-1440x1080.jpg" },
+      { key:"david-walleys", title:"David Walley's", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt08b954f4f80c7ee7/5e290fd1bad1555533de72e0/DWR_Amenities_HotSprings_Pool_001.jpg" },
+      { key:"desert-club", title:"Desert Club", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltba57961e1c76781e/5e54342d03d2600dc053dc8f/DCR_amenities_WateringHole_020.jpg" },
+      { key:"holiday-hills", title:"Holiday Hills", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltc9cc49c72b923b72/5e2f21fc8f7e217daef663fa/HHR_property_Resort_001.jpg" },
+      { key:"new-orleans", title:"New Orleans", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt0bde089d15479ba0/5fdba695b47cdf7fc7d68d16/20201202_NOR_0184AB_(1)-card.jpg" },
+      { key:"orange-lake", title:"Orange Lake", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltf04192786a7478ff/66c8bea691a856f9a470348a/orange-lake-resort-river-island-exchange-exterior-1440x1080.jpg" },
+      { key:"scottsdale", title:"Scottsdale", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blte2ff00e280785c31/5e2f6a8f507d2f74fb78c1cf/SDR_Amenities_Pool_025.JPG" },
+      { key:"seaside", title:"Seaside", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltc0d2242526c7465e/605cb0545d7a7e0ef01ab30f/SSR_Building-4320x2048.jpeg" },
+      { key:"smokey-mountain", title:"Smokey Mountain", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt25ba35c9bfe5e356/5e6115b88abca6651fc8c4b0/SMR_amenities_pool_010.jpg" },
+      { key:"south-beach", title:"South Beach", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt3feb49ba4da8f26d/5e4590eb5e52d50d64528109/SBR_property_CheckIn_003.jpg" },
+      { key:"myrtle-beach-oceanfront", title:"Myrtle Beach Oceanfront", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt716974a6bd1829af/6620213b061bb143094225ca/mbof-balcony-view-of-pool-1440x1080.jpg?format=pjpg&auto=webp&disable=upscale&quality=70&width=1024&height=716&fit=crop" },
+      { key:"williamsburg", title:"Williamsburg", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt0dd0b98197e30327/5daf1a6adf78486c826dc4b9/holiday-inn-club-vacations-williamsburg-5745140523-16x5.jpeg" }
+    ];
+
+    let AUTHEMP = "";
+    let AUTHNAME = "";
+    let SITEKEY = "";
+    let SITETITLE = "";
+
+    async function requireAuthOrRedirect(){
+      if(!sb) return goSignin();
+      const { data: { session } } = await sb.auth.getSession();
+      if(!session?.user) return goSignin();
+
+      const user = session.user;
+      AUTHNAME = user.user_metadata?.first_name || "";
+      AUTHEMP = getEmpFromEmail(user.email);
+
+      $("userName").textContent = AUTHNAME || "Signed In";
+      $("userEmp").textContent = AUTHEMP ? `#${AUTHEMP}` : "";
+    }
+
+    async function signOut(){
+      if(!sb) return goSignin();
+      const { error } = await sb.auth.signOut();
+      if(error){ showToast(error.message || "Sign out failed."); return; }
+      showToast("Signed out.");
+      goSignin();
+    }
+
+    $("btnSignOut").addEventListener("click", () => signOut());
+    $("btnBack").addEventListener("click", () => window.location.href = BACK_PAGE);
+
+    if(sb){
+      sb.auth.onAuthStateChange((event, session) => {
+        if(event === "SIGNED_OUT" || !session?.user) goSignin();
+      });
+    }
+
+    function pwKey(){ return `tourpulse:sitecalc:pwok:${AUTHEMP||"unknown"}`; }
+    function openPwGate(){
+      $("pwOverlay").classList.add("show");
+      $("pwHint").textContent = "";
+      $("pwInput").value = "";
+      setTimeout(() => $("pwInput")?.focus(), 0);
+    }
+    function isUnlocked(){
+      try{ return localStorage.getItem(pwKey()) === "1"; }catch(_){ return false; }
+    }
+    function setUnlocked(){
+      try{ localStorage.setItem(pwKey(), "1"); }catch(_){}
+    }
+
+    $("closePwX").addEventListener("click", () => { window.location.href = BACK_PAGE; });
+    $("btnPwUnlock").addEventListener("click", () => {
+      const v = String($("pwInput").value || "");
+      if(v !== UNIVERSAL_PASSWORD){
+        $("pwHint").textContent = "Incorrect password.";
+        return;
+      }
+      setUnlocked();
+      $("pwOverlay").classList.remove("show");
+      showToast("Unlocked.");
+      loadAllForCurrentMonth();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if(e.key === "Enter" && $("pwOverlay").classList.contains("show")){
+        $("btnPwUnlock").click();
+      }
+      if(e.key === "Escape"){
+        closeSiteModal();
+        closeDailyModal();
+      }
+    });
+
+    function monthKey(){ return $("monthSelect").value || ""; }
+
+    function buildMonthOptions(){
+      const sel = $("monthSelect");
+      sel.innerHTML = "";
+
+      const now = new Date();
+      const year = now.getFullYear();
+
+      for(let monthIndex = 0; monthIndex < 12; monthIndex++){
+        const d = new Date(year, monthIndex, 1);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const key = `${y}-${m}`;
+        const label = d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = label;
+        sel.appendChild(opt);
+      }
+    }
+
+    function setDefaultMonth(){
+      buildMonthOptions();
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth()+1).padStart(2,"0");
+      $("monthSelect").value = `${y}-${m}`;
+    }
+
+    function storeKey(){
+      return `tourpulse:sitecalc:v2:${AUTHEMP||"unknown"}:${SITEKEY||"nosite"}:${monthKey()||"nomonth"}`;
+    }
+    function mgrOverrideRateKey(){
+      return `tourpulse:sitecalc:mgr_override_rate:v1:${AUTHEMP||"unknown"}:${SITEKEY||"nosite"}`;
+    }
+
+    function safeInt(v){
+      const n = parseInt(String(v ?? "0"), 10);
+      return Number.isFinite(n) && n >= 0 ? n : 0;
+    }
+    function safeMoney(v){
+      const n = parseFloat(String(v ?? "0"));
+      return Number.isFinite(n) && n >= 0 ? n : 0;
+    }
+    function num(n){ return Number(n || 0).toLocaleString(); }
+    function pct01(x){
+      const p = Math.max(0, Math.min(1, Number(x || 0)));
+      return (p * 100).toFixed(0) + "%";
+    }
+    function money(n){
+      const x = Number(n || 0);
+      return x.toLocaleString(undefined, { style:"currency", currency:"USD" });
+    }
+    function formatDatePretty(iso){
+      const d = new Date(iso + "T00:00:00");
+      if(Number.isNaN(d.getTime())) return iso;
+      return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+    }
+
+    function defaultMonthData(){ return { byDate: {} }; }
+
+    function readMonthData(){
+      try{
+        const raw = localStorage.getItem(storeKey());
+        if(!raw) return defaultMonthData();
+        const x = JSON.parse(raw);
+
+        const byDate = {};
+        const src = x?.byDate && typeof x.byDate === "object" ? x.byDate : {};
+        for(const k in src){
+          const v = src[k] || {};
+          byDate[String(k)] = { budget: safeInt(v.budget), actual: safeInt(v.actual) };
+        }
+        return { byDate };
+      }catch(_){
+        return defaultMonthData();
+      }
+    }
+
+    function writeMonthData(data){
+      localStorage.setItem(storeKey(), JSON.stringify(data));
+    }
+
+    function readMgrOverrideRate(){
+      try{
+        const v = localStorage.getItem(mgrOverrideRateKey());
+        return safeMoney(v);
+      }catch(_){ return 0; }
+    }
+    function writeMgrOverrideRate(n){
+      try{ localStorage.setItem(mgrOverrideRateKey(), String(safeMoney(n))); }catch(_){}
+    }
+
+    function daysInMonth(ymKey){
+      const [yStr, mStr] = String(ymKey || "").split("-");
+      const y = safeInt(yStr);
+      const m = safeInt(mStr);
+      if(!y || !m) return 0;
+      return new Date(y, m, 0).getDate();
+    }
+
+    function isoForDay(ymKey, day){
+      const [yStr, mStr] = String(ymKey || "").split("-");
+      const y = safeInt(yStr);
+      const m = String(safeInt(mStr)).padStart(2,"0");
+      const d = String(safeInt(day)).padStart(2,"0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function buildMonthRows(ymKey, byDate){
+      const dim = daysInMonth(ymKey);
+      const rows = [];
+      for(let day = 1; day <= dim; day++){
+        const iso = isoForDay(ymKey, day);
+        const rec = (byDate && byDate[iso]) ? byDate[iso] : { budget: 0, actual: 0 };
+        rows.push({ iso, budget: safeInt(rec.budget), actual: safeInt(rec.actual) });
+      }
+      return rows;
+    }
+
+    function cutoffDayForSelectedMonth(ymKey){
+      const [yStr, mStr] = String(ymKey || "").split("-");
+      const y = safeInt(yStr);
+      const m = safeInt(mStr);
+      if(!y || !m) return 0;
+
+      const now = new Date();
+      const ny = now.getFullYear();
+      const nm = now.getMonth() + 1;
+
+      // current month → count to today
+      if(y === ny && m === nm) return now.getDate();
+
+      // future month → nothing "to date" yet (but daily inputs still editable)
+      if(y > ny || (y === ny && m > nm)) return 0;
+
+      // past month → full month
+      return daysInMonth(ymKey);
+    }
+
+    function totals(rows){
+      const budgetTotal = rows.reduce((s,r) => s + safeInt(r.budget), 0);
+      const actualTotal = rows.reduce((s,r) => s + safeInt(r.actual), 0);
+      return { budgetTotal, actualTotal };
+    }
+
+    function totalsToDate(rows, cutoffDay){
+      const to = Math.max(0, Math.min(rows.length, safeInt(cutoffDay)));
+      let b = 0, a = 0;
+      for(let i=0;i<to;i++){
+        b += safeInt(rows[i].budget);
+        a += safeInt(rows[i].actual);
+      }
+      return { budgetToDate: b, actualToDate: a, daysCounted: to };
+    }
+
+    /* UPDATED: add mobile labels (BUDGET / TOURS IN) inside each cell */
+    function renderDailyModalTable(rows){
+      const body = $("dailyBodyModal");
+      body.innerHTML = "";
+      rows.forEach((r) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td style="font-weight:950;">${escapeHtml(formatDatePretty(r.iso))}</td>
+
+          <td class="mobileLabeled">
+            <div class="mCellLabel" aria-hidden="true">BUDGET</div>
+            <input class="cellInput" inputmode="numeric" type="number" min="0" step="1"
+              data-date="${escapeAttr(r.iso)}" data-field="budget" value="${escapeAttr(r.budget)}" />
+          </td>
+
+          <td class="mobileLabeled">
+            <div class="mCellLabel" aria-hidden="true">TOURS IN</div>
+            <input class="cellInput" inputmode="numeric" type="number" min="0" step="1"
+              data-date="${escapeAttr(r.iso)}" data-field="actual" value="${escapeAttr(r.actual)}" />
+          </td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function varianceColor(v){
+      if(v > 0) return "rgba(10,166,181,.95)";
+      if(v === 0) return "rgba(15,23,42,.72)";
+      return "rgba(220,38,38,.95)";
+    }
+
+    function computeAndPaintUI(){
+      const data = readMonthData();
+      const rows = buildMonthRows(monthKey(), data.byDate);
+
+      const dim = rows.length;
+      const cutoffDay = cutoffDayForSelectedMonth(monthKey());
+      const td = totalsToDate(rows, cutoffDay);
+      const monthTotals = totals(rows);
+
+      const budgetToDate = td.budgetToDate;
+      const actualToDate = td.actualToDate;
+
+      const variance = actualToDate - budgetToDate;
+      const pctToDate = budgetToDate > 0 ? (actualToDate / budgetToDate) : 0;
+
+      const remainingDays = Math.max(0, dim - td.daysCounted);
+      const remainingToHitBudget = Math.max(0, monthTotals.budgetTotal - monthTotals.actualTotal);
+      const neededPerDay = remainingDays > 0 ? (remainingToHitBudget / remainingDays) : 0;
+
+      const teamGoal = Math.round(monthTotals.budgetTotal * 1.15);
+
+      const mgrRate = readMgrOverrideRate();
+      const mgrPayToDate = mgrRate * actualToDate;
+
+      const cutoffIso = td.daysCounted > 0 ? isoForDay(monthKey(), td.daysCounted) : "";
+      $("mtdLine").textContent = td.daysCounted > 0 ? `Up to: ${formatDatePretty(cutoffIso)}` : `Up to: —`;
+
+      $("tileActualToDate").textContent = num(actualToDate);
+      $("tileBudgetToDate").textContent = num(budgetToDate);
+
+      const varEl = $("tileVariance");
+      varEl.textContent = (variance >= 0 ? "+" : "") + num(variance);
+      varEl.style.color = varianceColor(variance);
+      $("tileVarianceHint").textContent = variance > 0 ? "Ahead of budget" : (variance < 0 ? "Behind budget" : "On budget");
+
+      $("tilePctToDate").textContent = pct01(pctToDate);
+
+      $("tileNeededPerDay").textContent = neededPerDay.toFixed(1);
+      $("tileNeededHint").textContent = remainingDays > 0 ? `For the remaining ${remainingDays} day(s)` : "Month complete";
+
+      $("tileTeamGoal").textContent = num(teamGoal);
+
+      const monthActual = monthTotals.actualTotal;
+      const monthRemaining = Math.max(0, monthTotals.budgetTotal - monthActual);
+      const monthPct = monthTotals.budgetTotal > 0 ? (monthActual / monthTotals.budgetTotal) : 0;
+
+      $("sumBudget").textContent = num(monthTotals.budgetTotal);
+      $("sumActual").textContent = num(monthActual);
+      $("sumRemaining").textContent = num(monthRemaining);
+      $("sumPct").textContent = pct01(monthPct);
+
+      $("sumMgrPay").textContent = money(mgrPayToDate);
+    }
+
+    function updateAllUI(){
+      const data = readMonthData();
+      const rows = buildMonthRows(monthKey(), data.byDate);
+      renderDailyModalTable(rows);
+
+      const r = readMgrOverrideRate();
+      $("mgrOverrideRate").value = r ? String(r.toFixed(2)) : "";
+
+      computeAndPaintUI();
+    }
+
+    function updateSummaryOnlyFromInputChange(){
+      computeAndPaintUI();
+    }
+
+    function wireModalInputs(){
+      const body = $("dailyBodyModal");
+
+      body.addEventListener("input", (e) => {
+        const el = e.target;
+        if(!(el instanceof HTMLInputElement)) return;
+        if(!el.classList.contains("cellInput")) return;
+
+        const iso = el.getAttribute("data-date") || "";
+        const field = el.getAttribute("data-field") || "";
+        if(!iso || (field !== "budget" && field !== "actual")) return;
+
+        const data = readMonthData();
+        if(!data.byDate[iso]) data.byDate[iso] = { budget: 0, actual: 0 };
+
+        data.byDate[iso][field] = safeInt(el.value);
+
+        writeMonthData(data);
+        updateSummaryOnlyFromInputChange();
+      });
+
+      body.addEventListener("focusin", (e) => {
+        const el = e.target;
+        if(!(el instanceof HTMLInputElement)) return;
+        if(!el.classList.contains("cellInput")) return;
+        if(String(el.value || "") === "0") el.select();
+      });
+    }
+
+    function openDailyModal(){
+      if(!SITEKEY || !monthKey()){
+        showToast("Select a site and month first.");
+        return;
+      }
+      $("settingsOverlay").classList.add("show");
+      updateAllUI();
+    }
+    function closeDailyModal(){ $("settingsOverlay").classList.remove("show"); }
+
+    $("btnDailyInputs").addEventListener("click", openDailyModal);
+    $("closeSettingsX").addEventListener("click", closeDailyModal);
+    $("settingsOverlay").addEventListener("click", (e) => { if(e.target === $("settingsOverlay")) closeDailyModal(); });
+
+    function toCsvFromMonth(byDate){
+      const rows = buildMonthRows(monthKey(), byDate);
+      const lines = ["date,budget,actual"];
+      rows.forEach(r => lines.push(`${r.iso},${safeInt(r.budget)},${safeInt(r.actual)}`));
+      return lines.join("\n");
+    }
+
+    function download(name, content, mime){
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    $("btnExportCsv").addEventListener("click", () => {
+      const data = readMonthData();
+      const filename = `daily_${SITEKEY}_${monthKey()}.csv`;
+      download(filename, toCsvFromMonth(data.byDate), "text/csv");
+      showToast("CSV exported.");
+    });
+
+    $("btnImportCsv").addEventListener("click", () => $("csvFile").click());
+
+    function normalizeToISODate(s){
+      const v = String(s || "").trim();
+      if(!v) return "";
+
+      // Already ISO
+      if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+
+      // Try parsing (handles common formats like M/D/YYYY, etc.)
+      const d = new Date(v);
+      if(Number.isNaN(d.getTime())) return "";
+
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    $("csvFile").addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if(!file) return;
+
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+      if(lines.length === 0){ showToast("Empty CSV."); return; }
+
+      const data = readMonthData();
+
+      for(let i=0;i<lines.length;i++){
+        const line = lines[i];
+        if(!line) continue;
+
+        // Expect header: TheDate,Budget (case-insensitive)
+        if(i === 0 && /thedate\s*,\s*budget/i.test(line)) continue;
+
+        const parts = line.split(",").map(x => x.trim());
+        if(parts.length < 2) continue;
+
+        const iso = normalizeToISODate(parts[0]);
+        if(!iso) continue;
+
+        // Only import rows that belong to the selected month
+        if(!iso.startsWith(monthKey() + "-")) continue;
+
+        const budget = safeInt(parts[1]);
+
+        // IMPORTANT: Do NOT overwrite actuals.
+        const existingActual = data.byDate[iso]?.actual ?? 0;
+
+        data.byDate[iso] = { budget, actual: safeInt(existingActual) };
+      }
+
+      writeMonthData(data);
+      $("csvFile").value = "";
+      updateAllUI();
+      showToast("Budget imported.");
+    });
+
+    $("btnResetMonth").addEventListener("click", () => {
+      const data = readMonthData();
+      const rows = buildMonthRows(monthKey(), data.byDate);
+      rows.forEach(r => { delete data.byDate[r.iso]; });
+      writeMonthData(data);
+      updateAllUI();
+      showToast("Month reset.");
+    });
+
+    let _mgrRateTimer = null;
+    $("mgrOverrideRate").addEventListener("input", () => {
+      window.clearTimeout(_mgrRateTimer);
+      _mgrRateTimer = window.setTimeout(() => {
+        writeMgrOverrideRate($("mgrOverrideRate").value);
+        updateSummaryOnlyFromInputChange();
+        showToast("Override saved.");
+      }, 250);
+    });
+
+    /* Format to 2 decimals on blur (keeps it clean like the stats) */
+    $("mgrOverrideRate").addEventListener("blur", () => {
+      const v = safeMoney($("mgrOverrideRate").value);
+      $("mgrOverrideRate").value = v ? v.toFixed(2) : "";
+    });
+
+    function openSiteModal(){
+      $("siteOverlay").classList.add("show");
+      $("siteSearch").value = "";
+      renderSites(SITES);
+      setTimeout(() => $("siteSearch")?.focus(), 0);
+    }
+    function closeSiteModal(){ $("siteOverlay").classList.remove("show"); }
+
+    $("btnChooseSite").addEventListener("click", openSiteModal);
+    $("btnChangeSite").addEventListener("click", openSiteModal);
+    $("closeSiteX").addEventListener("click", closeSiteModal);
+    $("siteCancel").addEventListener("click", closeSiteModal);
+    $("siteOverlay").addEventListener("click", (e) => { if(e.target === $("siteOverlay")) closeSiteModal(); });
+
+    function setBanner(site){
+      SITETITLE = site?.title || "";
+      SITEKEY = site?.key || "";
+
+      $("bannerSite").textContent = site?.title || "—";
+
+      $("btnChooseSite").style.display = site?.title ? "none" : "inline-flex";
+      $("btnChangeSite").style.display = site?.title ? "inline-flex" : "none";
+
+      const imgEl = $("bannerImg");
+      if(site?.img){
+        imgEl.src = site.img;
+        imgEl.style.display = "block";
+        imgEl.alt = site.title + " resort photo";
+      }else{
+        imgEl.removeAttribute("src");
+        imgEl.style.display = "none";
+        imgEl.alt = "";
+      }
+    }
+
+    function setSelectedSite(site){
+      try{
+        localStorage.setItem("f8_sitecalc_site_key", site.key);
+        localStorage.setItem("f8_sitecalc_site_title", site.title);
+      }catch(_){}
+      setBanner(site);
+
+      const r = readMgrOverrideRate();
+      $("mgrOverrideRate").value = r ? String(r.toFixed(2)) : "";
+
+      showToast("Site selected.");
+      if(isUnlocked()) loadAllForCurrentMonth();
+    }
+
+    function loadSelectedSite(){
+      try{
+        const key = localStorage.getItem("f8_sitecalc_site_key") || "";
+        if(!key) return null;
+        return SITES.find(s => s.key === key) || null;
+      }catch(_){ return null; }
+    }
+
+    function renderSites(list){
+      const grid = $("sitesGrid");
+      grid.innerHTML = "";
+
+      list.forEach(site => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "siteBtn";
+        btn.setAttribute("data-site", site.key);
+
+        btn.innerHTML = `
+          <div class="tileBg" aria-hidden="true"></div>
+          <img class="tileImg" alt="" loading="lazy" referrerpolicy="no-referrer" />
+          <div class="tileShade" aria-hidden="true"></div>
+          <div class="tileInner">
+            <p class="siteName">${escapeHtml(site.title)}</p>
+            <div class="pillSmall">Select</div>
+          </div>
+        `;
+
+        const img = btn.querySelector(".tileImg");
+        if(site.img){
+          img.src = site.img;
+          img.style.display = "block";
+        }
+        grid.appendChild(btn);
+      });
+    }
+
+    function applySiteSearch(){
+      const q = String($("siteSearch").value || "").trim().toLowerCase();
+      if(!q) return renderSites(SITES);
+      const filtered = SITES.filter(s => s.title.toLowerCase().includes(q) || s.key.toLowerCase().includes(q));
+      renderSites(filtered);
+    }
+    $("siteSearch").addEventListener("input", applySiteSearch);
+
+    $("sitesGrid").addEventListener("click", (e) => {
+      const btn = e.target?.closest?.("button[data-site]");
+      if(!btn) return;
+      const key = btn.getAttribute("data-site");
+      const site = SITES.find(s => s.key === key);
+      if(!site) return;
+      setSelectedSite(site);
+      closeSiteModal();
+    });
+
+    function loadAllForCurrentMonth(){
+      if(!AUTHEMP || !SITEKEY || !monthKey()) return;
+      updateAllUI();
+    }
+
+    $("monthSelect").addEventListener("change", () => {
+      if(isUnlocked()) loadAllForCurrentMonth();
+      showToast("Month loaded.");
+    });
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function escapeAttr(v){
+      return String(v ?? "").replaceAll('"',"&quot;");
+    }
+
+    (async function init(){
+      await requireAuthOrRedirect();
+
+      setDefaultMonth();
+
+      const selected = loadSelectedSite();
+      setBanner(selected);
+      if(!selected) openSiteModal();
+
+      wireModalInputs();
+
+      if(!isUnlocked()){
+        openPwGate();
+        return;
+      }
+
+      updateAllUI();
+    })();
+  </script>
+</body>
+</html>

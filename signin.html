@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TourPulse — Sign In</title>
+
+  <!-- Supabase JS v2 (loaded from CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- TourPulse stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Sign-in page (TourPulse-branded) helpers -->
+  <style>
+    /* Use existing TourPulse panel + topbar styles; add only what's missing for sign-in layout */
+    .heroCard{
+      margin: 6px 0 14px;
+      text-align:center;
+      padding:18px 16px;
+    }
+    .signinHeroLogo{
+      display:block;
+      width: min(320px, 68vw);
+      max-width: 100%;
+      height:auto;
+      margin: 6px auto 10px;
+      object-fit: contain;
+    }
+    .heroTitle{
+      margin: 6px 0 4px;
+      font-size:18px;
+      font-weight:1100;
+      letter-spacing:.2px;
+      color: rgba(15,23,42,.92);
+    }
+    .heroSub{
+      margin:0;
+      color: rgba(15,23,42,.60);
+      font-size:12px;
+      line-height:1.45;
+    }
+
+    .formCard{
+      padding:16px;
+    }
+
+    .formGrid{
+      display:grid;
+      gap:12px;
+    }
+
+    /* connection pill uses existing pillStat look but needs dot */
+    .connPill{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid rgba(15,23,42,.12);
+      background: rgba(255,255,255,.75);
+      box-shadow: 0 10px 26px rgba(2,6,23,.06);
+      font-size:12px;
+      font-weight:950;
+      color: rgba(15,23,42,.82);
+      white-space:nowrap;
+    }
+    .dot{
+      width:10px; height:10px;
+      border-radius:999px;
+      background: rgba(15,23,42,.22);
+      box-shadow: 0 0 0 3px rgba(15,23,42,.06);
+      flex:0 0 auto;
+    }
+    .dot.ok{ background: rgba(16,185,129,1); box-shadow: 0 0 0 3px rgba(16,185,129,.16); }
+    .dot.bad{ background: rgba(239,68,68,1); box-shadow: 0 0 0 3px rgba(239,68,68,.16); }
+
+    .error{
+      display:none;
+      margin:2px 0 0;
+      padding:10px 12px;
+      border-radius:14px;
+      border:1px solid rgba(239,68,68,.22);
+      background: rgba(239,68,68,.08);
+      color: rgba(185,28,28,.95);
+      font-size:12px;
+      font-weight:900;
+      line-height:1.35;
+    }
+    .error.show{ display:block; }
+
+    .metaRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+      color: rgba(15,23,42,.62);
+      font-size:12px;
+      font-weight:900;
+    }
+
+    /* safety: never allow images to blow up the panel */
+    .panel img{ max-width:100%; height:auto; }
+
+    /* ===== Sign-in only: modal-sized panel (does not affect other pages) ===== */
+    body.tp-signin .wrap{
+      max-width: 760px;     /* controls overall "modal" width */
+      margin: 0 auto;
+    }
+
+    body.tp-signin .panel{
+      max-width: 760px;     /* keeps the panel from stretching wide */
+      margin: 18px auto;
+    }
+
+    body.tp-signin .heroCard{
+      padding: 14px 14px;   /* tighter header block */
+    }
+
+    body.tp-signin .signinHeroLogo{
+      width: min(240px, 55vw); /* smaller hero logo so it doesn’t dominate */
+      margin: 4px auto 8px;
+    }
+
+    body.tp-signin .formCard{
+      padding: 14px;        /* tighter form card */
+    }
+
+    /* ===== Sign-in intro animation (signin.html only) ===== */
+    body.tp-signin.tp-intro .formCard{
+      opacity: 0;
+      transform: translateY(10px);
+      animation: tpFormIn .55s ease forwards;
+      animation-delay: 1.35s;
+    }
+
+    /* Make the hero card feel like it "appears" around the logo */
+    body.tp-signin.tp-intro .heroCard{
+      position: relative;
+      overflow: hidden;
+
+      /* start invisible-ish */
+      background: rgba(255,255,255,0);
+      border-color: rgba(15,23,42,0);
+      box-shadow: none;
+
+      animation: tpHeroCardReveal .65s ease forwards;
+      animation-delay: .65s;
+    }
+
+    /* Logo entrance */
+    body.tp-signin.tp-intro .signinHeroLogo{
+      transform: translateY(6px) scale(.92);
+      opacity: 0;
+      animation: tpLogoPop .60s cubic-bezier(.2,.9,.2,1) forwards;
+      animation-delay: .05s;
+      will-change: transform, opacity;
+    }
+
+    /* Title + tagline entrance */
+    body.tp-signin.tp-intro .heroTitle,
+    body.tp-signin.tp-intro .heroSub{
+      opacity: 0;
+      transform: translateY(4px);
+      animation: tpTextIn .45s ease forwards;
+      animation-delay: .35s;
+      will-change: transform, opacity;
+    }
+    body.tp-signin.tp-intro .heroSub{
+      animation-delay: .45s;
+    }
+
+    /* Optional: slightly tighten the hero spacing during intro */
+    body.tp-signin.tp-intro .heroCard{
+      padding-top: 16px;
+      padding-bottom: 16px;
+    }
+
+    /* Keyframes */
+    @keyframes tpLogoPop{
+      0%   { opacity:0; transform: translateY(6px) scale(.92); }
+      70%  { opacity:1; transform: translateY(0) scale(1.02); }
+      100% { opacity:1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes tpTextIn{
+      from { opacity:0; transform: translateY(4px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    @keyframes tpHeroCardReveal{
+      from{
+        background: rgba(255,255,255,0);
+        border-color: rgba(15,23,42,0);
+        box-shadow: none;
+      }
+      to{
+        background: rgba(255,255,255,.78);
+        border-color: rgba(15,23,42,.12);
+        box-shadow: 0 16px 40px rgba(2,6,23,.08);
+      }
+    }
+
+    @keyframes tpFormIn{
+      from { opacity:0; transform: translateY(10px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    /* Respect reduced motion */
+    @media (prefers-reduced-motion: reduce){
+      body.tp-signin.tp-intro .signinHeroLogo,
+      body.tp-signin.tp-intro .heroTitle,
+      body.tp-signin.tp-intro .heroSub,
+      body.tp-signin.tp-intro .heroCard,
+      body.tp-signin.tp-intro .formCard{
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+      }
+      body.tp-signin.tp-intro .heroCard{
+        background: rgba(255,255,255,.78) !important;
+        border-color: rgba(15,23,42,.12) !important;
+        box-shadow: 0 16px 40px rgba(2,6,23,.08) !important;
+      }
+    }
+
+  </style>
+</head>
+
+<body class="tp-signin tp-intro">
+  <div class="wrap">
+    <section class="panel" aria-label="Sign In Panel">
+
+      <!-- TourPulse topbar -->
+      <div class="topbar">
+        <div class="brand">
+          <div class="logoBox" aria-hidden="true">
+            <img src="images/MTK-logo.png" alt="TourPulse Logo" />
+          </div>
+          <div class="brandText">
+            <p class="title">TourPulse</p>
+            <p class="sub">Powered by F8</p>
+          </div>
+        </div>
+
+        <div class="rightStack">
+          <div class="connPill" title="Supabase connection">
+            <span id="connDot" class="dot"></span>
+            <span id="connText">Loading…</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Branded hero -->
+      <div class="card heroCard" aria-label="Sign in header">
+        <img class="signinHeroLogo" src="images/MTK-logo.png" alt="TourPulse Logo" />
+        <h1 class="heroTitle" id="headline">Sign In</h1>
+        <p class="heroSub" id="subhead">Enter your 6-digit Employee Number and 4-digit PIN.</p>
+      </div>
+
+      <!-- Form -->
+      <div class="card formCard" aria-label="Sign in form">
+        <form id="signInForm" class="formGrid" novalidate>
+
+          <div class="field">
+            <div class="label">Employee Number (6 digits)</div>
+            <input class="input" inputmode="numeric" autocomplete="off" id="signEmp" placeholder="078195" maxlength="6" />
+          </div>
+
+          <div class="field">
+            <div class="label">PIN (4 digits)</div>
+            <input class="input" inputmode="numeric" autocomplete="off" id="signPin" placeholder="1234" maxlength="4" />
+          </div>
+
+          <div class="error" id="signErr"></div>
+
+          <button class="btn" type="submit" id="signSubmit">Sign In</button>
+
+          <div class="metaRow">
+            <span>Don’t have an account?</span>
+            <button class="btnGhost" type="button" id="openCreateBtn">Create a profile</button>
+          </div>
+
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <!-- CREATE PROFILE MODAL -->
+  <div class="modalOverlay" id="createOverlay" role="dialog" aria-modal="true" aria-labelledby="createTitle">
+    <div class="modal">
+      <div class="modalHeader">
+        <div>
+          <h2 id="createTitle">Create Profile</h2>
+          <p>Employee Number (6 digits), First Name, and a 4-digit PIN.</p>
+        </div>
+        <button class="x" type="button" id="closeCreateX" aria-label="Close">×</button>
+      </div>
+
+      <form id="createForm" style="padding:16px 18px 18px; display:grid; gap:12px;">
+        <div class="field">
+          <div class="label">Employee Number (6 digits)</div>
+          <input class="input" inputmode="numeric" autocomplete="off" id="createEmp" placeholder="078195" maxlength="6" />
+        </div>
+
+        <div class="field">
+          <div class="label">First Name</div>
+          <input class="input" autocomplete="given-name" id="createFirst" placeholder="Aaron" />
+        </div>
+
+        <div class="field">
+          <div class="label">PIN (4 digits)</div>
+          <input class="input" inputmode="numeric" autocomplete="off" id="createPin" placeholder="1234" maxlength="4" />
+        </div>
+
+        <div class="error" id="createErr"></div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; align-items:center; margin-top:4px;">
+          <button class="btnGhost" type="button" id="createCancel">Cancel</button>
+          <button class="btn" type="submit" id="createSubmit">Create Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  /***********************
+   * CONFIG (yours)
+   ***********************/
+  const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
+  const NEXT_PAGE = "choose-calc.html";
+
+  const $ = (id) => document.getElementById(id);
+
+  function setErr(el, msg){
+    el.textContent = msg || "";
+    el.classList.toggle("show", !!msg);
+  }
+
+  function openCreate(){
+    $("createOverlay").classList.add("show");
+    setErr($("createErr"), "");
+    setTimeout(() => $("createEmp")?.focus(), 0);
+  }
+  function closeCreate(){
+    $("createOverlay").classList.remove("show");
+    setErr($("createErr"), "");
+  }
+
+  function normalizeEmployeeNumber(v){ return String(v || "").trim(); }
+  function normalizePin(v){ return String(v || "").trim(); }
+  function isSixDigits(v){ return /^\d{6}$/.test(v); }
+  function isFourDigits(v){ return /^\d{4}$/.test(v); }
+
+  function derivedEmail(emp){ return `${emp}@f8.local`; }
+  function derivedPassword(emp, pin){ return `F8-${emp}-${pin}`; }
+
+  function goNext(){
+    window.location.replace(NEXT_PAGE);
+  }
+
+  // Modal wires (these must work even if Supabase is down)
+  $("openCreateBtn").addEventListener("click", openCreate);
+  $("closeCreateX").addEventListener("click", closeCreate);
+  $("createCancel").addEventListener("click", closeCreate);
+
+  $("createOverlay").addEventListener("click", (e) => {
+    if(e.target === $("createOverlay")) closeCreate();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape") closeCreate();
+  });
+
+  /***********************
+   * SUPABASE INIT (GUARDED)
+   ***********************/
+  let sb = null;
+
+  function setConn(ok, text){
+    $("connDot").className = "dot " + (ok ? "ok" : "bad");
+    $("connText").textContent = text;
+  }
+
+  (function initSupabaseSafe(){
+    try{
+      if(!window.supabase || !window.supabase.createClient){
+        setConn(false, "Supabase not loaded");
+        return;
+      }
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      setConn(true, "Connected");
+    }catch(err){
+      sb = null;
+      setConn(false, "Supabase init error");
+      console.error(err);
+    }
+  })();
+
+  async function redirectIfSignedIn(){
+    if(!sb) return;
+    const { data: { session } } = await sb.auth.getSession();
+    if(session?.user) goNext();
+  }
+
+  async function createProfileThenSignIn(emp, firstName, pin){
+    const email = derivedEmail(emp);
+    const password = derivedPassword(emp, pin);
+
+    const { error: signUpError } = await sb.auth.signUp({
+      email,
+      password,
+      options: { data: { first_name: firstName } }
+    });
+    if(signUpError) throw signUpError;
+
+    const { error: signInError } = await sb.auth.signInWithPassword({ email, password });
+    if(signInError) throw signInError;
+  }
+
+  async function signIn(emp, pin){
+    const email = derivedEmail(emp);
+    const password = derivedPassword(emp, pin);
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if(error) throw error;
+  }
+
+  // Sign in form
+  $("signInForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if(!sb){
+      setErr($("signErr"), "Supabase not available (CDN blocked or offline).");
+      return;
+    }
+
+    const emp = normalizeEmployeeNumber($("signEmp").value);
+    const pin = normalizePin($("signPin").value);
+
+    if(!isSixDigits(emp)) return setErr($("signErr"), "Employee Number must be exactly 6 digits (example: 078195).");
+    if(!isFourDigits(pin)) return setErr($("signErr"), "PIN must be exactly 4 digits.");
+
+    setErr($("signErr"), "");
+    $("signSubmit").disabled = true;
+    $("signSubmit").textContent = "Signing in…";
+
+    try{
+      await signIn(emp, pin);
+      goNext();
+    }catch(err){
+      setErr($("signErr"), err?.message || "Sign in failed.");
+    }finally{
+      $("signSubmit").disabled = false;
+      $("signSubmit").textContent = "Sign In";
+    }
+  });
+
+  // Create profile form
+  $("createForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if(!sb){
+      setErr($("createErr"), "Supabase not available (CDN blocked or offline).");
+      return;
+    }
+
+    const emp = normalizeEmployeeNumber($("createEmp").value);
+    const first = String($("createFirst").value || "").trim();
+    const pin = normalizePin($("createPin").value);
+
+    if(!isSixDigits(emp)) return setErr($("createErr"), "Employee Number must be exactly 6 digits (example: 078195).");
+    if(!first) return setErr($("createErr"), "First Name is required.");
+    if(!isFourDigits(pin)) return setErr($("createErr"), "PIN must be exactly 4 digits.");
+
+    setErr($("createErr"), "");
+    $("createSubmit").disabled = true;
+    $("createSubmit").textContent = "Creating…";
+
+    try{
+      await createProfileThenSignIn(emp, first, pin);
+      closeCreate();
+      goNext();
+    }catch(err){
+      const msg = (err?.message || "Unable to create profile.")
+        .replace("User already registered", "Account already exists for that Employee Number.");
+      setErr($("createErr"), msg);
+    }finally{
+      $("createSubmit").disabled = false;
+      $("createSubmit").textContent = "Create Profile";
+    }
+  });
+
+  // Init: auto-forward if already signed in
+  (async function init(){
+    if(sb){
+      sb.auth.onAuthStateChange((event, session) => {
+        if(event === "SIGNED_IN" && session?.user) goNext();
+      });
+      await redirectIfSignedIn();
+    }
+  })();
+  </script>
+</body>
+</html>

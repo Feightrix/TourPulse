@@ -1,0 +1,1199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TourPulse — Marketer Pay Calculator</title>
+
+  <!-- Sitewide CSS -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- PAGE-SPECIFIC FIXES (scoped to pay-calc.html only) -->
+  <style>
+    body.tp-paycalc .settingsModal,
+    body.tp-paycalc .settingsBody,
+    body.tp-paycalc .sectionCard{
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* ===== Matrix table: keep rows INLINE with headers ===== */
+    body.tp-paycalc .tableWrap table{
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    body.tp-paycalc .tableWrap thead th{
+      text-align: left;
+      font-weight: 900;
+      letter-spacing: .06em;
+      font-size: 12px;
+      opacity: .85;
+      padding: 12px 12px;
+      white-space: nowrap;
+    }
+
+    body.tp-paycalc .tableWrap td{
+      padding: 12px 12px;
+      vertical-align: middle;
+      box-sizing: border-box;
+    }
+
+    /* Inputs fill their cell cleanly */
+    body.tp-paycalc .tableWrap .cellInput{
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    /* X remove button at end of each row */
+    body.tp-paycalc .iconX{
+      width: 40px;
+      height: 40px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,.14);
+      background: rgba(255,255,255,.7);
+      cursor: pointer;
+      font-size: 22px;
+      line-height: 1;
+      font-weight: 800;
+      color: rgba(20,24,32,.75);
+      user-select: none;
+    }
+    body.tp-paycalc .iconX:active{ transform: scale(.98); }
+
+    /* Make sure the last column stays tight */
+    body.tp-paycalc .colDel,
+    body.tp-paycalc td.colDel{
+      width: 56px;
+      text-align: right;
+    }
+
+    /* ===== Mobile: keep everything in one line per row ===== */
+    @media (max-width: 520px){
+      body.tp-paycalc .settingsBody{
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      body.tp-paycalc .tableWrap{
+        padding-right: 6px;
+      }
+
+      /* Slightly tighter on mobile so inputs don't wrap */
+      body.tp-paycalc .tableWrap td{
+        padding: 10px 10px;
+      }
+      body.tp-paycalc .tableWrap thead th{
+        padding: 10px 10px;
+        font-size: 11px;
+      }
+
+      /* Force columns to behave */
+      body.tp-paycalc .tableWrap table{
+        table-layout: fixed;
+      }
+    }
+
+    /* ===== Points tab: stack fields on mobile (override inline min-width) ===== */
+    @media (max-width: 520px){
+      body.tp-paycalc #pointsPane .row{
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+      body.tp-paycalc #pointsPane .field{
+        min-width: 0 !important;
+        width: 100% !important;
+        flex: 1 1 100% !important;
+      }
+      body.tp-paycalc #pointsPane .cellInput{
+        width: 100%;
+        box-sizing: border-box;
+      }
+      body.tp-paycalc .miniTableWrap{
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+
+    /* ===== FIX: style.css is hiding table headers on mobile — override (pay-calc only) ===== */
+    @media (max-width: 520px){
+      body.tp-paycalc #matrixPane .tableWrap thead{
+        display: table-header-group !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        height: auto !important;
+        overflow: visible !important;
+        clip: auto !important;
+        clip-path: none !important;
+        position: static !important;
+      }
+
+      body.tp-paycalc #matrixPane .tableWrap thead tr{
+        display: table-row !important;
+      }
+
+      body.tp-paycalc #matrixPane .tableWrap thead th{
+        display: table-cell !important;
+      }
+    }
+
+    /* ===== Mobile Matrix: force a clean 3-column grid (TOURS | RATE | X) ===== */
+    @media (max-width: 520px){
+      body.tp-paycalc #matrixPane .tableWrap{
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      /* Make header row align with body rows */
+      body.tp-paycalc #matrixPane .tableWrap thead tr{
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 56px;
+        gap: 12px;
+        align-items: end;
+      }
+
+      body.tp-paycalc #matrixPane .tableWrap thead th{
+        display: block !important;
+        padding: 10px 0 !important;
+        font-size: 11px;
+        letter-spacing: .08em;
+        white-space: nowrap;
+      }
+
+      /* Make each body row a 3-col grid */
+      body.tp-paycalc #matrixPane .tableWrap tbody tr{
+        display: grid !important;
+        grid-template-columns: 1fr 1fr 56px;
+        gap: 12px;
+        align-items: center;
+      }
+
+      body.tp-paycalc #matrixPane .tableWrap tbody td{
+        display: block !important;
+        padding: 14px 0 !important;
+        vertical-align: middle;
+      }
+
+      /* Full-width pills inside each grid cell */
+      body.tp-paycalc #matrixPane .tableWrap .cellInput{
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        display: block;
+        text-align: center;
+      }
+
+      /* Tight X column */
+      body.tp-paycalc #matrixPane .tableWrap td.colDel{
+        width: 56px !important;
+        text-align: center !important;
+        padding: 10px 0 !important;
+      }
+
+      body.tp-paycalc #matrixPane .tableWrap .iconX{
+        width: 44px;
+        height: 44px;
+      }
+      /* --- Fix: stop the blank delete-header from looking like a 3rd section --- */
+      body.tp-paycalc #matrixPane .tableWrap thead tr{
+        /* give the HEADER ROW one unified look */
+        background: transparent !important;
+      }
+
+      body.tp-paycalc #matrixPane .tableWrap thead th{
+        /* kill per-cell header styling coming from style.css */
+        background: transparent !important;
+        border: 0 !important;
+      }
+
+      body.tp-paycalc #matrixPane .tableWrap thead th.colDel{
+        /* keep the column for alignment, but visually remove it */
+        visibility: hidden !important;
+        padding: 0 !important;
+      }
+
+    }
+
+  </style>
+
+  <!-- Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="tp-paycalc">
+  <div class="wrap">
+    <section class="panel" aria-label="Marketer Pay Calculator">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logoBox" aria-hidden="true">
+            <img src="images/MTK-logo.png" alt="TourPulse Logo" />
+          </div>
+          <div class="brandText">
+            <p class="title">TourPulse</p>
+            <p class="sub">Powered by F8</p>
+          </div>
+        </div>
+
+        <div class="rightStack">
+          <div class="userPill" title="Signed-in account">
+            <div class="name" id="userName">—</div>
+            <div class="emp" id="userEmp">—</div>
+          </div>
+
+          <button class="btnGhost" type="button" id="btnChangeSite" style="display:none;">Change Site</button>
+          <button class="btnGhost" type="button" id="btnChooseSite">Choose Site</button>
+
+          <button class="btnGhost" type="button" id="btnBack">← Back</button>
+          <button class="btnGhost" type="button" id="btnSignOut">Sign Out</button>
+        </div>
+      </div>
+
+      <!-- Banner -->
+      <div class="banner" aria-label="Selected site banner">
+        <div class="bannerBg" aria-hidden="true"></div>
+        <img id="bannerImg" class="bannerImg" alt="" />
+        <div class="bannerShade" aria-hidden="true"></div>
+
+        <div class="bannerInner">
+          <div class="bannerLeft">
+            <p class="k">Selected Site</p>
+            <p class="site" id="bannerSite">—</p>
+          </div>
+
+          <div class="bannerActions">
+            <select class="monthSelect" id="monthSelect" aria-label="Select month"></select>
+            <button class="btn" type="button" id="btnEditMatrix">Edit Matrix</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main area -->
+      <div class="grid">
+        <!-- LEFT: inputs -->
+        <div class="card">
+          <h1>Monthly Tour Inputs</h1>
+          <p class="muted">Enter this month’s tour counts. Summary updates instantly.</p>
+
+          <div style="height:12px"></div>
+
+          <div class="row">
+            <div class="field">
+              <div class="label">Owners (tours)</div>
+              <input class="input" id="monthOwners" inputmode="numeric" type="number" min="0" step="1" placeholder="0" />
+            </div>
+            <div class="field">
+              <div class="label">GOO’s (tours)</div>
+              <input class="input" id="monthGoos" inputmode="numeric" type="number" min="0" step="1" placeholder="0" />
+            </div>
+            <div class="field">
+              <div class="label">Renters (tours)</div>
+              <input class="input" id="monthRenters" inputmode="numeric" type="number" min="0" step="1" placeholder="0" />
+            </div>
+          </div>
+
+          <div style="height:14px"></div>
+
+          <div class="row">
+            <div class="pillStat">Total Tours: <span class="mono" id="pillTotalTours">0</span></div>
+            <div class="pillStat">Rate: <span class="mono" id="pillRate">$—</span></div>
+            <div class="pillStat">Trip Points: <span class="mono" id="pillTripPoints">0</span></div>
+          </div>
+
+          <div style="height:14px"></div>
+
+          <details class="matrixPreview" id="matrixPreview">
+            <summary>
+              <div class="sumLeft">
+                <p class="sumTitle">Selected Month Matrix</p>
+                <p class="sumMeta">Current rate: <span class="mono" id="previewRate">$—</span></p>
+              </div>
+              <div class="chev">⌄</div>
+            </summary>
+
+            <div class="previewInner">
+              <div class="previewTableWrap">
+                <table aria-label="Selected month matrix preview">
+                  <thead>
+                    <tr>
+                      <th style="width:45%;">TOURS</th>
+                      <th style="width:55%;">RATE</th>
+                    </tr>
+                  </thead>
+                  <tbody id="previewMatrixBody"></tbody>
+                </table>
+              </div>
+
+              <p class="muted" style="margin-top:10px;">
+                The highlighted row matches your current total tours.
+              </p>
+            </div>
+          </details>
+        </div>
+
+        <!-- RIGHT: summary -->
+        <div class="card summaryCard">
+          <div class="summaryTop">
+            <p class="summaryTitle"><span>Summary</span></p>
+          </div>
+
+          <div class="summaryBody">
+            <div class="sumRow">
+              <div class="sumLabel strong">Grand Total</div>
+              <div class="sumValue big" id="sumGrandTotal">$0.00</div>
+            </div>
+
+            <div class="sumRow">
+              <div class="sumLabel">Hourly</div>
+              <div class="sumValue" id="sumHourly">$562.50</div>
+            </div>
+
+            <div class="sumRow">
+              <div class="sumLabel">Total Tours</div>
+              <div class="sumValue" id="sumTotalTours">0</div>
+            </div>
+
+            <div class="sumRow">
+              <div class="sumLabel">Rate</div>
+              <div class="sumValue" id="sumRate">$—</div>
+            </div>
+
+            <div class="sumRow">
+              <div class="sumLabel">Tours Pay</div>
+              <div class="sumValue" id="sumToursPay">$0.00</div>
+            </div>
+
+            <div class="sumRow">
+              <div class="sumLabel strong">Monthly Points Total</div>
+              <div class="sumValue" id="sumMonthlyPoints">0</div>
+            </div>
+
+            <div class="sumSubline" id="sumPointsBreakdown">
+              Points — Owners: 0 • GOO’s: 0 • Renters: 0
+            </div>
+
+            <div style="height:10px"></div>
+
+            <div class="sumRow">
+              <div class="sumLabel strong">Trip Points</div>
+              <div class="sumValue" id="sumTripPoints">0</div>
+            </div>
+
+            <div class="sumSubline" id="sumLastAdded">Last added: —</div>
+
+            <div class="summaryFooter">
+              <button class="btn" type="button" id="btnAddTripPoints">Add Points</button>
+            </div>
+
+            <p class="muted" style="margin-top:10px;">
+              Trip log is managed inside <b>Edit Matrix → Points</b>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- SITE PICKER MODAL -->
+  <div class="modalOverlay" id="siteOverlay" role="dialog" aria-modal="true" aria-labelledby="siteTitle">
+    <div class="modal">
+      <div class="modalHeader">
+        <div>
+          <h2 id="siteTitle">Select Your Site</h2>
+          <p>Pick your location.</p>
+        </div>
+        <button class="x" type="button" id="closeSiteX" aria-label="Close">×</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="search" role="search" aria-label="Search sites">
+          <span class="searchIcon" aria-hidden="true"></span>
+          <input id="siteSearch" type="text" placeholder="Search sites…" autocomplete="off" />
+        </div>
+
+        <div class="sitesGrid" id="sitesGrid"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:2px;">
+          <button class="btnGhost" type="button" id="siteCancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MATRIX MODAL -->
+  <div class="settingsOverlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="settingsModal">
+      <div class="settingsHeader">
+        <h2 id="settingsTitle">Edit Matrix</h2>
+        <button class="x" type="button" id="closeSettingsX" aria-label="Close">×</button>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Matrix Tabs">
+        <button class="tab active" id="tabMatrix" type="button" role="tab" aria-selected="true">Monthly Matrix</button>
+        <button class="tab" id="tabPoints" type="button" role="tab" aria-selected="false">Points</button>
+      </div>
+
+      <div class="settingsBody">
+        <!-- MATRIX TAB -->
+        <div id="matrixPane">
+          <div class="sectionCard">
+            <div class="tableWrap">
+              <table aria-label="Monthly Matrix table">
+                <thead>
+                  <tr>
+                    <th style="width:100%;">TOURS</th>
+                    <th style="width:100%;">RATE</th>
+                    <th class="colDel" aria-label="Remove"></th>
+                  </tr>
+                </thead>
+                <tbody id="payBody"></tbody>
+              </table>
+            </div>
+
+            <div style="height:14px"></div>
+
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <div class="row" style="gap:10px;">
+                <button class="iconBtn" type="button" id="btnImportCsv">Import CSV</button>
+                <button class="iconBtn" type="button" id="btnExportCsv">Export CSV</button>
+              </div>
+              <div class="row" style="gap:10px;">
+                <button class="iconBtn" type="button" id="btnAddPayRow">+ Add Row</button>
+                <button class="iconBtn" type="button" id="btnResetPay">Reset (This Month)</button>
+              </div>
+            </div>
+
+            <div class="muted" style="margin-top:10px;">CSV format: <span class="mono">tours,rate</span></div>
+
+            <input class="hidden" type="file" id="csvFile" accept=".csv,text/csv" />
+          </div>
+        </div>
+
+        <!-- POINTS TAB -->
+        <div id="pointsPane" class="hidden">
+          <div class="sectionCard">
+            <div class="row" style="align-items:flex-end;">
+              <div class="field" style="min-width:260px;">
+                <div class="label" style="font-size:14px; font-weight:1100;">Owners (points per tour)</div>
+                <input class="cellInput" id="ptsOwner" inputmode="numeric" type="number" min="0" step="1" />
+              </div>
+
+              <div class="field" style="min-width:260px;">
+                <div class="label" style="font-size:14px; font-weight:1100;">GOO’s (points per tour)</div>
+                <input class="cellInput" id="ptsGoo" inputmode="numeric" type="number" min="0" step="1" />
+              </div>
+
+              <div class="field" style="min-width:260px;">
+                <div class="label" style="font-size:14px; font-weight:1100;">Renters (points per tour)</div>
+                <input class="cellInput" id="ptsRenter" inputmode="numeric" type="number" min="0" step="1" />
+              </div>
+            </div>
+
+            <p class="muted" style="margin-top:12px;">
+              These values affect Monthly Points and Trip Points calculations.
+            </p>
+
+            <div style="height:10px;"></div>
+
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <div class="pillStat">Trip Points Total: <span class="mono" id="pillTripPointsModal">0</span></div>
+              <button class="iconBtn" type="button" id="btnClearTripLog">Clear Trip Log</button>
+            </div>
+
+            <div class="miniTableWrap" aria-label="Trip points log">
+              <table class="miniTable">
+                <thead>
+                  <tr>
+                    <th style="width:45%;">DATE</th>
+                    <th style="width:30%;">POINTS</th>
+                    <th style="width:25%;">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="tripLogBody"></tbody>
+              </table>
+            </div>
+
+            <p class="muted" style="margin-top:10px;">
+              Entries are created from <b>Summary → Add Points</b>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
+
+    const SIGNIN_PAGE = "signin.html";
+    const BACK_PAGE = "choose-calc.html";
+
+    const HOURLY_RATE = 15;
+    const WEEKLY_HOURS = 37.5;
+    const HOURLY_WEEK_PAY = HOURLY_RATE * WEEKLY_HOURS; // 562.50
+
+    const DEFAULT_PPTS = { owner: 1260, goo: 1570, renter: 1570 };
+
+    const sb = (window.supabase && window.supabase.createClient)
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    const $ = (id) => document.getElementById(id);
+
+    function showToast(msg, ms = 1600){
+      const t = $("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      window.clearTimeout(showToast._timer);
+      showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
+    }
+    function goSignin(){ window.location.replace(SIGNIN_PAGE); }
+    function getEmpFromEmail(email){ return String(email || "").split("@")[0] || ""; }
+
+    const SITES = [
+      { key:"cape-canaveral", title:"Cape Canaveral", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltd5e047ac82ec503c/61a794c237c855238d66ec0c/cape-canaveral-resort-property-building-sunset-1440x1080.jpg" },
+      { key:"david-walleys", title:"David Walley's", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt08b954f4f80c7ee7/5e290fd1bad1555533de72e0/DWR_Amenities_HotSprings_Pool_001.jpg" },
+      { key:"desert-club", title:"Desert Club", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltba57961e1c76781e/5e54342d03d2600dc053dc8f/DCR_amenities_WateringHole_020.jpg" },
+      { key:"holiday-hills", title:"Holiday Hills", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltc9cc49c72b923b72/5e2f21fc8f7e217daef663fa/HHR_property_Resort_001.jpg" },
+      { key:"new-orleans", title:"New Orleans", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt0bde089d15479ba0/5fdba695b47cdf7fc7d68d16/20201202_NOR_0184AB_(1)-card.jpg" },
+      { key:"orange-lake", title:"Orange Lake", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltf04192786a7478ff/66c8bea691a856f9a470348a/orange-lake-resort-river-island-exchange-exterior-1440x1080.jpg" },
+      { key:"scottsdale", title:"Scottsdale", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blte2ff00e280785c31/5e2f6a8f507d2f74fb78c1cf/SDR_Amenities_Pool_025.JPG" },
+      { key:"seaside", title:"Seaside", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltc0d2242526c7465e/605cb0545d7a7e0ef01ab30f/SSR_Building-4320x2048.jpeg" },
+      { key:"smokey-mountain", title:"Smokey Mountain", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt25ba35c9bfe5e356/5e6115b88abca6651fc8c4b0/SMR_amenities_pool_010.jpg" },
+      { key:"south-beach", title:"South Beach", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt3feb49ba4da8f26d/5e4590eb5e52d50d64528109/SBR_property_CheckIn_003.jpg" },
+      { key:"myrtle-beach-oceanfront", title:"Myrtle Beach Oceanfront", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt716974a6bd1829af/6620213b061bb143094225ca/mbof-balcony-view-of-pool-1440x1080.jpg?format=pjpg&auto=webp&disable=upscale&quality=70&width=1024&height=716&fit=crop" },
+      { key:"williamsburg", title:"Williamsburg", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt0dd0b98197e30327/5daf1a6adf78486c826dc4b9/holiday-inn-club-vacations-williamsburg-5745140523-16x5.jpeg" }
+    ];
+
+    // ====== Auth / header ======
+    let AUTHEMP = "";
+    let AUTHNAME = "";
+    let SITEKEY = "";
+    let SITETITLE = "";
+
+    async function requireAuthOrRedirect(){
+      if(!sb) return goSignin();
+      const { data: { session } } = await sb.auth.getSession();
+      if(!session?.user) return goSignin();
+
+      const user = session.user;
+      AUTHNAME = user.user_metadata?.first_name || "";
+      AUTHEMP = getEmpFromEmail(user.email);
+
+      $("userName").textContent = AUTHNAME || "Signed In";
+      $("userEmp").textContent = AUTHEMP ? `#${AUTHEMP}` : "";
+    }
+
+    async function signOut(){
+      if(!sb) return goSignin();
+      const { error } = await sb.auth.signOut();
+      if(error){ showToast(error.message || "Sign out failed."); return; }
+      showToast("Signed out.");
+      goSignin();
+    }
+
+    $("btnSignOut").addEventListener("click", () => signOut());
+    $("btnBack").addEventListener("click", () => window.location.href = BACK_PAGE);
+
+    if(sb){
+      sb.auth.onAuthStateChange((event, session) => {
+        if(event === "SIGNED_OUT" || !session?.user) goSignin();
+      });
+    }
+
+    // ====== Month dropdown ======
+    function monthKey(){
+      return $("monthSelect").value || "";
+    }
+
+    function buildMonthOptions(){
+      const sel = $("monthSelect");
+      sel.innerHTML = "";
+
+      const now = new Date();
+      const year = now.getFullYear();
+
+      for(let monthIndex = 0; monthIndex < 12; monthIndex++){
+        const d = new Date(year, monthIndex, 1);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const key = `${y}-${m}`;
+        const label = d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = label;
+        sel.appendChild(opt);
+      }
+    }
+
+    function setDefaultMonth(){
+      buildMonthOptions();
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth()+1).padStart(2,"0");
+      $("monthSelect").value = `${y}-${m}`;
+    }
+
+    // ====== Storage Key ======
+    function storeKey(){
+      return `tourpulse:paycalc:v3:${AUTHEMP||"unknown"}:${SITEKEY||"nosite"}:${monthKey()||"nomonth"}`;
+    }
+
+    function safeInt(v){
+      const n = parseInt(String(v ?? "0"), 10);
+      return Number.isFinite(n) && n >= 0 ? n : 0;
+    }
+
+    function money(n){
+      const x = Number(n || 0);
+      return x.toLocaleString(undefined, { style:"currency", currency:"USD" });
+    }
+
+    function num(n){
+      return Number(n || 0).toLocaleString();
+    }
+
+    function todayISO(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const day = String(d.getDate()).padStart(2,"0");
+      return `${y}-${m}-${day}`;
+    }
+
+    // ====== Data Model (per month) ======
+    function defaultMatrix(){
+      return [
+        { tours: 3, rate: 70 },
+        { tours: 4, rate: 95 },
+        { tours: 5, rate: 120 },
+        { tours: 6, rate: 125 },
+        { tours: 7, rate: 130 },
+        { tours: 8, rate: 135 },
+        { tours: 9, rate: 140 },
+        { tours: 10, rate: 145 },
+        { tours: 11, rate: 150 }
+      ];
+    }
+
+    function defaultMonthData(){
+      return {
+        pointsPerTour: { ...DEFAULT_PPTS },
+        monthTours: { owners: 0, goos: 0, renters: 0 },
+        tripEntries: [],
+        matrix: defaultMatrix()
+      };
+    }
+
+    function readMonthData(){
+      try{
+        const raw = localStorage.getItem(storeKey());
+        if(!raw) return defaultMonthData();
+        const x = JSON.parse(raw);
+
+        const ppt = x?.pointsPerTour || {};
+        const pointsPerTour = {
+          owner: safeInt(ppt.owner ?? DEFAULT_PPTS.owner),
+          goo: safeInt(ppt.goo ?? DEFAULT_PPTS.goo),
+          renter: safeInt(ppt.renter ?? DEFAULT_PPTS.renter)
+        };
+
+        const mt = x?.monthTours || {};
+        const monthTours = {
+          owners: safeInt(mt.owners),
+          goos: safeInt(mt.goos),
+          renters: safeInt(mt.renters)
+        };
+
+        const tripEntries = Array.isArray(x?.tripEntries) ? x.tripEntries.map(e => ({
+          id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
+          date: String(e?.date ?? ""),
+          points: safeInt(e?.points)
+        })) : [];
+
+        const matrix = Array.isArray(x?.matrix) ? x.matrix.map(r => ({
+          tours: safeInt(r?.tours),
+          rate: safeInt(r?.rate)
+        })) : defaultMatrix();
+
+        return { pointsPerTour, monthTours, tripEntries, matrix };
+      }catch(_){
+        return defaultMonthData();
+      }
+    }
+
+    function writeMonthData(data){
+      localStorage.setItem(storeKey(), JSON.stringify(data));
+    }
+
+    // ====== Site selection / banner ======
+    function openSiteModal(){
+      $("siteOverlay").classList.add("show");
+      $("siteSearch").value = "";
+      renderSites(SITES);
+      setTimeout(() => $("siteSearch")?.focus(), 0);
+    }
+    function closeSiteModal(){ $("siteOverlay").classList.remove("show"); }
+
+    $("btnChooseSite").addEventListener("click", openSiteModal);
+    $("btnChangeSite").addEventListener("click", openSiteModal);
+    $("closeSiteX").addEventListener("click", closeSiteModal);
+    $("siteCancel").addEventListener("click", closeSiteModal);
+    $("siteOverlay").addEventListener("click", (e) => { if(e.target === $("siteOverlay")) closeSiteModal(); });
+    document.addEventListener("keydown", (e) => { if(e.key === "Escape") { closeSiteModal(); closeMatrix(); } });
+
+    function setBanner(site){
+      SITETITLE = site?.title || "";
+      SITEKEY = site?.key || "";
+      $("bannerSite").textContent = site?.title || "—";
+
+      $("btnChooseSite").style.display = site?.title ? "none" : "inline-flex";
+      $("btnChangeSite").style.display = site?.title ? "inline-flex" : "none";
+
+      const imgEl = $("bannerImg");
+      if(site?.img){
+        imgEl.src = site.img;
+        imgEl.style.display = "block";
+        imgEl.alt = site.title + " resort photo";
+      }else{
+        imgEl.removeAttribute("src");
+        imgEl.style.display = "none";
+        imgEl.alt = "";
+      }
+    }
+
+    function setSelectedSite(site){
+      try{
+        localStorage.setItem("f8_pay_site_key", site.key);
+        localStorage.setItem("f8_pay_site_title", site.title);
+      }catch(_){}
+      setBanner(site);
+      showToast("Site selected.");
+      loadAllForCurrentMonth();
+    }
+
+    function loadSelectedSite(){
+      try{
+        const key = localStorage.getItem("f8_pay_site_key") || "";
+        if(!key) return null;
+        return SITES.find(s => s.key === key) || null;
+      }catch(_){ return null; }
+    }
+
+    function renderSites(list){
+      const grid = $("sitesGrid");
+      grid.innerHTML = "";
+      list.forEach(site => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "siteBtn";
+        btn.setAttribute("data-site", site.key);
+
+        btn.innerHTML = `
+          <div class="tileBg" aria-hidden="true"></div>
+          <img class="tileImg" alt="" loading="lazy" referrerpolicy="no-referrer" />
+          <div class="tileShade" aria-hidden="true"></div>
+          <div class="tileInner">
+            <p class="siteName">${escapeHtml(site.title)}</p>
+            <div class="pillSmall">Select</div>
+          </div>
+        `;
+
+        const img = btn.querySelector(".tileImg");
+        if(site.img){
+          img.src = site.img;
+          img.style.display = "block";
+        }
+        grid.appendChild(btn);
+      });
+    }
+
+    function applySiteSearch(){
+      const q = String($("siteSearch").value || "").trim().toLowerCase();
+      if(!q) return renderSites(SITES);
+      const filtered = SITES.filter(s => s.title.toLowerCase().includes(q) || s.key.toLowerCase().includes(q));
+      renderSites(filtered);
+    }
+    $("siteSearch").addEventListener("input", applySiteSearch);
+
+    $("sitesGrid").addEventListener("click", (e) => {
+      const btn = e.target?.closest?.("button[data-site]");
+      if(!btn) return;
+      const key = btn.getAttribute("data-site");
+      const site = SITES.find(s => s.key === key);
+      if(!site) return;
+      setSelectedSite(site);
+      closeSiteModal();
+    });
+
+    // ====== Matrix Modal Logic ======
+    function openMatrix(openTab = "matrix"){
+      if(!SITEKEY || !monthKey()){
+        showToast("Select a site and month first.");
+        return;
+      }
+      $("settingsOverlay").classList.add("show");
+      setTab(openTab);
+      loadAllForCurrentMonth();
+    }
+    function closeMatrix(){ $("settingsOverlay").classList.remove("show"); }
+
+    $("btnEditMatrix").addEventListener("click", () => openMatrix("matrix"));
+    $("closeSettingsX").addEventListener("click", closeMatrix);
+    $("settingsOverlay").addEventListener("click", (e) => { if(e.target === $("settingsOverlay")) closeMatrix(); });
+
+    function setTab(which){
+      const isMatrix = which === "matrix";
+      $("tabMatrix").classList.toggle("active", isMatrix);
+      $("tabPoints").classList.toggle("active", !isMatrix);
+      $("tabMatrix").setAttribute("aria-selected", isMatrix ? "true" : "false");
+      $("tabPoints").setAttribute("aria-selected", isMatrix ? "false" : "true");
+      $("matrixPane").classList.toggle("hidden", !isMatrix);
+      $("pointsPane").classList.toggle("hidden", isMatrix);
+    }
+    $("tabMatrix").addEventListener("click", () => setTab("matrix"));
+    $("tabPoints").addEventListener("click", () => setTab("points"));
+
+    // ====== Render Matrix (INLINE ROW: Tours | Rate | X) ======
+    function renderMatrix(rows){
+      const body = $("payBody");
+      body.innerHTML = "";
+      rows.forEach((r, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>
+            <input class="cellInput" inputmode="numeric" type="number" min="0" step="1"
+              data-mtype="tours" data-i="${idx}" value="${escapeAttr(r.tours)}" />
+          </td>
+          <td>
+            <input class="cellInput" inputmode="numeric" type="number" min="0" step="1"
+              data-mtype="rate" data-i="${idx}" value="${escapeAttr(r.rate)}" />
+          </td>
+          <td class="colDel">
+            <button class="iconX" type="button" data-mdel="${idx}" aria-label="Remove row">×</button>
+          </td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    // ====== Selected Month Matrix Preview ======
+    function renderSelectedMonthMatrixPreview(matrix, totalTours){
+      const body = $("previewMatrixBody");
+      if(!body) return;
+
+      body.innerHTML = "";
+
+      const sorted = [...(matrix || [])].sort((a,b) => safeInt(a.tours) - safeInt(b.tours));
+      const activeTours = safeInt(totalTours);
+
+      sorted.forEach(r => {
+        const tours = safeInt(r.tours);
+        const rate = safeInt(r.rate);
+
+        const tr = document.createElement("tr");
+        const isActive = tours === activeTours;
+
+        if(isActive) tr.classList.add("active");
+
+        tr.innerHTML = `
+          <td style="font-weight:950;">
+            ${escapeHtml(String(tours))}
+            ${isActive ? `<span class="badge">CURRENT</span>` : ``}
+          </td>
+          <td style="font-weight:1100;">${escapeHtml(rate ? money(rate) : "$—")}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    $("payBody").addEventListener("input", (e) => {
+      const el = e.target;
+      if(!(el instanceof HTMLInputElement)) return;
+      if(!el.classList.contains("cellInput")) return;
+
+      const i = safeInt(el.getAttribute("data-i"));
+      const field = el.getAttribute("data-mtype");
+      const data = readMonthData();
+
+      if(!data.matrix[i]) return;
+      if(field === "tours") data.matrix[i].tours = safeInt(el.value);
+      if(field === "rate") data.matrix[i].rate = safeInt(el.value);
+
+      writeMonthData(data);
+      refreshAllUI(data);
+    });
+
+    $("payBody").addEventListener("click", (e) => {
+      const btn = e.target?.closest?.("button[data-mdel]");
+      if(!btn) return;
+      const idx = safeInt(btn.getAttribute("data-mdel"));
+      const data = readMonthData();
+      data.matrix.splice(idx, 1);
+      writeMonthData(data);
+      renderMatrix(data.matrix);
+      refreshAllUI(data);
+    });
+
+    $("btnAddPayRow").addEventListener("click", () => {
+      const data = readMonthData();
+      data.matrix.push({ tours: 0, rate: 0 });
+      writeMonthData(data);
+      renderMatrix(data.matrix);
+      refreshAllUI(data);
+    });
+
+    $("btnResetPay").addEventListener("click", () => {
+      const data = readMonthData();
+      data.matrix = defaultMatrix();
+      writeMonthData(data);
+      renderMatrix(data.matrix);
+      refreshAllUI(data);
+    });
+
+    // ====== CSV Import/Export ======
+    function toCsv(rows){
+      const lines = ["tours,rate"];
+      rows.forEach(r => lines.push(`${safeInt(r.tours)},${safeInt(r.rate)}`));
+      return lines.join("\n");
+    }
+
+    function download(name, content, mime){
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    $("btnExportCsv").addEventListener("click", () => {
+      const data = readMonthData();
+      const filename = `matrix_${SITEKEY}_${monthKey()}.csv`;
+      download(filename, toCsv(data.matrix), "text/csv");
+      showToast("CSV exported.");
+    });
+
+    $("btnImportCsv").addEventListener("click", () => $("csvFile").click());
+
+    $("csvFile").addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if(!file) return;
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+      if(lines.length === 0){ showToast("Empty CSV."); return; }
+
+      const rows = [];
+      for(let i=0;i<lines.length;i++){
+        const line = lines[i];
+        if(i === 0 && /tours\s*,\s*rate/i.test(line)) continue;
+        const parts = line.split(",").map(x => x.trim());
+        if(parts.length < 2) continue;
+        rows.push({ tours: safeInt(parts[0]), rate: safeInt(parts[1]) });
+      }
+
+      const data = readMonthData();
+      data.matrix = rows.length ? rows : data.matrix;
+      writeMonthData(data);
+      renderMatrix(data.matrix);
+      $("csvFile").value = "";
+      refreshAllUI(data);
+      showToast(rows.length ? "CSV imported." : "No valid rows found.");
+    });
+
+    // ====== Points per tour edits ======
+    ["ptsOwner","ptsGoo","ptsRenter"].forEach(id => {
+      $(id).addEventListener("input", () => {
+        const data = readMonthData();
+        data.pointsPerTour.owner = safeInt($("ptsOwner").value);
+        data.pointsPerTour.goo = safeInt($("ptsGoo").value);
+        data.pointsPerTour.renter = safeInt($("ptsRenter").value);
+        writeMonthData(data);
+        refreshAllUI(data);
+      });
+    });
+
+    // ====== Live Summary Calculations ======
+    function findRateForTours(matrix, totalTours){
+      const match = matrix.find(r => safeInt(r.tours) === safeInt(totalTours));
+      return match ? safeInt(match.rate) : null;
+    }
+
+    function formatDatePretty(iso){
+      const d = new Date(iso + "T00:00:00");
+      if(Number.isNaN(d.getTime())) return iso;
+      return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
+    }
+
+    function renderTripLog(entries){
+      const body = $("tripLogBody");
+      body.innerHTML = "";
+      entries.forEach((e) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td style="font-weight:950;">${escapeHtml(formatDatePretty(e.date))}</td>
+          <td style="font-weight:1100;">${escapeHtml(num(e.points))}</td>
+          <td><button class="iconBtn" type="button" data-trm="${escapeAttr(e.id)}">Remove</button></td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    function currentMonthlyPoints(data){
+      const ownersTours = safeInt(data.monthTours.owners);
+      const goosTours = safeInt(data.monthTours.goos);
+      const rentersTours = safeInt(data.monthTours.renters);
+
+      const ownersPts = ownersTours * safeInt(data.pointsPerTour.owner);
+      const goosPts = goosTours * safeInt(data.pointsPerTour.goo);
+      const rentersPts = rentersTours * safeInt(data.pointsPerTour.renter);
+      return { ownersPts, goosPts, rentersPts, total: ownersPts + goosPts + rentersPts };
+    }
+
+    function refreshAllUI(data){
+      $("monthOwners").value = String(data.monthTours.owners ?? 0);
+      $("monthGoos").value = String(data.monthTours.goos ?? 0);
+      $("monthRenters").value = String(data.monthTours.renters ?? 0);
+
+      const ownersTours = safeInt(data.monthTours.owners);
+      const goosTours = safeInt(data.monthTours.goos);
+      const rentersTours = safeInt(data.monthTours.renters);
+      const totalTours = ownersTours + goosTours + rentersTours;
+
+      const pts = currentMonthlyPoints(data);
+      const monthlyPointsTotal = pts.total;
+
+      const tripPointsTotal = data.tripEntries.reduce((sum, e) => sum + safeInt(e.points), 0);
+      const lastAdded = data.tripEntries.length ? data.tripEntries[0].date : null;
+
+      const rate = findRateForTours(data.matrix, totalTours);
+      const toursPay = (rate === null) ? 0 : totalTours * rate;
+
+      const hourlyPay = HOURLY_WEEK_PAY;
+      const grandTotal = hourlyPay + toursPay;
+
+      $("pillTotalTours").textContent = String(totalTours);
+      $("pillRate").textContent = (rate === null) ? "$—" : money(rate);
+      $("pillTripPoints").textContent = num(tripPointsTotal);
+
+      if($("previewRate")) $("previewRate").textContent = (rate === null) ? "$—" : money(rate);
+      renderSelectedMonthMatrixPreview(data.matrix, totalTours);
+
+      $("sumGrandTotal").textContent = money(grandTotal);
+      $("sumHourly").textContent = money(hourlyPay);
+      $("sumTotalTours").textContent = String(totalTours);
+      $("sumRate").textContent = (rate === null) ? "$—" : money(rate);
+      $("sumToursPay").textContent = money(toursPay);
+      $("sumMonthlyPoints").textContent = num(monthlyPointsTotal);
+      $("sumPointsBreakdown").textContent = `Points — Owners: ${num(pts.ownersPts)} • GOO’s: ${num(pts.goosPts)} • Renters: ${num(pts.rentersPts)}`;
+      $("sumTripPoints").textContent = num(tripPointsTotal);
+      $("sumLastAdded").textContent = lastAdded ? `Last added: ${formatDatePretty(lastAdded)}` : "Last added: —";
+
+      $("ptsOwner").value = String(data.pointsPerTour.owner);
+      $("ptsGoo").value = String(data.pointsPerTour.goo);
+      $("ptsRenter").value = String(data.pointsPerTour.renter);
+
+      $("pillTripPointsModal").textContent = num(tripPointsTotal);
+      renderTripLog(data.tripEntries);
+    }
+
+    function saveMonthToursFromInputs(){
+      const data = readMonthData();
+      data.monthTours.owners = safeInt($("monthOwners").value);
+      data.monthTours.goos = safeInt($("monthGoos").value);
+      data.monthTours.renters = safeInt($("monthRenters").value);
+      writeMonthData(data);
+      refreshAllUI(data);
+    }
+
+    ["monthOwners","monthGoos","monthRenters"].forEach(id => {
+      $(id).addEventListener("input", saveMonthToursFromInputs);
+    });
+
+    $("btnAddTripPoints").addEventListener("click", () => {
+      const data = readMonthData();
+      const pts = currentMonthlyPoints(data);
+      if(safeInt(pts.total) <= 0){
+        showToast("No points to add.");
+        return;
+      }
+
+      const id = (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+      data.tripEntries.unshift({ id, date: todayISO(), points: safeInt(pts.total) });
+
+      writeMonthData(data);
+      refreshAllUI(data);
+      showToast("Points added.");
+    });
+
+    $("tripLogBody").addEventListener("click", (e) => {
+      const btn = e.target?.closest?.("button[data-trm]");
+      if(!btn) return;
+      const id = btn.getAttribute("data-trm");
+      const data = readMonthData();
+      data.tripEntries = data.tripEntries.filter(x => x.id !== id);
+      writeMonthData(data);
+      refreshAllUI(data);
+      showToast("Entry removed.");
+    });
+
+    $("btnClearTripLog").addEventListener("click", () => {
+      const data = readMonthData();
+      data.tripEntries = [];
+      writeMonthData(data);
+      refreshAllUI(data);
+      showToast("Trip log cleared.");
+    });
+
+    function loadAllForCurrentMonth(){
+      if(!AUTHEMP || !SITEKEY || !monthKey()) return;
+      const data = readMonthData();
+      renderMatrix(data.matrix);
+      refreshAllUI(data);
+    }
+
+    $("monthSelect").addEventListener("change", () => {
+      loadAllForCurrentMonth();
+      showToast("Month loaded.");
+    });
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function escapeAttr(v){
+      return String(v ?? "").replaceAll('"',"&quot;");
+    }
+
+    (async function init(){
+      await requireAuthOrRedirect();
+      setDefaultMonth();
+
+      const selected = loadSelectedSite();
+      setBanner(selected);
+      if(!selected) openSiteModal();
+
+      if(selected){
+        loadAllForCurrentMonth();
+      }
+
+      setTab("matrix");
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TourPulse — Choose Calculator</title>
+
+  <!-- Sitewide CSS -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+  <div class="wrap choose-calc">
+    <section class="panel" aria-label="Choose Calculator">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logoBox" aria-hidden="true">
+            <img src="images/MTK-logo.png" alt="TourPulse Logo" />
+          </div>
+          <div class="brandText">
+            <p class="title">TourPulse</p>
+            <p class="sub" id="welcomeLine">Powered by F8</p>
+          </div>
+        </div>
+
+        <div class="rightStack">
+          <div class="userPill" title="Signed-in account">
+            <div class="name" id="userName">—</div>
+            <div class="emp" id="userEmp">—</div>
+          </div>
+          <button class="btnGhost" type="button" id="btnSignOut">Sign Out</button>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="heroLeft">
+          <h1 id="heroTitle">Choose a Calculator</h1>
+          <p id="heroSub">Only Marketer Pay is active right now. The rest will unlock as we build them.</p>
+        </div>
+
+        <div class="heroRight">
+          <div class="search" role="search" aria-label="Search calculators">
+            <span class="searchIcon" aria-hidden="true"></span>
+            <input id="searchInput" type="text" placeholder="Search calculators…" autocomplete="off" />
+          </div>
+        </div>
+      </div>
+
+      <div class="sectionTitle">
+        <h2>Calculators</h2>
+        <p class="hint" id="countHint">—</p>
+      </div>
+
+      <div class="grid" id="cardsGrid"></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    /***********************
+     * SUPABASE CONFIG (yours)
+     ***********************/
+    const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
+
+    const SIGNIN_PAGE = "signin.html";
+
+    const sb = (window.supabase && window.supabase.createClient)
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    const $ = (id) => document.getElementById(id);
+
+    function showToast(msg, ms = 2200){
+      const t = $("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      window.clearTimeout(showToast._timer);
+      showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
+    }
+
+    function goSignin(){ window.location.replace(SIGNIN_PAGE); }
+
+    function getEmpFromEmail(email){
+      return String(email || "").split("@")[0] || "";
+    }
+
+    /***********************
+     * MENU
+     ***********************/
+    const CALCS = [
+      {
+        key: "marketer-pay",
+        title: "Marketer Pay Calculator",
+        desc: "Estimate comp fast based on site rules and tour outcomes.",
+        path: "pay-calc.html",
+        locked: false
+      },
+      {
+        key: "site-calculator",
+        title: "Site Calculator",
+        desc: "Site-based math tools you’ll use all day — clean and fast.",
+        path: "site-calc.html",
+        locked: false
+      },
+      {
+        key: "monthly-tour-budget",
+        title: "Monthly Tour Budget",
+        desc: "Set goals, track tours, and validate pacing for the month.",
+        path: "",
+        locked: true
+      },
+      {
+        key: "sales-volume",
+        title: "Sales Volume",
+        desc: "Handy helpers (conversions, pacing, daily checks).",
+        path: "",
+        locked: true
+      }
+    ];
+
+    function renderCards(list){
+      const grid = $("cardsGrid");
+      grid.innerHTML = "";
+
+      list.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "calcCard";
+
+        const locked = !!item.locked;
+        const badge = locked ? `<span class="badge">LOCKED</span>` : ``;
+
+        const btnClass = locked ? "goBtn locked" : "goBtn open";
+        const btnText  = locked ? "Locked" : "Open";
+        const dataPath = locked ? "" : (item.path || "");
+
+        card.innerHTML = `
+          <div class="calcTop">
+            <div class="calcIcon" aria-hidden="true"></div>
+            <div class="badgeRow">${badge}</div>
+          </div>
+
+          <div>
+            <div class="calcTitle">${item.title}</div>
+            <p class="calcDesc">${item.desc}</p>
+          </div>
+
+          <button class="${btnClass}" type="button" data-path="${dataPath}">
+            ${btnText}
+          </button>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      $("countHint").textContent = `${list.length} shown`;
+    }
+
+    function applySearch(){
+      const q = String($("searchInput").value || "").trim().toLowerCase();
+      if(!q){
+        renderCards(CALCS);
+        return;
+      }
+      const filtered = CALCS.filter(c =>
+        c.title.toLowerCase().includes(q) ||
+        c.desc.toLowerCase().includes(q) ||
+        c.key.toLowerCase().includes(q)
+      );
+      renderCards(filtered);
+    }
+
+    function wireCardClicks(){
+      $("cardsGrid").addEventListener("click", (e) => {
+        const btn = e.target?.closest?.("button[data-path]");
+        if(!btn) return;
+
+        const path = btn.getAttribute("data-path") || "";
+        if(!path){
+          showToast("Locked for now.");
+          return;
+        }
+        window.location.href = path;
+      });
+    }
+
+    /***********************
+     * AUTH GATE + HEADER
+     ***********************/
+    async function requireAuthOrRedirect(){
+      if(!sb) return goSignin();
+
+      const { data: { session } } = await sb.auth.getSession();
+      if(!session?.user) return goSignin();
+
+      const user = session.user;
+      const first = user.user_metadata?.first_name || "";
+      const emp = getEmpFromEmail(user.email);
+
+      $("userName").textContent = first || "Signed In";
+      $("userEmp").textContent = emp ? `#${emp}` : "";
+      $("welcomeLine").textContent = "Powered by F8";
+
+      $("heroTitle").textContent = first ? `What are we running today, ${first}?` : "Choose a Calculator";
+    }
+
+    async function signOut(){
+      if(!sb) return goSignin();
+      const { error } = await sb.auth.signOut();
+      if(error){
+        showToast(error.message || "Sign out failed.");
+        return;
+      }
+      showToast("Signed out.");
+      goSignin();
+    }
+
+    $("btnSignOut").addEventListener("click", () => signOut());
+
+    if(sb){
+      sb.auth.onAuthStateChange((event, session) => {
+        if(event === "SIGNED_OUT" || !session?.user) goSignin();
+      });
+    }
+
+    (async function init(){
+      await requireAuthOrRedirect();
+      renderCards(CALCS);
+      wireCardClicks();
+      $("searchInput").addEventListener("input", applySearch);
+    })();
+  </script>
+</body>
+</html>
