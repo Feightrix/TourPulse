@@ -309,7 +309,7 @@
         <div class="sectionCard">
           <div class="row" style="justify-content:space-between; align-items:center;">
             <div class="muted">
-              CSV format: <span class="mono">TheDate,Budget</span> (TheDate can be <b>MM/DD/YYYY</b> or <b>YYYY-MM-DD</b>)
+              CSV format: <span class="mono">TheDate,Budget</span> (TheDate = MM/DD/YYYY)
             </div>
             <div class="row" style="gap:10px;">
               <button class="iconBtn" type="button" id="btnImportCsv">Import CSV</button>
@@ -348,6 +348,8 @@
     const BACK_PAGE = "choose-calc.html";
     const UNIVERSAL_PASSWORD = "BookEmAll";
 
+    const CALC_KEY = "site-calc";
+
     const sb = (window.supabase && window.supabase.createClient)
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
       : null;
@@ -381,6 +383,7 @@
 
     let AUTHEMP = "";
     let AUTHNAME = "";
+    let AUTHUID = "";
     let SITEKEY = "";
     let SITETITLE = "";
 
@@ -390,6 +393,7 @@
       if(!session?.user) return goSignin();
 
       const user = session.user;
+      AUTHUID = user.id;
       AUTHNAME = user.user_metadata?.first_name || "";
       AUTHEMP = getEmpFromEmail(user.email);
 
@@ -429,7 +433,7 @@
     }
 
     $("closePwX").addEventListener("click", () => { window.location.href = BACK_PAGE; });
-    $("btnPwUnlock").addEventListener("click", () => {
+    $("btnPwUnlock").addEventListener("click", async () => {
       const v = String($("pwInput").value || "");
       if(v !== UNIVERSAL_PASSWORD){
         $("pwHint").textContent = "Incorrect password.";
@@ -438,7 +442,7 @@
       setUnlocked();
       $("pwOverlay").classList.remove("show");
       showToast("Unlocked.");
-      loadAllForCurrentMonth();
+      await syncFromCloudThenUpdate();
     });
 
     document.addEventListener("keydown", (e) => {
@@ -453,12 +457,12 @@
 
     function monthKey(){ return $("monthSelect").value || ""; }
 
-    // 12 total selections: Jan–Dec of current year
     function buildMonthOptions(){
       const sel = $("monthSelect");
       sel.innerHTML = "";
 
-      const year = 2026; // <-- FORCE year to match your CSV
+      const now = new Date();
+      const year = now.getFullYear();
 
       for(let monthIndex = 0; monthIndex < 12; monthIndex++){
         const d = new Date(year, monthIndex, 1);
@@ -476,14 +480,14 @@
 
     function setDefaultMonth(){
       buildMonthOptions();
-      $("monthSelect").value = "2026-01"; // <-- default to Jan 2026
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth()+1).padStart(2,"0");
+      $("monthSelect").value = `${y}-${m}`;
     }
 
     function storeKey(){
       return `tourpulse:sitecalc:v2:${AUTHEMP||"unknown"}:${SITEKEY||"nosite"}:${monthKey()||"nomonth"}`;
-    }
-    function mgrOverrideRateKey(){
-      return `tourpulse:sitecalc:mgr_override_rate:v1:${AUTHEMP||"unknown"}:${SITEKEY||"nosite"}`;
     }
 
     function safeInt(v){
@@ -509,7 +513,9 @@
       return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
     }
 
-    function defaultMonthData(){ return { byDate: {} }; }
+    function defaultMonthData(){
+      return { byDate: {}, mgrOverrideRate: 0 };
+    }
 
     function readMonthData(){
       try{
@@ -523,24 +529,116 @@
           const v = src[k] || {};
           byDate[String(k)] = { budget: safeInt(v.budget), actual: safeInt(v.actual) };
         }
-        return { byDate };
+
+        const mgrOverrideRate = safeMoney(x?.mgrOverrideRate ?? 0);
+
+        return { byDate, mgrOverrideRate };
       }catch(_){
         return defaultMonthData();
       }
     }
 
+    // Debounced cloud save
+    let _cloudSaveTimer = null;
+    function scheduleCloudSave(stateObj){
+      if(!sb || !AUTHUID || !SITEKEY || !monthKey()) return;
+      window.clearTimeout(_cloudSaveTimer);
+      _cloudSaveTimer = window.setTimeout(async () => {
+        try{
+          const payload = {
+            user_id: AUTHUID,
+            calc_key: CALC_KEY,
+            site_key: SITEKEY,
+            month_key: monthKey(),
+            state: stateObj
+          };
+
+          const { error } = await sb
+            .from("tp_calc_state")
+            .upsert(payload, { onConflict: "user_id,calc_key,site_key,month_key" });
+
+          if(error) console.error(error);
+        }catch(err){
+          console.error(err);
+        }
+      }, 350);
+    }
+
     function writeMonthData(data){
       localStorage.setItem(storeKey(), JSON.stringify(data));
+      scheduleCloudSave(data);
+    }
+
+    async function cloudFetchMonthState(){
+      if(!sb || !AUTHUID || !SITEKEY || !monthKey()) return null;
+
+      const { data, error } = await sb
+        .from("tp_calc_state")
+        .select("state")
+        .eq("user_id", AUTHUID)
+        .eq("calc_key", CALC_KEY)
+        .eq("site_key", SITEKEY)
+        .eq("month_key", monthKey())
+        .maybeSingle();
+
+      if(error){
+        console.error(error);
+        return null;
+      }
+      return data?.state ?? null;
+    }
+
+    function monthDataHasMeaningfulContent(d){
+      if(!d) return false;
+      if(safeMoney(d.mgrOverrideRate) > 0) return true;
+      const byDate = d.byDate || {};
+      for(const k in byDate){
+        const r = byDate[k] || {};
+        if(safeInt(r.budget) !== 0) return true;
+        if(safeInt(r.actual) !== 0) return true;
+      }
+      return false;
+    }
+
+    async function syncFromCloudThenUpdate(){
+      if(!AUTHEMP || !SITEKEY || !monthKey()) return;
+
+      // 1) try cloud
+      const cloud = await cloudFetchMonthState();
+
+      if(cloud && typeof cloud === "object"){
+        // cloud wins
+        const merged = defaultMonthData();
+
+        const src = cloud?.byDate && typeof cloud.byDate === "object" ? cloud.byDate : {};
+        for(const k in src){
+          const v = src[k] || {};
+          merged.byDate[String(k)] = { budget: safeInt(v.budget), actual: safeInt(v.actual) };
+        }
+        merged.mgrOverrideRate = safeMoney(cloud?.mgrOverrideRate ?? 0);
+
+        localStorage.setItem(storeKey(), JSON.stringify(merged));
+        updateAllUI();
+        return;
+      }
+
+      // 2) no cloud row yet → if local has data, push it once
+      const local = readMonthData();
+      if(monthDataHasMeaningfulContent(local)){
+        writeMonthData(local); // schedules cloud save
+      }
+
+      updateAllUI();
     }
 
     function readMgrOverrideRate(){
-      try{
-        const v = localStorage.getItem(mgrOverrideRateKey());
-        return safeMoney(v);
-      }catch(_){ return 0; }
+      const d = readMonthData();
+      return safeMoney(d.mgrOverrideRate);
     }
     function writeMgrOverrideRate(n){
-      try{ localStorage.setItem(mgrOverrideRateKey(), String(safeMoney(n))); }catch(_){}
+      const d = readMonthData();
+      d.mgrOverrideRate = safeMoney(n);
+      writeMonthData(d);
     }
 
     function daysInMonth(ymKey){
@@ -750,13 +848,8 @@
 
     function toCsvFromMonth(byDate){
       const rows = buildMonthRows(monthKey(), byDate);
-      const lines = ["TheDate,Budget"];
-      rows.forEach(r => {
-        // export as MM/DD/YYYY to match your sheet look
-        const [yy,mm,dd] = r.iso.split("-");
-        const pretty = `${mm}/${dd}/${yy}`;
-        lines.push(`${pretty},${safeInt(r.budget)}`);
-      });
+      const lines = ["date,budget,actual"];
+      rows.forEach(r => lines.push(`${r.iso},${safeInt(r.budget)},${safeInt(r.actual)}`));
       return lines.join("\n");
     }
 
@@ -774,14 +867,14 @@
 
     $("btnExportCsv").addEventListener("click", () => {
       const data = readMonthData();
-      const filename = `budget_${SITEKEY}_${monthKey()}.csv`;
+      const filename = `daily_${SITEKEY}_${monthKey()}.csv`;
       download(filename, toCsvFromMonth(data.byDate), "text/csv");
       showToast("CSV exported.");
     });
 
     $("btnImportCsv").addEventListener("click", () => $("csvFile").click());
 
-    // ===== CSV IMPORT (TheDate,Budget) =====
+    // IMPORT: TheDate,Budget (TheDate = MM/DD/YYYY). Only updates BUDGET; preserves ACTUAL.
     $("csvFile").addEventListener("change", async (e) => {
       const file = e.target.files?.[0];
       if(!file) return;
@@ -790,18 +883,12 @@
       const lines = text.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
       if(lines.length === 0){ showToast("Empty CSV."); return; }
 
-      // detect delimiter (comma or tab)
       const delim = lines[0].includes("\t") ? "\t" : ",";
 
-      // helpers
       const norm = (s) => String(s ?? "").trim().replace(/^"|"$/g, "");
       const toISO = (s) => {
         const v = norm(s);
-
-        // already ISO
         if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
-
-        // MM/DD/YYYY
         const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
         if(m){
           const mm = String(parseInt(m[1],10)).padStart(2,"0");
@@ -809,11 +896,9 @@
           const yy = m[3];
           return `${yy}-${mm}-${dd}`;
         }
-
-        return ""; // unsupported
+        return "";
       };
 
-      // find header columns (TheDate, Budget) if present
       let startIdx = 0;
       let dateCol = 0;
       let budgetCol = 1;
@@ -828,7 +913,6 @@
 
       if(hasHeader){
         startIdx = 1;
-        // prefer TheDate specifically
         dateCol = hLower.indexOf("thedate");
         if(dateCol === -1) dateCol = hLower.indexOf("date");
         if(dateCol === -1) dateCol = 0;
@@ -839,7 +923,6 @@
 
       const data = readMonthData();
 
-      // IMPORTANT: only overwrite BUDGET; preserve any existing ACTUAL
       for(let i = startIdx; i < lines.length; i++){
         const parts = lines[i].split(delim).map(norm);
         if(parts.length <= Math.max(dateCol, budgetCol)) continue;
@@ -847,7 +930,6 @@
         const iso = toISO(parts[dateCol]);
         if(!iso) continue;
 
-        // only apply to selected month
         if(!iso.startsWith(monthKey() + "-")) continue;
 
         const budget = safeInt(parts[budgetCol]);
@@ -921,18 +1003,15 @@
       }
     }
 
-    function setSelectedSite(site){
+    async function setSelectedSite(site){
       try{
         localStorage.setItem("f8_sitecalc_site_key", site.key);
         localStorage.setItem("f8_sitecalc_site_title", site.title);
       }catch(_){}
       setBanner(site);
 
-      const r = readMgrOverrideRate();
-      $("mgrOverrideRate").value = r ? String(r.toFixed(2)) : "";
-
       showToast("Site selected.");
-      if(isUnlocked()) loadAllForCurrentMonth();
+      if(isUnlocked()) await syncFromCloudThenUpdate();
     }
 
     function loadSelectedSite(){
@@ -980,88 +1059,20 @@
     }
     $("siteSearch").addEventListener("input", applySiteSearch);
 
-    $("sitesGrid").addEventListener("click", (e) => {
+    $("sitesGrid").addEventListener("click", async (e) => {
       const btn = e.target?.closest?.("button[data-site]");
       if(!btn) return;
       const key = btn.getAttribute("data-site");
       const site = SITES.find(s => s.key === key);
       if(!site) return;
-      setSelectedSite(site);
+      await setSelectedSite(site);
       closeSiteModal();
     });
 
-    function loadAllForCurrentMonth(){
-      if(!AUTHEMP || !SITEKEY || !monthKey()) return;
-      updateAllUI();
-    }
-
-    $("monthSelect").addEventListener("change", () => {
-      if(isUnlocked()) loadAllForCurrentMonth();
+    $("monthSelect").addEventListener("change", async () => {
+      if(isUnlocked()) await syncFromCloudThenUpdate();
       showToast("Month loaded.");
     });
-
-    // ===== Helpers for CSV parsing / date normalization =====
-    function stripBOM(s){
-      return String(s || "").replace(/^\uFEFF/, "");
-    }
-
-    function splitCSVLine(line){
-      // Basic CSV split that respects quotes
-      const out = [];
-      let cur = "";
-      let inQ = false;
-      const s = String(line ?? "");
-      for(let i=0;i<s.length;i++){
-        const ch = s[i];
-        if(ch === '"'){
-          if(inQ && s[i+1] === '"'){ cur += '"'; i++; }
-          else inQ = !inQ;
-        }else if(ch === "," && !inQ){
-          out.push(cur.trim());
-          cur = "";
-        }else{
-          cur += ch;
-        }
-      }
-      out.push(cur.trim());
-      return out;
-    }
-
-    function normHeader(h){
-      return String(h || "")
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "")
-        .replace(/[^a-z0-9]/g, "");
-    }
-
-    function parseDateToISO(v){
-      const s = String(v || "").trim();
-      if(!s) return null;
-
-      // Already ISO
-      if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-
-      // MM/DD/YYYY (your screenshot)
-      const mdy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-      if(mdy){
-        const mm = String(mdy[1]).padStart(2,"0");
-        const dd = String(mdy[2]).padStart(2,"0");
-        const yy = String(mdy[3]);
-        return `${yy}-${mm}-${dd}`;
-      }
-
-      // M-D-YYYY (just in case)
-      const mdy2 = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-      if(mdy2){
-        const mm = String(mdy2[1]).padStart(2,"0");
-        const dd = String(mdy2[2]).padStart(2,"0");
-        const yy = String(mdy2[3]);
-        return `${yy}-${mm}-${dd}`;
-      }
-
-      return null;
-    }
 
     function escapeHtml(s){
       return String(s)
@@ -1091,7 +1102,7 @@
         return;
       }
 
-      updateAllUI();
+      await syncFromCloudThenUpdate();
     })();
   </script>
 </body>
