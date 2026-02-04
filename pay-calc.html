@@ -199,26 +199,20 @@
         width: 44px;
         height: 44px;
       }
-      /* --- Fix: stop the blank delete-header from looking like a 3rd section --- */
+
+      /* stop the blank delete-header from looking like a 3rd section */
       body.tp-paycalc #matrixPane .tableWrap thead tr{
-        /* give the HEADER ROW one unified look */
         background: transparent !important;
       }
-
       body.tp-paycalc #matrixPane .tableWrap thead th{
-        /* kill per-cell header styling coming from style.css */
         background: transparent !important;
         border: 0 !important;
       }
-
       body.tp-paycalc #matrixPane .tableWrap thead th.colDel{
-        /* keep the column for alignment, but visually remove it */
         visibility: hidden !important;
         padding: 0 !important;
       }
-
     }
-
   </style>
 
   <!-- Supabase JS v2 -->
@@ -530,8 +524,7 @@
 
   <script>
     const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
-
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsImVlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
     const SIGNIN_PAGE = "signin.html";
     const BACK_PAGE = "choose-calc.html";
 
@@ -577,6 +570,7 @@
     let AUTHNAME = "";
     let SITEKEY = "";
     let SITETITLE = "";
+    let AUTHUSERID = "";
 
     async function requireAuthOrRedirect(){
       if(!sb) return goSignin();
@@ -584,6 +578,7 @@
       if(!session?.user) return goSignin();
 
       const user = session.user;
+      AUTHUSERID = user.id;
       AUTHNAME = user.user_metadata?.first_name || "";
       AUTHEMP = getEmpFromEmail(user.email);
 
@@ -609,9 +604,7 @@
     }
 
     // ====== Month dropdown ======
-    function monthKey(){
-      return $("monthSelect").value || "";
-    }
+    function monthKey(){ return $("monthSelect").value || ""; }
 
     function buildMonthOptions(){
       const sel = $("monthSelect");
@@ -642,25 +635,32 @@
       $("monthSelect").value = `${y}-${m}`;
     }
 
-    // ====== Storage Key ======
-    function storeKey(){
+    // ====== Local backup storage key ======
+    function storeKeyLocal(){
       return `tourpulse:paycalc:v3:${AUTHEMP||"unknown"}:${SITEKEY||"nosite"}:${monthKey()||"nomonth"}`;
+    }
+
+    // ====== Supabase cloud key (tp_calc_state) ======
+    function cloudRowKey(){
+      return {
+        user_id: AUTHUSERID || "",
+        calc_key: "pay-calc",
+        site_key: SITEKEY || "nosite",
+        month_key: monthKey() || "nomonth"
+      };
     }
 
     function safeInt(v){
       const n = parseInt(String(v ?? "0"), 10);
       return Number.isFinite(n) && n >= 0 ? n : 0;
     }
-
     function money(n){
       const x = Number(n || 0);
       return x.toLocaleString(undefined, { style:"currency", currency:"USD" });
     }
-
     function num(n){
       return Number(n || 0).toLocaleString();
     }
-
     function todayISO(){
       const d = new Date();
       const y = d.getFullYear();
@@ -693,9 +693,10 @@
       };
     }
 
-    function readMonthData(){
+    // ====== LOCAL read/write (backup) ======
+    function readLocalMonthData(){
       try{
-        const raw = localStorage.getItem(storeKey());
+        const raw = localStorage.getItem(storeKeyLocal());
         if(!raw) return defaultMonthData();
         const x = JSON.parse(raw);
 
@@ -730,8 +731,64 @@
       }
     }
 
-    function writeMonthData(data){
-      localStorage.setItem(storeKey(), JSON.stringify(data));
+    function writeLocalMonthData(data){
+      try{
+        localStorage.setItem(storeKeyLocal(), JSON.stringify(data));
+      }catch(_){}
+    }
+
+    // ====== CLOUD read/write (Supabase) ======
+    let _cloudWriteTimer = null;
+
+    async function cloudRead(){
+      if(!sb || !AUTHUSERID) return null;
+      const k = cloudRowKey();
+      if(!k.user_id || !k.site_key || !k.month_key) return null;
+
+      const { data, error } = await sb
+        .from("tp_calc_state")
+        .select("state,updated_at")
+        .eq("user_id", k.user_id)
+        .eq("calc_key", k.calc_key)
+        .eq("site_key", k.site_key)
+        .eq("month_key", k.month_key)
+        .maybeSingle();
+
+      if(error){
+        console.warn("cloudRead error:", error);
+        return null;
+      }
+      return data?.state || null;
+    }
+
+    async function cloudWriteNow(stateObj){
+      if(!sb || !AUTHUSERID) return false;
+      const k = cloudRowKey();
+      if(!k.user_id || !k.site_key || !k.month_key) return false;
+
+      const payload = { ...k, state: stateObj };
+
+      const { error } = await sb
+        .from("tp_calc_state")
+        .upsert(payload, { onConflict: "user_id,calc_key,site_key,month_key" });
+
+      if(error){
+        console.warn("cloudWrite error:", error);
+        return false;
+      }
+      return true;
+    }
+
+    function scheduleCloudWrite(stateObj){
+      window.clearTimeout(_cloudWriteTimer);
+      _cloudWriteTimer = window.setTimeout(async () => {
+        await cloudWriteNow(stateObj);
+      }, 450);
+    }
+
+    function saveDataAndSync(data){
+      writeLocalMonthData(data);
+      scheduleCloudWrite(data);
     }
 
     // ====== Site selection / banner ======
@@ -770,14 +827,14 @@
       }
     }
 
-    function setSelectedSite(site){
+    async function setSelectedSite(site){
       try{
         localStorage.setItem("f8_pay_site_key", site.key);
         localStorage.setItem("f8_pay_site_title", site.title);
       }catch(_){}
       setBanner(site);
       showToast("Site selected.");
-      loadAllForCurrentMonth();
+      await loadAllForCurrentMonth();
     }
 
     function loadSelectedSite(){
@@ -824,13 +881,13 @@
     }
     $("siteSearch").addEventListener("input", applySiteSearch);
 
-    $("sitesGrid").addEventListener("click", (e) => {
+    $("sitesGrid").addEventListener("click", async (e) => {
       const btn = e.target?.closest?.("button[data-site]");
       if(!btn) return;
       const key = btn.getAttribute("data-site");
       const site = SITES.find(s => s.key === key);
       if(!site) return;
-      setSelectedSite(site);
+      await setSelectedSite(site);
       closeSiteModal();
     });
 
@@ -842,7 +899,6 @@
       }
       $("settingsOverlay").classList.add("show");
       setTab(openTab);
-      loadAllForCurrentMonth();
     }
     function closeMatrix(){ $("settingsOverlay").classList.remove("show"); }
 
@@ -862,7 +918,7 @@
     $("tabMatrix").addEventListener("click", () => setTab("matrix"));
     $("tabPoints").addEventListener("click", () => setTab("points"));
 
-    // ====== Render Matrix (INLINE ROW: Tours | Rate | X) ======
+    // ====== Render Matrix ======
     function renderMatrix(rows){
       const body = $("payBody");
       body.innerHTML = "";
@@ -885,11 +941,9 @@
       });
     }
 
-    // ====== Selected Month Matrix Preview ======
     function renderSelectedMonthMatrixPreview(matrix, totalTours){
       const body = $("previewMatrixBody");
       if(!body) return;
-
       body.innerHTML = "";
 
       const sorted = [...(matrix || [])].sort((a,b) => safeInt(a.tours) - safeInt(b.tours));
@@ -901,7 +955,6 @@
 
         const tr = document.createElement("tr");
         const isActive = tours === activeTours;
-
         if(isActive) tr.classList.add("active");
 
         tr.innerHTML = `
@@ -914,50 +967,6 @@
         body.appendChild(tr);
       });
     }
-
-    $("payBody").addEventListener("input", (e) => {
-      const el = e.target;
-      if(!(el instanceof HTMLInputElement)) return;
-      if(!el.classList.contains("cellInput")) return;
-
-      const i = safeInt(el.getAttribute("data-i"));
-      const field = el.getAttribute("data-mtype");
-      const data = readMonthData();
-
-      if(!data.matrix[i]) return;
-      if(field === "tours") data.matrix[i].tours = safeInt(el.value);
-      if(field === "rate") data.matrix[i].rate = safeInt(el.value);
-
-      writeMonthData(data);
-      refreshAllUI(data);
-    });
-
-    $("payBody").addEventListener("click", (e) => {
-      const btn = e.target?.closest?.("button[data-mdel]");
-      if(!btn) return;
-      const idx = safeInt(btn.getAttribute("data-mdel"));
-      const data = readMonthData();
-      data.matrix.splice(idx, 1);
-      writeMonthData(data);
-      renderMatrix(data.matrix);
-      refreshAllUI(data);
-    });
-
-    $("btnAddPayRow").addEventListener("click", () => {
-      const data = readMonthData();
-      data.matrix.push({ tours: 0, rate: 0 });
-      writeMonthData(data);
-      renderMatrix(data.matrix);
-      refreshAllUI(data);
-    });
-
-    $("btnResetPay").addEventListener("click", () => {
-      const data = readMonthData();
-      data.matrix = defaultMatrix();
-      writeMonthData(data);
-      renderMatrix(data.matrix);
-      refreshAllUI(data);
-    });
 
     // ====== CSV Import/Export ======
     function toCsv(rows){
@@ -979,7 +988,7 @@
     }
 
     $("btnExportCsv").addEventListener("click", () => {
-      const data = readMonthData();
+      const data = _currentData || readLocalMonthData();
       const filename = `matrix_${SITEKEY}_${monthKey()}.csv`;
       download(filename, toCsv(data.matrix), "text/csv");
       showToast("CSV exported.");
@@ -990,6 +999,7 @@
     $("csvFile").addEventListener("change", async (e) => {
       const file = e.target.files?.[0];
       if(!file) return;
+
       const text = await file.text();
       const lines = text.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
       if(lines.length === 0){ showToast("Empty CSV."); return; }
@@ -1003,30 +1013,21 @@
         rows.push({ tours: safeInt(parts[0]), rate: safeInt(parts[1]) });
       }
 
-      const data = readMonthData();
-      data.matrix = rows.length ? rows : data.matrix;
-      writeMonthData(data);
+      const data = (_currentData || readLocalMonthData());
+      if(rows.length) data.matrix = rows;
+
+      saveDataAndSync(data);
+      _currentData = data;
+
       renderMatrix(data.matrix);
       $("csvFile").value = "";
       refreshAllUI(data);
       showToast(rows.length ? "CSV imported." : "No valid rows found.");
     });
 
-    // ====== Points per tour edits ======
-    ["ptsOwner","ptsGoo","ptsRenter"].forEach(id => {
-      $(id).addEventListener("input", () => {
-        const data = readMonthData();
-        data.pointsPerTour.owner = safeInt($("ptsOwner").value);
-        data.pointsPerTour.goo = safeInt($("ptsGoo").value);
-        data.pointsPerTour.renter = safeInt($("ptsRenter").value);
-        writeMonthData(data);
-        refreshAllUI(data);
-      });
-    });
-
-    // ====== Live Summary Calculations ======
+    // ====== Live Calculations ======
     function findRateForTours(matrix, totalTours){
-      const match = matrix.find(r => safeInt(r.tours) === safeInt(totalTours));
+      const match = (matrix || []).find(r => safeInt(r.tours) === safeInt(totalTours));
       return match ? safeInt(match.rate) : null;
     }
 
@@ -1039,7 +1040,7 @@
     function renderTripLog(entries){
       const body = $("tripLogBody");
       body.innerHTML = "";
-      entries.forEach((e) => {
+      (entries || []).forEach((e) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td style="font-weight:950;">${escapeHtml(formatDatePretty(e.date))}</td>
@@ -1074,8 +1075,8 @@
       const pts = currentMonthlyPoints(data);
       const monthlyPointsTotal = pts.total;
 
-      const tripPointsTotal = data.tripEntries.reduce((sum, e) => sum + safeInt(e.points), 0);
-      const lastAdded = data.tripEntries.length ? data.tripEntries[0].date : null;
+      const tripPointsTotal = (data.tripEntries || []).reduce((sum, e) => sum + safeInt(e.points), 0);
+      const lastAdded = (data.tripEntries || []).length ? data.tripEntries[0].date : null;
 
       const rate = findRateForTours(data.matrix, totalTours);
       const toursPay = (rate === null) ? 0 : totalTours * rate;
@@ -1108,12 +1109,70 @@
       renderTripLog(data.tripEntries);
     }
 
+    // ====== In-memory current state (prevents double reads) ======
+    let _currentData = null;
+
+    function normalizeState(x){
+      const base = defaultMonthData();
+      if(!x || typeof x !== "object") return base;
+
+      const ppt = x.pointsPerTour || {};
+      const pointsPerTour = {
+        owner: safeInt(ppt.owner ?? DEFAULT_PPTS.owner),
+        goo: safeInt(ppt.goo ?? DEFAULT_PPTS.goo),
+        renter: safeInt(ppt.renter ?? DEFAULT_PPTS.renter)
+      };
+
+      const mt = x.monthTours || {};
+      const monthTours = {
+        owners: safeInt(mt.owners),
+        goos: safeInt(mt.goos),
+        renters: safeInt(mt.renters)
+      };
+
+      const tripEntries = Array.isArray(x.tripEntries) ? x.tripEntries.map(e => ({
+        id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
+        date: String(e?.date ?? ""),
+        points: safeInt(e?.points)
+      })) : [];
+
+      const matrix = Array.isArray(x.matrix) ? x.matrix.map(r => ({
+        tours: safeInt(r?.tours),
+        rate: safeInt(r?.rate)
+      })) : defaultMatrix();
+
+      return { pointsPerTour, monthTours, tripEntries, matrix };
+    }
+
+    // ====== Central load (cloud first, local fallback) ======
+    async function loadAllForCurrentMonth(){
+      if(!AUTHEMP || !SITEKEY || !monthKey()) return;
+
+      const cloudState = await cloudRead();
+      if(cloudState && typeof cloudState === "object"){
+        const data = normalizeState(cloudState);
+        writeLocalMonthData(data);   // keep backup
+        _currentData = data;
+        renderMatrix(data.matrix);
+        refreshAllUI(data);
+        return;
+      }
+
+      const local = readLocalMonthData();
+      _currentData = local;
+      renderMatrix(local.matrix);
+      refreshAllUI(local);
+    }
+
+    // ====== Event wiring that writes (local + cloud) ======
     function saveMonthToursFromInputs(){
-      const data = readMonthData();
+      const data = _currentData || readLocalMonthData();
       data.monthTours.owners = safeInt($("monthOwners").value);
       data.monthTours.goos = safeInt($("monthGoos").value);
       data.monthTours.renters = safeInt($("monthRenters").value);
-      writeMonthData(data);
+
+      saveDataAndSync(data);
+      _currentData = data;
       refreshAllUI(data);
     }
 
@@ -1121,8 +1180,81 @@
       $(id).addEventListener("input", saveMonthToursFromInputs);
     });
 
+    // matrix edits
+    $("payBody").addEventListener("input", (e) => {
+      const el = e.target;
+      if(!(el instanceof HTMLInputElement)) return;
+      if(!el.classList.contains("cellInput")) return;
+
+      const i = safeInt(el.getAttribute("data-i"));
+      const field = el.getAttribute("data-mtype");
+
+      const data = _currentData || readLocalMonthData();
+      if(!data.matrix[i]) return;
+
+      if(field === "tours") data.matrix[i].tours = safeInt(el.value);
+      if(field === "rate") data.matrix[i].rate = safeInt(el.value);
+
+      saveDataAndSync(data);
+      _currentData = data;
+      refreshAllUI(data);
+    });
+
+    $("payBody").addEventListener("click", (e) => {
+      const btn = e.target?.closest?.("button[data-mdel]");
+      if(!btn) return;
+      const idx = safeInt(btn.getAttribute("data-mdel"));
+
+      const data = _currentData || readLocalMonthData();
+      data.matrix.splice(idx, 1);
+
+      saveDataAndSync(data);
+      _currentData = data;
+
+      renderMatrix(data.matrix);
+      refreshAllUI(data);
+    });
+
+    $("btnAddPayRow").addEventListener("click", () => {
+      const data = _currentData || readLocalMonthData();
+      data.matrix.push({ tours: 0, rate: 0 });
+
+      saveDataAndSync(data);
+      _currentData = data;
+
+      renderMatrix(data.matrix);
+      refreshAllUI(data);
+    });
+
+    $("btnResetPay").addEventListener("click", () => {
+      const data = _currentData || readLocalMonthData();
+      data.matrix = defaultMatrix();
+
+      saveDataAndSync(data);
+      _currentData = data;
+
+      renderMatrix(data.matrix);
+      refreshAllUI(data);
+    });
+
+    // points per tour edits
+    ["ptsOwner","ptsGoo","ptsRenter"].forEach(id => {
+      $(id).addEventListener("input", () => {
+        const data = _currentData || readLocalMonthData();
+        data.pointsPerTour.owner = safeInt($("ptsOwner").value);
+        data.pointsPerTour.goo = safeInt($("ptsGoo").value);
+        data.pointsPerTour.renter = safeInt($("ptsRenter").value);
+
+        saveDataAndSync(data);
+        _currentData = data;
+
+        refreshAllUI(data);
+      });
+    });
+
+    // trip points
     $("btnAddTripPoints").addEventListener("click", () => {
-      const data = readMonthData();
+      const data = _currentData || readLocalMonthData();
       const pts = currentMonthlyPoints(data);
       if(safeInt(pts.total) <= 0){
         showToast("No points to add.");
@@ -1132,7 +1264,9 @@
       const id = (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
       data.tripEntries.unshift({ id, date: todayISO(), points: safeInt(pts.total) });
 
-      writeMonthData(data);
+      saveDataAndSync(data);
+      _currentData = data;
+
       refreshAllUI(data);
       showToast("Points added.");
     });
@@ -1141,30 +1275,31 @@
       const btn = e.target?.closest?.("button[data-trm]");
       if(!btn) return;
       const id = btn.getAttribute("data-trm");
-      const data = readMonthData();
+
+      const data = _currentData || readLocalMonthData();
       data.tripEntries = data.tripEntries.filter(x => x.id !== id);
-      writeMonthData(data);
+
+      saveDataAndSync(data);
+      _currentData = data;
+
       refreshAllUI(data);
       showToast("Entry removed.");
     });
 
     $("btnClearTripLog").addEventListener("click", () => {
-      const data = readMonthData();
+      const data = _currentData || readLocalMonthData();
       data.tripEntries = [];
-      writeMonthData(data);
+
+      saveDataAndSync(data);
+      _currentData = data;
+
       refreshAllUI(data);
       showToast("Trip log cleared.");
     });
 
-    function loadAllForCurrentMonth(){
-      if(!AUTHEMP || !SITEKEY || !monthKey()) return;
-      const data = readMonthData();
-      renderMatrix(data.matrix);
-      refreshAllUI(data);
-    }
-
-    $("monthSelect").addEventListener("change", () => {
-      loadAllForCurrentMonth();
+    // month change (cloud load)
+    $("monthSelect").addEventListener("change", async () => {
+      await loadAllForCurrentMonth();
       showToast("Month loaded.");
     });
 
@@ -1188,11 +1323,12 @@
       setBanner(selected);
       if(!selected) openSiteModal();
 
-      if(selected){
-        loadAllForCurrentMonth();
-      }
-
+      // default tab state
       setTab("matrix");
+
+      if(selected){
+        await loadAllForCurrentMonth();
+      }
     })();
   </script>
 </body>
