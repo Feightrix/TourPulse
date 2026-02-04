@@ -309,7 +309,7 @@
         <div class="sectionCard">
           <div class="row" style="justify-content:space-between; align-items:center;">
             <div class="muted">
-              CSV format: <span class="mono">TheDate,Budget</span> (TheDate = YYYY-MM-DD)
+              CSV format: <span class="mono">TheDate,Budget</span> (TheDate can be <b>MM/DD/YYYY</b> or <b>YYYY-MM-DD</b>)
             </div>
             <div class="row" style="gap:10px;">
               <button class="iconBtn" type="button" id="btnImportCsv">Import CSV</button>
@@ -353,152 +353,6 @@
       : null;
 
     const $ = (id) => document.getElementById(id);
-
-    /***********************
-     * CLOUD SYNC (site-calc)
-     * - keeps localStorage as fast/offline cache
-     * - mirrors changes to Supabase so other devices stay in sync
-     ***********************/
-    let _suppressCloudPush = false;
-
-    async function _uid(){
-      if(!sb) return null;
-      const { data: { session } } = await sb.auth.getSession();
-      return session?.user?.id || null;
-    }
-
-    async function cloudPullSitecalcMonth(){
-      try{
-        const user_id = await _uid();
-        if(!user_id || !SITEKEY || !monthKey()) return;
-
-        const ym = monthKey(); // "YYYY-MM"
-        const { data, error } = await sb
-          .from("tp_sitecalc_daily")
-          .select("the_date,budget,actual")
-          .eq("user_id", user_id)
-          .eq("site_key", SITEKEY)
-          .eq("ym", ym)
-          .order("the_date", { ascending: true });
-
-        if(error) throw error;
-
-        const byDate = {};
-        (data || []).forEach(r => {
-          const iso = String(r.the_date || "");
-          if(!iso) return;
-          byDate[iso] = { budget: safeInt(r.budget), actual: safeInt(r.actual) };
-        });
-
-        // hydrate local cache WITHOUT pushing back up
-        _suppressCloudPush = true;
-        try{
-          localStorage.setItem(storeKey(), JSON.stringify({ byDate }));
-        }catch(_){}
-        _suppressCloudPush = false;
-
-        updateAllUI();
-      }catch(err){
-        console.warn("cloudPullSitecalcMonth:", err?.message || err);
-      }
-    }
-
-    async function cloudUpsertDailyBatch(rows){
-      try{
-        const user_id = await _uid();
-        if(!user_id || !SITEKEY || !monthKey()) return;
-
-        const ym = monthKey();
-        const payload = (rows || []).map(r => ({
-          user_id,
-          emp: AUTHEMP || "",
-          site_key: SITEKEY,
-          ym,
-          the_date: r.iso,
-          budget: safeInt(r.budget),
-          actual: safeInt(r.actual)
-        }));
-
-        if(!payload.length) return;
-
-        const { error } = await sb
-          .from("tp_sitecalc_daily")
-          .upsert(payload, { onConflict: "user_id,site_key,the_date" });
-
-        if(error) throw error;
-      }catch(err){
-        console.warn("cloudUpsertDailyBatch:", err?.message || err);
-      }
-    }
-
-    async function cloudUpsertDailyOne(iso, rec){
-      return cloudUpsertDailyBatch([{ iso, budget: rec?.budget ?? 0, actual: rec?.actual ?? 0 }]);
-    }
-
-    async function cloudDeleteMonth(){
-      try{
-        const user_id = await _uid();
-        if(!user_id || !SITEKEY || !monthKey()) return;
-
-        const ym = monthKey();
-        const { error } = await sb
-          .from("tp_sitecalc_daily")
-          .delete()
-          .eq("user_id", user_id)
-          .eq("site_key", SITEKEY)
-          .eq("ym", ym);
-
-        if(error) throw error;
-      }catch(err){
-        console.warn("cloudDeleteMonth:", err?.message || err);
-      }
-    }
-
-    async function cloudPullMgrRate(){
-      try{
-        const user_id = await _uid();
-        if(!user_id || !SITEKEY) return;
-
-        const { data, error } = await sb
-          .from("tp_sitecalc_mgr_rate")
-          .select("rate")
-          .eq("user_id", user_id)
-          .eq("site_key", SITEKEY)
-          .limit(1)
-          .maybeSingle();
-
-        if(error) throw error;
-
-        const rate = safeMoney(data?.rate ?? 0);
-        writeMgrOverrideRate(rate);
-        $("mgrOverrideRate").value = rate ? String(rate.toFixed(2)) : "";
-        updateSummaryOnlyFromInputChange();
-      }catch(err){
-        console.warn("cloudPullMgrRate:", err?.message || err);
-      }
-    }
-
-    async function cloudUpsertMgrRate(rate){
-      try{
-        const user_id = await _uid();
-        if(!user_id || !SITEKEY) return;
-
-        const payload = {
-          user_id,
-          emp: AUTHEMP || "",
-          site_key: SITEKEY,
-          rate: safeMoney(rate)
-        };
-
-        const { error } = await sb
-          .from("tp_sitecalc_mgr_rate")
-          .upsert(payload, { onConflict: "user_id,site_key" });
-
-        if(error) throw error;
-      }catch(err){
-        console.warn("cloudUpsertMgrRate:", err?.message || err);
-      }
-    }
 
     function showToast(msg, ms = 1600){
       const t = $("toast");
@@ -599,13 +453,12 @@
 
     function monthKey(){ return $("monthSelect").value || ""; }
 
-    /* Jan–Dec for CURRENT YEAR only */
+    // 12 total selections: Jan–Dec of current year
     function buildMonthOptions(){
       const sel = $("monthSelect");
       sel.innerHTML = "";
 
-      const now = new Date();
-      const year = now.getFullYear();
+      const year = 2026; // <-- FORCE year to match your CSV
 
       for(let monthIndex = 0; monthIndex < 12; monthIndex++){
         const d = new Date(year, monthIndex, 1);
@@ -623,10 +476,7 @@
 
     function setDefaultMonth(){
       buildMonthOptions();
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth()+1).padStart(2,"0");
-      $("monthSelect").value = `${y}-${m}`;
+      $("monthSelect").value = "2026-01"; // <-- default to Jan 2026
     }
 
     function storeKey(){
@@ -756,7 +606,6 @@
       return { budgetToDate: b, actualToDate: a, daysCounted: to };
     }
 
-    /* add mobile labels (BUDGET / TOURS IN) inside each cell */
     function renderDailyModalTable(rows){
       const body = $("dailyBodyModal");
       body.innerHTML = "";
@@ -874,7 +723,6 @@
         data.byDate[iso][field] = safeInt(el.value);
 
         writeMonthData(data);
-        if(!_suppressCloudPush) cloudUpsertDailyOne(iso, data.byDate[iso]);
         updateSummaryOnlyFromInputChange();
       });
 
@@ -902,9 +750,13 @@
 
     function toCsvFromMonth(byDate){
       const rows = buildMonthRows(monthKey(), byDate);
-      // export includes actuals for backup, but IMPORT can be TheDate,Budget only
-      const lines = ["TheDate,Budget,Actual"];
-      rows.forEach(r => lines.push(`${r.iso},${safeInt(r.budget)},${safeInt(r.actual)}`));
+      const lines = ["TheDate,Budget"];
+      rows.forEach(r => {
+        // export as MM/DD/YYYY to match your sheet look
+        const [yy,mm,dd] = r.iso.split("-");
+        const pretty = `${mm}/${dd}/${yy}`;
+        lines.push(`${pretty},${safeInt(r.budget)}`);
+      });
       return lines.join("\n");
     }
 
@@ -922,17 +774,14 @@
 
     $("btnExportCsv").addEventListener("click", () => {
       const data = readMonthData();
-      const filename = `daily_${SITEKEY}_${monthKey()}.csv`;
+      const filename = `budget_${SITEKEY}_${monthKey()}.csv`;
       download(filename, toCsvFromMonth(data.byDate), "text/csv");
       showToast("CSV exported.");
     });
 
     $("btnImportCsv").addEventListener("click", () => $("csvFile").click());
 
-    // Accepts:
-    // - TheDate,Budget (preferred)  -> sets budget only; keeps existing actual
-    // - date,budget,actual (legacy) -> sets both
-    // - rows with 2 cols            -> treated as date,budget
+    // ===== CSV IMPORT (TheDate,Budget) =====
     $("csvFile").addEventListener("change", async (e) => {
       const file = e.target.files?.[0];
       if(!file) return;
@@ -941,44 +790,73 @@
       const lines = text.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
       if(lines.length === 0){ showToast("Empty CSV."); return; }
 
+      // detect delimiter (comma or tab)
+      const delim = lines[0].includes("\t") ? "\t" : ",";
+
+      // helpers
+      const norm = (s) => String(s ?? "").trim().replace(/^"|"$/g, "");
+      const toISO = (s) => {
+        const v = norm(s);
+
+        // already ISO
+        if(/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+
+        // MM/DD/YYYY
+        const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if(m){
+          const mm = String(parseInt(m[1],10)).padStart(2,"0");
+          const dd = String(parseInt(m[2],10)).padStart(2,"0");
+          const yy = m[3];
+          return `${yy}-${mm}-${dd}`;
+        }
+
+        return ""; // unsupported
+      };
+
+      // find header columns (TheDate, Budget) if present
+      let startIdx = 0;
+      let dateCol = 0;
+      let budgetCol = 1;
+
+      const header = lines[0].split(delim).map(norm);
+      const hLower = header.map(x => x.toLowerCase());
+
+      const hasHeader =
+        hLower.includes("thedate") ||
+        hLower.includes("date") ||
+        hLower.includes("budget");
+
+      if(hasHeader){
+        startIdx = 1;
+        // prefer TheDate specifically
+        dateCol = hLower.indexOf("thedate");
+        if(dateCol === -1) dateCol = hLower.indexOf("date");
+        if(dateCol === -1) dateCol = 0;
+
+        budgetCol = hLower.indexOf("budget");
+        if(budgetCol === -1) budgetCol = 1;
+      }
+
       const data = readMonthData();
-      const _batch = [];
 
-      // header detection
-      const header = String(lines[0] || "");
-      const hasTheDate = /(^|,)\s*TheDate\s*(,|$)/i.test(header);
-      const hasBudget = /(^|,)\s*Budget\s*(,|$)/i.test(header);
-      const hasActual = /(^|,)\s*Actual\s*(,|$)/i.test(header);
-      const isHeaderRow = (hasTheDate && hasBudget) || /date\s*,\s*budget/i.test(header);
+      // IMPORTANT: only overwrite BUDGET; preserve any existing ACTUAL
+      for(let i = startIdx; i < lines.length; i++){
+        const parts = lines[i].split(delim).map(norm);
+        if(parts.length <= Math.max(dateCol, budgetCol)) continue;
 
-      for(let i=0;i<lines.length;i++){
-        const line = lines[i];
-        if(i === 0 && isHeaderRow) continue;
+        const iso = toISO(parts[dateCol]);
+        if(!iso) continue;
 
-        const parts = line.split(",").map(x => x.trim());
-        if(parts.length < 2) continue;
-
-        const iso = String(parts[0] || "");
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+        // only apply to selected month
         if(!iso.startsWith(monthKey() + "-")) continue;
 
-        const budget = safeInt(parts[1]);
+        const budget = safeInt(parts[budgetCol]);
 
-        // if 3rd column provided AND header indicates actual OR it's legacy date,budget,actual
-        const incomingActual = safeInt(parts[2] ?? 0);
-        const shouldApplyActual = (parts.length >= 3) && (hasActual || /date\s*,\s*budget\s*,\s*actual/i.test(header));
-
-        // keep existing actual unless explicitly provided in a 3-col legacy/Actual file
         const existing = data.byDate[iso] || { budget: 0, actual: 0 };
-        const actual = shouldApplyActual ? incomingActual : safeInt(existing.actual);
-
-        data.byDate[iso] = { budget, actual };
-        _batch.push({ iso, budget, actual });
+        data.byDate[iso] = { budget, actual: safeInt(existing.actual) };
       }
 
       writeMonthData(data);
-      if(!_suppressCloudPush) cloudUpsertDailyBatch(_batch);
-
       $("csvFile").value = "";
       updateAllUI();
       showToast("CSV imported.");
@@ -989,9 +867,6 @@
       const rows = buildMonthRows(monthKey(), data.byDate);
       rows.forEach(r => { delete data.byDate[r.iso]; });
       writeMonthData(data);
-
-      cloudDeleteMonth();
-
       updateAllUI();
       showToast("Month reset.");
     });
@@ -1000,15 +875,12 @@
     $("mgrOverrideRate").addEventListener("input", () => {
       window.clearTimeout(_mgrRateTimer);
       _mgrRateTimer = window.setTimeout(() => {
-        const v = $("mgrOverrideRate").value;
-        writeMgrOverrideRate(v);
-        cloudUpsertMgrRate(v);
+        writeMgrOverrideRate($("mgrOverrideRate").value);
         updateSummaryOnlyFromInputChange();
         showToast("Override saved.");
       }, 250);
     });
 
-    /* Format to 2 decimals on blur (keeps it clean like the stats) */
     $("mgrOverrideRate").addEventListener("blur", () => {
       const v = safeMoney($("mgrOverrideRate").value);
       $("mgrOverrideRate").value = v ? v.toFixed(2) : "";
@@ -1120,21 +992,76 @@
 
     function loadAllForCurrentMonth(){
       if(!AUTHEMP || !SITEKEY || !monthKey()) return;
-
-      // Paint immediately from local cache
       updateAllUI();
-
-      // Then hydrate from cloud (other device changes)
-      if(sb){
-        cloudPullMgrRate();
-        cloudPullSitecalcMonth();
-      }
     }
 
     $("monthSelect").addEventListener("change", () => {
       if(isUnlocked()) loadAllForCurrentMonth();
       showToast("Month loaded.");
     });
+
+    // ===== Helpers for CSV parsing / date normalization =====
+    function stripBOM(s){
+      return String(s || "").replace(/^\uFEFF/, "");
+    }
+
+    function splitCSVLine(line){
+      // Basic CSV split that respects quotes
+      const out = [];
+      let cur = "";
+      let inQ = false;
+      const s = String(line ?? "");
+      for(let i=0;i<s.length;i++){
+        const ch = s[i];
+        if(ch === '"'){
+          if(inQ && s[i+1] === '"'){ cur += '"'; i++; }
+          else inQ = !inQ;
+        }else if(ch === "," && !inQ){
+          out.push(cur.trim());
+          cur = "";
+        }else{
+          cur += ch;
+        }
+      }
+      out.push(cur.trim());
+      return out;
+    }
+
+    function normHeader(h){
+      return String(h || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "")
+        .replace(/[^a-z0-9]/g, "");
+    }
+
+    function parseDateToISO(v){
+      const s = String(v || "").trim();
+      if(!s) return null;
+
+      // Already ISO
+      if(/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+      // MM/DD/YYYY (your screenshot)
+      const mdy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if(mdy){
+        const mm = String(mdy[1]).padStart(2,"0");
+        const dd = String(mdy[2]).padStart(2,"0");
+        const yy = String(mdy[3]);
+        return `${yy}-${mm}-${dd}`;
+      }
+
+      // M-D-YYYY (just in case)
+      const mdy2 = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+      if(mdy2){
+        const mm = String(mdy2[1]).padStart(2,"0");
+        const dd = String(mdy2[2]).padStart(2,"0");
+        const yy = String(mdy2[3]);
+        return `${yy}-${mm}-${dd}`;
+      }
+
+      return null;
+    }
 
     function escapeHtml(s){
       return String(s)
@@ -1164,7 +1091,7 @@
         return;
       }
 
-      loadAllForCurrentMonth();
+      updateAllUI();
     })();
   </script>
 </body>
