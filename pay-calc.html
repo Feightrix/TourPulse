@@ -524,7 +524,7 @@
 
   <script>
     const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsImVlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
     const SIGNIN_PAGE = "signin.html";
     const BACK_PAGE = "choose-calc.html";
 
@@ -762,9 +762,16 @@
     }
 
     async function cloudWriteNow(stateObj){
-      if(!sb || !AUTHUSERID) return false;
+      if(!sb || !AUTHUSERID) {
+        console.warn("cloudWrite skipped: missing sb or AUTHUSERID");
+        return false;
+      }
+
       const k = cloudRowKey();
-      if(!k.user_id || !k.site_key || !k.month_key) return false;
+      if(!k.user_id || !k.site_key || !k.month_key) {
+        console.warn("cloudWrite skipped: missing key parts", k);
+        return false;
+      }
 
       const payload = { ...k, state: stateObj };
 
@@ -774,8 +781,12 @@
 
       if(error){
         console.warn("cloudWrite error:", error);
+        showToast(`Cloud save failed: ${error.message || "unknown error"}`, 2600);
         return false;
       }
+
+      // quick confirmation in console only (keeps UI clean)
+      console.log("cloudWrite ok", k);
       return true;
     }
 
