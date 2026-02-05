@@ -818,10 +818,39 @@
     function normalizeTripEntries(arr){
       if(!Array.isArray(arr)) return [];
       return arr.map(e => ({
-        id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
+        id: String(e?.id ?? ""),
         date: String(e?.date ?? ""),
         points: safeInt(e?.points)
-      }));
+      })).filter(e => e.date && e.points >= 0);
+    }
+
+    function ensureTripId(e){
+      // if older rows have blank ids, generate a stable-ish one
+      if(e.id) return e;
+      const base = `${e.date}|${safeInt(e.points)}`;
+      const id = "legacy_" + btoa(unescape(encodeURIComponent(base))).replace(/=+$/,"").slice(0,24);
+      return { ...e, id };
+    }
+
+    function sortTripDesc(list){
+      return [...list].sort((a,b) => {
+        const ad = String(a.date || "");
+        const bd = String(b.date || "");
+        if(ad === bd) return String(b.id).localeCompare(String(a.id));
+        return bd.localeCompare(ad); // ISO date sorts correctly as string
+      });
+    }
+
+    function dedupeTrips(list){
+      const seen = new Set();
+      const out = [];
+      for(const raw of list){
+        const e = ensureTripId(raw);
+        if(seen.has(e.id)) continue;
+        seen.add(e.id);
+        out.push(e);
+      }
+      return out;
     }
 
     async function cloudReadTripYear(){
@@ -843,6 +872,60 @@
         return null;
       }
       return data?.state || null;
+    }
+
+    // LEGACY PULL #1: older builds stored trips under calc_key "pay-calc-trip-ytd" but month_key like "YYYY-MM"
+    async function cloudReadLegacyTripMonthsForYear(year){
+      if(!sb || !AUTHUSERID) return [];
+      const y = String(year || "");
+      if(!y) return [];
+
+      const { data, error } = await sb
+        .from("tp_calc_state")
+        .select("month_key,state")
+        .eq("user_id", AUTHUSERID)
+        .eq("site_key", SITEKEY || "nosite")
+        .eq("calc_key", "pay-calc-trip-ytd")
+        .like("month_key", `${y}-%`);
+
+      if(error){
+        console.warn("cloudReadLegacyTripMonthsForYear error:", error);
+        return [];
+      }
+
+      const collected = [];
+      for(const row of (data || [])){
+        const trips = normalizeTripEntries(row?.state?.tripEntries);
+        collected.push(...trips);
+      }
+      return collected;
+    }
+
+    // LEGACY PULL #2: some builds stored trips inside monthly "pay-calc" state.tripEntries
+    async function cloudReadLegacyTripsInsidePayCalcMonths(year){
+      if(!sb || !AUTHUSERID) return [];
+      const y = String(year || "");
+      if(!y) return [];
+
+      const { data, error } = await sb
+        .from("tp_calc_state")
+        .select("month_key,state")
+        .eq("user_id", AUTHUSERID)
+        .eq("site_key", SITEKEY || "nosite")
+        .eq("calc_key", "pay-calc")
+        .like("month_key", `${y}-%`);
+
+      if(error){
+        console.warn("cloudReadLegacyTripsInsidePayCalcMonths error:", error);
+        return [];
+      }
+
+      const collected = [];
+      for(const row of (data || [])){
+        const trips = normalizeTripEntries(row?.state?.tripEntries);
+        collected.push(...trips);
+      }
+      return collected;
     }
 
     async function cloudWriteTripYearNow(entries){
@@ -870,11 +953,32 @@
       }, 450);
     }
 
+    // ✅ FIX: Always total “Trip Points (YTD)” from the YEAR bucket,
+    // but also auto-merge any legacy monthly trip logs (Jan, etc.) into the year bucket once.
     async function loadTripYearForCurrentContext(){
       _yearTripEntries = [];
-      const cloudState = await cloudReadTripYear();
-      if(cloudState && typeof cloudState === "object"){
-        _yearTripEntries = normalizeTripEntries(cloudState.tripEntries);
+      const y = yearKey();
+
+      // 1) read the year bucket (new standard)
+      const yearState = await cloudReadTripYear();
+      const yearTrips = normalizeTripEntries(yearState?.tripEntries);
+
+      // 2) read legacy monthly sources (if any exist)
+      const legacyA = await cloudReadLegacyTripMonthsForYear(y);
+      const legacyB = await cloudReadLegacyTripsInsidePayCalcMonths(y);
+
+      // 3) merge + dedupe + sort
+      let merged = dedupeTrips([ ...yearTrips, ...legacyA, ...legacyB ]);
+      merged = sortTripDesc(merged);
+
+      _yearTripEntries = merged;
+
+      // 4) if we found legacy trips that aren’t in the year bucket yet, write them into the year bucket
+      const yearIds = new Set(yearTrips.map(t => ensureTripId(t).id));
+      const hasNewLegacy = merged.some(t => !yearIds.has(t.id));
+      if(hasNewLegacy){
+        // write once (debounced is fine, but do it now so totals are correct everywhere)
+        await cloudWriteTripYearNow(merged);
       }
     }
 
@@ -1162,7 +1266,7 @@
       const pts = currentMonthlyPoints(data);
       const monthlyPointsTotal = pts.total;
 
-      // YTD Trip Points come from Supabase (pay-calc-trip-ytd)
+      // YTD Trip Points come from Supabase (pay-calc-trip-ytd), plus auto-merged legacy month logs
       const tripPointsTotal = (_yearTripEntries || []).reduce((sum, e) => sum + safeInt(e.points), 0);
       const lastAdded = (_yearTripEntries || []).length ? _yearTripEntries[0].date : null;
 
@@ -1236,7 +1340,7 @@
     async function loadAllForCurrentMonth(){
       if(!AUTHEMP || !SITEKEY || !monthKey()) return;
 
-      // load YTD trip log for the selected year/site (Supabase ONLY)
+      // load YTD trip log for the selected year/site (Supabase ONLY) + legacy merge
       await loadTripYearForCurrentContext();
 
       const cloudState = await cloudRead();
