@@ -525,6 +525,9 @@
   <script>
     const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
+    console.log("SUPABASE_URL:", SUPABASE_URL);
+    console.log("SUPABASE_ANON_KEY len:", (SUPABASE_ANON_KEY || "").length);
+    console.log("SUPABASE_ANON_KEY preview:", (SUPABASE_ANON_KEY || "").slice(0, 16) + "..." + (SUPABASE_ANON_KEY || "").slice(-8));
     const SIGNIN_PAGE = "signin.html";
     const BACK_PAGE = "choose-calc.html";
 
