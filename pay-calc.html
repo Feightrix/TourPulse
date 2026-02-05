@@ -9,7 +9,6 @@
 
   <!-- Sitewide CSS -->
   <link rel="stylesheet" href="css/style.css">
-  <link rel="icon" href="data:,">
 
   <!-- PAGE-SPECIFIC FIXES (scoped to pay-calc.html only) -->
   <style>
@@ -376,7 +375,7 @@
             <div style="height:10px"></div>
 
             <div class="sumRow">
-              <div class="sumLabel strong">Trip Points</div>
+              <div class="sumLabel strong">Trip Points (YTD)</div>
               <div class="sumValue" id="sumTripPoints">0</div>
             </div>
 
@@ -497,7 +496,7 @@
             <div style="height:10px;"></div>
 
             <div class="row" style="justify-content:space-between; align-items:center;">
-              <div class="pillStat">Trip Points Total: <span class="mono" id="pillTripPointsModal">0</span></div>
+              <div class="pillStat">Trip Points Total (YTD): <span class="mono" id="pillTripPointsModal">0</span></div>
               <button class="iconBtn" type="button" id="btnClearTripLog">Clear Trip Log</button>
             </div>
 
@@ -638,18 +637,35 @@
       $("monthSelect").value = `${y}-${m}`;
     }
 
-    // ====== Local backup storage key ======
+    // ====== Year key (for YTD Trip Points) ======
+    function yearKey(){
+      const mk = monthKey() || "";
+      const y = mk.slice(0,4);
+      return y || String(new Date().getFullYear());
+    }
+
+    // ====== Local backup storage key (MONTHLY state only) ======
     function storeKeyLocal(){
       return `tourpulse:paycalc:v3:${AUTHEMP||"unknown"}:${SITEKEY||"nosite"}:${monthKey()||"nomonth"}`;
     }
 
-    // ====== Supabase cloud key (tp_calc_state) ======
+    // ====== Supabase cloud key (MONTHLY state) ======
     function cloudRowKey(){
       return {
         user_id: AUTHUSERID || "",
         calc_key: "pay-calc",
         site_key: SITEKEY || "nosite",
         month_key: monthKey() || "nomonth"
+      };
+    }
+
+    // ====== Supabase cloud key (YEARLY trip log) ======
+    function cloudTripYearRowKey(){
+      return {
+        user_id: AUTHUSERID || "",
+        calc_key: "pay-calc-trip-ytd",
+        site_key: SITEKEY || "nosite",
+        month_key: yearKey() || "noyear" // store year in month_key column
       };
     }
 
@@ -691,12 +707,13 @@
       return {
         pointsPerTour: { ...DEFAULT_PPTS },
         monthTours: { owners: 0, goos: 0, renters: 0 },
+        // NOTE: tripEntries are no longer used for totals; YTD trip log is stored in Supabase under calc_key "pay-calc-trip-ytd"
         tripEntries: [],
         matrix: defaultMatrix()
       };
     }
 
-    // ====== LOCAL read/write (backup) ======
+    // ====== LOCAL read/write (MONTHLY backup) ======
     function readLocalMonthData(){
       try{
         const raw = localStorage.getItem(storeKeyLocal());
@@ -740,7 +757,7 @@
       }catch(_){}
     }
 
-    // ====== CLOUD read/write (Supabase) ======
+    // ====== CLOUD read/write (MONTHLY) ======
     let _cloudWriteTimer = null;
 
     async function cloudRead(){
@@ -765,16 +782,9 @@
     }
 
     async function cloudWriteNow(stateObj){
-      if(!sb || !AUTHUSERID) {
-        console.warn("cloudWrite skipped: missing sb or AUTHUSERID");
-        return false;
-      }
-
+      if(!sb || !AUTHUSERID) return false;
       const k = cloudRowKey();
-      if(!k.user_id || !k.site_key || !k.month_key) {
-        console.warn("cloudWrite skipped: missing key parts", k);
-        return false;
-      }
+      if(!k.user_id || !k.site_key || !k.month_key) return false;
 
       const payload = { ...k, state: stateObj };
 
@@ -784,12 +794,8 @@
 
       if(error){
         console.warn("cloudWrite error:", error);
-        showToast(`Cloud save failed: ${error.message || "unknown error"}`, 2600);
         return false;
       }
-
-      // quick confirmation in console only (keeps UI clean)
-      console.log("cloudWrite ok", k);
       return true;
     }
 
@@ -803,6 +809,73 @@
     function saveDataAndSync(data){
       writeLocalMonthData(data);
       scheduleCloudWrite(data);
+    }
+
+    // ====== CLOUD read/write (YEARLY Trip Log — Supabase ONLY, no local storage) ======
+    let _yearTripEntries = [];
+    let _cloudTripYearTimer = null;
+
+    function normalizeTripEntries(arr){
+      if(!Array.isArray(arr)) return [];
+      return arr.map(e => ({
+        id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
+        date: String(e?.date ?? ""),
+        points: safeInt(e?.points)
+      }));
+    }
+
+    async function cloudReadTripYear(){
+      if(!sb || !AUTHUSERID) return null;
+      const k = cloudTripYearRowKey();
+      if(!k.user_id || !k.site_key || !k.month_key) return null;
+
+      const { data, error } = await sb
+        .from("tp_calc_state")
+        .select("state,updated_at")
+        .eq("user_id", k.user_id)
+        .eq("calc_key", k.calc_key)
+        .eq("site_key", k.site_key)
+        .eq("month_key", k.month_key)
+        .maybeSingle();
+
+      if(error){
+        console.warn("cloudReadTripYear error:", error);
+        return null;
+      }
+      return data?.state || null;
+    }
+
+    async function cloudWriteTripYearNow(entries){
+      if(!sb || !AUTHUSERID) return false;
+      const k = cloudTripYearRowKey();
+      if(!k.user_id || !k.site_key || !k.month_key) return false;
+
+      const payload = { ...k, state: { tripEntries: entries || [] } };
+
+      const { error } = await sb
+        .from("tp_calc_state")
+        .upsert(payload, { onConflict: "user_id,calc_key,site_key,month_key" });
+
+      if(error){
+        console.warn("cloudWriteTripYear error:", error);
+        return false;
+      }
+      return true;
+    }
+
+    function scheduleCloudWriteTripYear(entries){
+      window.clearTimeout(_cloudTripYearTimer);
+      _cloudTripYearTimer = window.setTimeout(async () => {
+        await cloudWriteTripYearNow(entries);
+      }, 450);
+    }
+
+    async function loadTripYearForCurrentContext(){
+      _yearTripEntries = [];
+      const cloudState = await cloudReadTripYear();
+      if(cloudState && typeof cloudState === "object"){
+        _yearTripEntries = normalizeTripEntries(cloudState.tripEntries);
+      }
     }
 
     // ====== Site selection / banner ======
@@ -1089,8 +1162,9 @@
       const pts = currentMonthlyPoints(data);
       const monthlyPointsTotal = pts.total;
 
-      const tripPointsTotal = (data.tripEntries || []).reduce((sum, e) => sum + safeInt(e.points), 0);
-      const lastAdded = (data.tripEntries || []).length ? data.tripEntries[0].date : null;
+      // YTD Trip Points come from Supabase (pay-calc-trip-ytd)
+      const tripPointsTotal = (_yearTripEntries || []).reduce((sum, e) => sum + safeInt(e.points), 0);
+      const lastAdded = (_yearTripEntries || []).length ? _yearTripEntries[0].date : null;
 
       const rate = findRateForTours(data.matrix, totalTours);
       const toursPay = (rate === null) ? 0 : totalTours * rate;
@@ -1120,7 +1194,7 @@
       $("ptsRenter").value = String(data.pointsPerTour.renter);
 
       $("pillTripPointsModal").textContent = num(tripPointsTotal);
-      renderTripLog(data.tripEntries);
+      renderTripLog(_yearTripEntries);
     }
 
     // ====== In-memory current state (prevents double reads) ======
@@ -1162,10 +1236,13 @@
     async function loadAllForCurrentMonth(){
       if(!AUTHEMP || !SITEKEY || !monthKey()) return;
 
+      // load YTD trip log for the selected year/site (Supabase ONLY)
+      await loadTripYearForCurrentContext();
+
       const cloudState = await cloudRead();
       if(cloudState && typeof cloudState === "object"){
         const data = normalizeState(cloudState);
-        writeLocalMonthData(data);   // keep backup
+        writeLocalMonthData(data);   // keep monthly backup
         _currentData = data;
         renderMatrix(data.matrix);
         refreshAllUI(data);
@@ -1178,7 +1255,7 @@
       refreshAllUI(local);
     }
 
-    // ====== Event wiring that writes (local + cloud) ======
+    // ====== Event wiring that writes (MONTHLY local + cloud) ======
     function saveMonthToursFromInputs(){
       const data = _currentData || readLocalMonthData();
       data.monthTours.owners = safeInt($("monthOwners").value);
@@ -1266,8 +1343,8 @@
       });
     });
 
-    // trip points
-    $("btnAddTripPoints").addEventListener("click", () => {
+    // ====== Trip Points (YTD) — Supabase ONLY ======
+    $("btnAddTripPoints").addEventListener("click", async () => {
       const data = _currentData || readLocalMonthData();
       const pts = currentMonthlyPoints(data);
       if(safeInt(pts.total) <= 0){
@@ -1276,10 +1353,10 @@
       }
 
       const id = (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
-      data.tripEntries.unshift({ id, date: todayISO(), points: safeInt(pts.total) });
+      _yearTripEntries = Array.isArray(_yearTripEntries) ? _yearTripEntries : [];
+      _yearTripEntries.unshift({ id, date: todayISO(), points: safeInt(pts.total) });
 
-      saveDataAndSync(data);
-      _currentData = data;
+      scheduleCloudWriteTripYear(_yearTripEntries);
 
       refreshAllUI(data);
       showToast("Points added.");
@@ -1290,23 +1367,19 @@
       if(!btn) return;
       const id = btn.getAttribute("data-trm");
 
+      _yearTripEntries = (_yearTripEntries || []).filter(x => x.id !== id);
+      scheduleCloudWriteTripYear(_yearTripEntries);
+
       const data = _currentData || readLocalMonthData();
-      data.tripEntries = data.tripEntries.filter(x => x.id !== id);
-
-      saveDataAndSync(data);
-      _currentData = data;
-
       refreshAllUI(data);
       showToast("Entry removed.");
     });
 
     $("btnClearTripLog").addEventListener("click", () => {
+      _yearTripEntries = [];
+      scheduleCloudWriteTripYear(_yearTripEntries);
+
       const data = _currentData || readLocalMonthData();
-      data.tripEntries = [];
-
-      saveDataAndSync(data);
-      _currentData = data;
-
       refreshAllUI(data);
       showToast("Trip log cleared.");
     });
