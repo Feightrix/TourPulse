@@ -815,42 +815,26 @@
     let _yearTripEntries = [];
     let _cloudTripYearTimer = null;
 
+    // Add-points double-tap guard + feedback
+    let _addTripBusy = false;
+    let _addBtnDefaultText = "Add Points";
+    function setAddBtnBusy(on){
+      const btn = $("btnAddTripPoints");
+      if(!btn) return;
+      if(!_addBtnDefaultText) _addBtnDefaultText = btn.textContent || "Add Points";
+      btn.disabled = !!on;
+      btn.textContent = on ? "Saving…" : _addBtnDefaultText;
+      btn.style.opacity = on ? ".85" : "";
+      btn.style.pointerEvents = on ? "none" : "";
+    }
+
     function normalizeTripEntries(arr){
       if(!Array.isArray(arr)) return [];
       return arr.map(e => ({
-        id: String(e?.id ?? ""),
+        id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
         date: String(e?.date ?? ""),
         points: safeInt(e?.points)
-      })).filter(e => e.date && e.points >= 0);
-    }
-
-    function ensureTripId(e){
-      // if older rows have blank ids, generate a stable-ish one
-      if(e.id) return e;
-      const base = `${e.date}|${safeInt(e.points)}`;
-      const id = "legacy_" + btoa(unescape(encodeURIComponent(base))).replace(/=+$/,"").slice(0,24);
-      return { ...e, id };
-    }
-
-    function sortTripDesc(list){
-      return [...list].sort((a,b) => {
-        const ad = String(a.date || "");
-        const bd = String(b.date || "");
-        if(ad === bd) return String(b.id).localeCompare(String(a.id));
-        return bd.localeCompare(ad); // ISO date sorts correctly as string
-      });
-    }
-
-    function dedupeTrips(list){
-      const seen = new Set();
-      const out = [];
-      for(const raw of list){
-        const e = ensureTripId(raw);
-        if(seen.has(e.id)) continue;
-        seen.add(e.id);
-        out.push(e);
-      }
-      return out;
+      }));
     }
 
     async function cloudReadTripYear(){
@@ -872,60 +856,6 @@
         return null;
       }
       return data?.state || null;
-    }
-
-    // LEGACY PULL #1: older builds stored trips under calc_key "pay-calc-trip-ytd" but month_key like "YYYY-MM"
-    async function cloudReadLegacyTripMonthsForYear(year){
-      if(!sb || !AUTHUSERID) return [];
-      const y = String(year || "");
-      if(!y) return [];
-
-      const { data, error } = await sb
-        .from("tp_calc_state")
-        .select("month_key,state")
-        .eq("user_id", AUTHUSERID)
-        .eq("site_key", SITEKEY || "nosite")
-        .eq("calc_key", "pay-calc-trip-ytd")
-        .like("month_key", `${y}-%`);
-
-      if(error){
-        console.warn("cloudReadLegacyTripMonthsForYear error:", error);
-        return [];
-      }
-
-      const collected = [];
-      for(const row of (data || [])){
-        const trips = normalizeTripEntries(row?.state?.tripEntries);
-        collected.push(...trips);
-      }
-      return collected;
-    }
-
-    // LEGACY PULL #2: some builds stored trips inside monthly "pay-calc" state.tripEntries
-    async function cloudReadLegacyTripsInsidePayCalcMonths(year){
-      if(!sb || !AUTHUSERID) return [];
-      const y = String(year || "");
-      if(!y) return [];
-
-      const { data, error } = await sb
-        .from("tp_calc_state")
-        .select("month_key,state")
-        .eq("user_id", AUTHUSERID)
-        .eq("site_key", SITEKEY || "nosite")
-        .eq("calc_key", "pay-calc")
-        .like("month_key", `${y}-%`);
-
-      if(error){
-        console.warn("cloudReadLegacyTripsInsidePayCalcMonths error:", error);
-        return [];
-      }
-
-      const collected = [];
-      for(const row of (data || [])){
-        const trips = normalizeTripEntries(row?.state?.tripEntries);
-        collected.push(...trips);
-      }
-      return collected;
     }
 
     async function cloudWriteTripYearNow(entries){
@@ -953,32 +883,11 @@
       }, 450);
     }
 
-    // ✅ FIX: Always total “Trip Points (YTD)” from the YEAR bucket,
-    // but also auto-merge any legacy monthly trip logs (Jan, etc.) into the year bucket once.
     async function loadTripYearForCurrentContext(){
       _yearTripEntries = [];
-      const y = yearKey();
-
-      // 1) read the year bucket (new standard)
-      const yearState = await cloudReadTripYear();
-      const yearTrips = normalizeTripEntries(yearState?.tripEntries);
-
-      // 2) read legacy monthly sources (if any exist)
-      const legacyA = await cloudReadLegacyTripMonthsForYear(y);
-      const legacyB = await cloudReadLegacyTripsInsidePayCalcMonths(y);
-
-      // 3) merge + dedupe + sort
-      let merged = dedupeTrips([ ...yearTrips, ...legacyA, ...legacyB ]);
-      merged = sortTripDesc(merged);
-
-      _yearTripEntries = merged;
-
-      // 4) if we found legacy trips that aren’t in the year bucket yet, write them into the year bucket
-      const yearIds = new Set(yearTrips.map(t => ensureTripId(t).id));
-      const hasNewLegacy = merged.some(t => !yearIds.has(t.id));
-      if(hasNewLegacy){
-        // write once (debounced is fine, but do it now so totals are correct everywhere)
-        await cloudWriteTripYearNow(merged);
+      const cloudState = await cloudReadTripYear();
+      if(cloudState && typeof cloudState === "object"){
+        _yearTripEntries = normalizeTripEntries(cloudState.tripEntries);
       }
     }
 
@@ -1266,7 +1175,7 @@
       const pts = currentMonthlyPoints(data);
       const monthlyPointsTotal = pts.total;
 
-      // YTD Trip Points come from Supabase (pay-calc-trip-ytd), plus auto-merged legacy month logs
+      // YTD Trip Points come from Supabase (pay-calc-trip-ytd)
       const tripPointsTotal = (_yearTripEntries || []).reduce((sum, e) => sum + safeInt(e.points), 0);
       const lastAdded = (_yearTripEntries || []).length ? _yearTripEntries[0].date : null;
 
@@ -1340,7 +1249,7 @@
     async function loadAllForCurrentMonth(){
       if(!AUTHEMP || !SITEKEY || !monthKey()) return;
 
-      // load YTD trip log for the selected year/site (Supabase ONLY) + legacy merge
+      // load YTD trip log for the selected year/site (Supabase ONLY)
       await loadTripYearForCurrentContext();
 
       const cloudState = await cloudRead();
@@ -1449,21 +1358,41 @@
 
     // ====== Trip Points (YTD) — Supabase ONLY ======
     $("btnAddTripPoints").addEventListener("click", async () => {
-      const data = _currentData || readLocalMonthData();
-      const pts = currentMonthlyPoints(data);
-      if(safeInt(pts.total) <= 0){
-        showToast("No points to add.");
-        return;
+      if(_addTripBusy) return;                 // hard guard against double taps
+      _addTripBusy = true;
+      setAddBtnBusy(true);
+
+      try{
+        const data = _currentData || readLocalMonthData();
+        const pts = currentMonthlyPoints(data);
+        if(safeInt(pts.total) <= 0){
+          showToast("No points to add.");
+          return;
+        }
+
+        const id = (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+        _yearTripEntries = Array.isArray(_yearTripEntries) ? _yearTripEntries : [];
+        _yearTripEntries.unshift({ id, date: todayISO(), points: safeInt(pts.total) });
+
+        // Write immediately (not debounced) so the lock is meaningful
+        const ok = await cloudWriteTripYearNow(_yearTripEntries);
+        if(!ok){
+          // rollback the optimistic entry if save fails
+          _yearTripEntries = (_yearTripEntries || []).filter(e => e.id !== id);
+          refreshAllUI(data);
+          showToast("Couldn’t save. Check connection.");
+          return;
+        }
+
+        refreshAllUI(data);
+        showToast("Points added.");
+      } finally{
+        // small delay keeps it feeling intentional on mobile
+        window.setTimeout(() => {
+          _addTripBusy = false;
+          setAddBtnBusy(false);
+        }, 350);
       }
-
-      const id = (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
-      _yearTripEntries = Array.isArray(_yearTripEntries) ? _yearTripEntries : [];
-      _yearTripEntries.unshift({ id, date: todayISO(), points: safeInt(pts.total) });
-
-      scheduleCloudWriteTripYear(_yearTripEntries);
-
-      refreshAllUI(data);
-      showToast("Points added.");
     });
 
     $("tripLogBody").addEventListener("click", (e) => {
