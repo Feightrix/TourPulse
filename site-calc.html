@@ -513,10 +513,15 @@
       return Number.isFinite(n) && n >= 0 ? n : 0;
     }
     function num(n){ return Number(n || 0).toLocaleString(); }
-    function pct01(x){
-      const p = Math.max(0, Math.min(1, Number(x || 0)));
-      return (p * 100).toFixed(0) + "%";
+
+    // ✅ TRUE percentage (no cap at 100%)
+    function pct(x){
+      let v = Number(x);
+      if(!Number.isFinite(v)) v = 0;
+      if(v < 0) v = 0;
+      return (v * 100).toFixed(0) + "%";
     }
+
     function money(n){
       const x = Number(n || 0);
       return x.toLocaleString(undefined, { style:"currency", currency:"USD" });
@@ -750,7 +755,8 @@
       varEl.style.color = varianceColor(variance);
       $("tileVarianceHint").textContent = variance > 0 ? "Ahead of budget" : (variance < 0 ? "Behind budget" : "On budget");
 
-      $("tilePctToDate").textContent = pct01(pctToDate);
+      // ✅ show true percentage even when > 100%
+      $("tilePctToDate").textContent = pct(pctToDate);
 
       $("tileNeededPerDay").textContent = neededPerDay.toFixed(1);
       $("tileNeededHint").textContent = remainingDays > 0 ? `For the remaining ${remainingDays} day(s)` : "Month complete";
@@ -764,7 +770,9 @@
       $("sumBudget").textContent = num(monthTotals.budgetTotal);
       $("sumActual").textContent = num(monthActual);
       $("sumRemaining").textContent = num(monthRemaining);
-      $("sumPct").textContent = pct01(monthPct);
+
+      // ✅ also show true monthly % if it exceeds 100%
+      $("sumPct").textContent = pct(monthPct);
 
       $("sumMgrPay").textContent = money(mgrPayToDate);
     }
