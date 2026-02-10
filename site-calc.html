@@ -171,6 +171,15 @@
               <div class="kpiHint">Actual / budget (to date)</div>
             </div>
 
+            <!-- ✅ NEW: Year % of Budget (running YTD) -->
+            <div class="kpiTile">
+              <div>
+                <div class="kpiLabel">Year % of Budget (YTD)</div>
+                <div class="kpiValue mono" id="tileYearPct">0%</div>
+              </div>
+              <div class="kpiHint">Running total (Jan → selected month)</div>
+            </div>
+
             <div class="kpiTile">
               <div>
                 <div class="kpiLabel">Needed / Day</div>
@@ -232,6 +241,12 @@
             <div class="sumRow">
               <div class="sumLabel strong">% of Monthly Budget Completed</div>
               <div class="sumValue mono" id="sumPct">0%</div>
+            </div>
+
+            <!-- ✅ NEW: Year % of Budget (YTD) -->
+            <div class="sumRow">
+              <div class="sumLabel strong">Year % of Budget (YTD)</div>
+              <div class="sumValue mono" id="sumYearPct">0%</div>
             </div>
 
             <div class="sumRow">
@@ -486,6 +501,11 @@
       $("monthSelect").value = `${y}-${m}`;
     }
 
+    function yearKeyFromMonth(ym){
+      const y = String(ym || "").slice(0,4);
+      return y || String(new Date().getFullYear());
+    }
+
     // ====== Local backup keys ======
     function storeKeyLocal(){
       return `tourpulse:sitecalc:v2:${AUTHEMP||"unknown"}:${SITEKEY||"nosite"}:${monthKey()||"nomonth"}`;
@@ -495,12 +515,12 @@
     }
 
     // ====== Supabase cloud keys ======
-    function cloudRowKey(){
+    function cloudRowKey(forMonthKey){
       return {
         user_id: AUTHUSERID || "",
         calc_key: "site-calc",
         site_key: SITEKEY || "nosite",
-        month_key: monthKey() || "nomonth"
+        month_key: (forMonthKey || monthKey()) || "nomonth"
       };
     }
 
@@ -514,7 +534,7 @@
     }
     function num(n){ return Number(n || 0).toLocaleString(); }
 
-    // ✅ TRUE percentage (no cap at 100%)
+    // TRUE percentage (no cap at 100%)
     function pct(x){
       let v = Number(x);
       if(!Number.isFinite(v)) v = 0;
@@ -573,9 +593,9 @@
     // ====== CLOUD read/write (Supabase) ======
     let _cloudWriteTimer = null;
 
-    async function cloudRead(){
+    async function cloudRead(forMonthKey){
       if(!sb || !AUTHUSERID) return null;
-      const k = cloudRowKey();
+      const k = cloudRowKey(forMonthKey);
       if(!k.user_id || !k.site_key || !k.month_key) return null;
 
       const { data, error } = await sb
@@ -599,10 +619,7 @@
       const k = cloudRowKey();
       if(!k.user_id || !k.site_key || !k.month_key) return false;
 
-      const payload = {
-        ...k,
-        state: stateObj
-      };
+      const payload = { ...k, state: stateObj };
 
       const { error } = await sb
         .from("tp_calc_state")
@@ -617,12 +634,7 @@
 
     function scheduleCloudWrite(stateObj){
       window.clearTimeout(_cloudWriteTimer);
-      _cloudWriteTimer = window.setTimeout(async () => {
-        const ok = await cloudWriteNow(stateObj);
-        if(!ok){
-          // fail silently but keep backup local
-        }
-      }, 450);
+      _cloudWriteTimer = window.setTimeout(async () => { await cloudWriteNow(stateObj); }, 450);
     }
 
     // ====== Month helpers ======
@@ -663,13 +675,8 @@
       const ny = now.getFullYear();
       const nm = now.getMonth() + 1;
 
-      // current month → count to today
       if(y === ny && m === nm) return now.getDate();
-
-      // future month → nothing "to date" yet (but daily inputs still editable)
       if(y > ny || (y === ny && m > nm)) return 0;
-
-      // past month → full month
       return daysInMonth(ymKey);
     }
 
@@ -687,6 +694,82 @@
         a += safeInt(rows[i].actual);
       }
       return { budgetToDate: b, actualToDate: a, daysCounted: to };
+    }
+
+    // ====== YEAR (YTD) percent calc (cloud-based) ======
+    let _yearPctTimer = null;
+    async function recomputeYearPct(){
+      if(!sb || !AUTHUSERID || !SITEKEY || !monthKey()) return;
+
+      const ym = monthKey();
+      const year = yearKeyFromMonth(ym);
+      const selectedMonthNum = safeInt(String(ym).slice(5,7));
+
+      // pull all months for this year in one query
+      const { data, error } = await sb
+        .from("tp_calc_state")
+        .select("month_key,state")
+        .eq("user_id", AUTHUSERID)
+        .eq("calc_key", "site-calc")
+        .eq("site_key", SITEKEY)
+        .like("month_key", `${year}-%`);
+
+      if(error){
+        console.warn("yearPct read error:", error);
+        return;
+      }
+
+      // map month_key -> normalized {byDate}
+      const map = {};
+      (data || []).forEach(row => {
+        const mk = String(row?.month_key || "");
+        const st = row?.state && typeof row.state === "object" ? row.state : {};
+        const src = st.byDate && typeof st.byDate === "object" ? st.byDate : {};
+        const byDate = {};
+        for(const k in src){
+          const v = src[k] || {};
+          byDate[String(k)] = { budget: safeInt(v.budget), actual: safeInt(v.actual) };
+        }
+        map[mk] = { byDate };
+      });
+
+      // always include current month's local edits immediately (even before cloud finishes)
+      map[ym] = { byDate: (readLocalMonthData().byDate || {}) };
+
+      let ytdBudget = 0;
+      let ytdActual = 0;
+
+      for(let m = 1; m <= 12; m++){
+        if(m > selectedMonthNum) break;
+
+        const mk = `${year}-${String(m).padStart(2,"0")}`;
+        const month = map[mk];
+        if(!month || !month.byDate) continue;
+
+        const rows = buildMonthRows(mk, month.byDate);
+
+        // past months: full month totals
+        // selected month: "to date" (matches 'running' behavior)
+        if(m < selectedMonthNum){
+          const t = totals(rows);
+          ytdBudget += t.budgetTotal;
+          ytdActual += t.actualTotal;
+        }else{
+          const cutoff = cutoffDayForSelectedMonth(mk);
+          const td = totalsToDate(rows, cutoff);
+          ytdBudget += td.budgetToDate;
+          ytdActual += td.actualToDate;
+        }
+      }
+
+      const ytdPct = ytdBudget > 0 ? (ytdActual / ytdBudget) : 0;
+      $("tileYearPct").textContent = pct(ytdPct);
+      $("sumYearPct").textContent  = pct(ytdPct);
+    }
+
+    function scheduleYearPctRecalc(){
+      window.clearTimeout(_yearPctTimer);
+      _yearPctTimer = window.setTimeout(() => { recomputeYearPct(); }, 450);
     }
 
     /* Modal table */
@@ -755,7 +838,6 @@
       varEl.style.color = varianceColor(variance);
       $("tileVarianceHint").textContent = variance > 0 ? "Ahead of budget" : (variance < 0 ? "Behind budget" : "On budget");
 
-      // ✅ show true percentage even when > 100%
       $("tilePctToDate").textContent = pct(pctToDate);
 
       $("tileNeededPerDay").textContent = neededPerDay.toFixed(1);
@@ -770,11 +852,12 @@
       $("sumBudget").textContent = num(monthTotals.budgetTotal);
       $("sumActual").textContent = num(monthActual);
       $("sumRemaining").textContent = num(monthRemaining);
-
-      // ✅ also show true monthly % if it exceeds 100%
       $("sumPct").textContent = pct(monthPct);
 
       $("sumMgrPay").textContent = money(mgrPayToDate);
+
+      // keep year % in sync whenever the month UI repaints
+      scheduleYearPctRecalc();
     }
 
     function updateAllUI(fromData){
@@ -802,10 +885,7 @@
 
     // ====== Wires: input updates (save local + cloud) ======
     function saveDataAndSync(data){
-      // local backup always
       writeLocalMonthData(data);
-
-      // cloud sync
       scheduleCloudWrite({
         byDate: data.byDate || {},
         mgrOverrideRate: safeMoney(data.mgrOverrideRate || 0)
@@ -861,7 +941,6 @@
     // ====== CSV export/import ======
     function toCsvFromMonth(byDate){
       const rows = buildMonthRows(monthKey(), byDate);
-      // Export using TheDate,Budget for your workflow
       const lines = ["TheDate,Budget"];
       rows.forEach(r => {
         const [y,m,d] = r.iso.split("-");
@@ -911,9 +990,7 @@
       const lines = text.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
       if(lines.length === 0){ showToast("Empty CSV."); return; }
 
-      // IMPORTANT: do NOT wipe existing data on a bad import
       const data = readLocalMonthData();
-
       let imported = 0;
 
       for(let i=0;i<lines.length;i++){
@@ -926,19 +1003,16 @@
         const iso = mmddyyyyToIso(parts[0]);
         if(!iso) continue;
 
-        // Only apply to currently selected month
         if(!iso.startsWith(monthKey() + "-")) continue;
 
         const budget = safeInt(parts[1]);
 
         if(!data.byDate[iso]) data.byDate[iso] = { budget: 0, actual: 0 };
-        // Only budget from CSV; actual stays whatever user has
         data.byDate[iso].budget = budget;
 
         imported++;
       }
 
-      // Save + sync
       saveDataAndSync(data);
 
       $("csvFile").value = "";
@@ -1062,11 +1136,9 @@
     async function loadAllForCurrentMonth(){
       if(!AUTHEMP || !SITEKEY || !monthKey()) return;
 
-      // 1) try cloud
-      const cloudState = await cloudRead();
+      const cloudState = await cloudRead(monthKey());
 
       if(cloudState && typeof cloudState === "object"){
-        // normalize
         const byDate = {};
         const src = cloudState.byDate && typeof cloudState.byDate === "object" ? cloudState.byDate : {};
         for(const k in src){
@@ -1077,15 +1149,16 @@
 
         const merged = { byDate, mgrOverrideRate };
 
-        // write local backup
         writeLocalMonthData(merged);
-
         updateAllUI(merged);
+
+        // also refresh year % (runs async, uses current month local data immediately)
+        scheduleYearPctRecalc();
         return;
       }
 
-      // 2) fallback to local
       updateAllUI(readLocalMonthData());
+      scheduleYearPctRecalc();
     }
 
     $("monthSelect").addEventListener("change", async () => {
