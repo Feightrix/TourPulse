@@ -68,7 +68,6 @@
      ***********************/
     const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
-
     const SIGNIN_PAGE = "signin.html";
 
     const sb = (window.supabase && window.supabase.createClient)
@@ -92,6 +91,20 @@
     }
 
     /***********************
+     * ADMIN GATE (ONLY YOUR ACCOUNT)
+     * - Put YOUR employee number (email prefix) here.
+     * - Example: if your login email is 12345@whatever.com → use "12345"
+     ***********************/
+    const ADMIN_EMPS = [
+      "078195"
+    ];
+
+    function isAdminEmp(emp){
+      const e = String(emp || "").trim();
+      return !!e && ADMIN_EMPS.includes(e);
+    }
+
+    /***********************
      * MENU
      ***********************/
     const CALCS = [
@@ -109,6 +122,17 @@
         path: "site-calc.html",
         locked: false
       },
+
+      // ✅ Admin gateway (hidden unless your account)
+      {
+        key: "admin",
+        title: "Admin Console",
+        desc: "View logins, usage, and captured tour inputs across calculators.",
+        path: "admin.html",
+        locked: false,
+        adminOnly: true
+      },
+
       {
         key: "monthly-tour-budget",
         title: "Monthly Tour Budget",
@@ -124,6 +148,12 @@
         locked: true
       }
     ];
+
+    let _isAdmin = false;
+
+    function getVisibleCalcs(){
+      return CALCS.filter(c => !c.adminOnly || _isAdmin);
+    }
 
     function renderCards(list){
       const grid = $("cardsGrid");
@@ -164,11 +194,14 @@
 
     function applySearch(){
       const q = String($("searchInput").value || "").trim().toLowerCase();
+      const base = getVisibleCalcs();
+
       if(!q){
-        renderCards(CALCS);
+        renderCards(base);
         return;
       }
-      const filtered = CALCS.filter(c =>
+
+      const filtered = base.filter(c =>
         c.title.toLowerCase().includes(q) ||
         c.desc.toLowerCase().includes(q) ||
         c.key.toLowerCase().includes(q)
@@ -203,11 +236,18 @@
       const first = user.user_metadata?.first_name || "";
       const emp = getEmpFromEmail(user.email);
 
+      _isAdmin = isAdminEmp(emp);
+
       $("userName").textContent = first || "Signed In";
       $("userEmp").textContent = emp ? `#${emp}` : "";
       $("welcomeLine").textContent = "Powered by F8";
 
       $("heroTitle").textContent = first ? `What are we running today, ${first}?` : "Choose a Calculator";
+
+      // Optional subtle nudge for you only
+      if(_isAdmin){
+        $("heroSub").textContent = "Admin Console is enabled for your account.";
+      }
     }
 
     async function signOut(){
@@ -231,7 +271,7 @@
 
     (async function init(){
       await requireAuthOrRedirect();
-      renderCards(CALCS);
+      renderCards(getVisibleCalcs());
       wireCardClicks();
       $("searchInput").addEventListener("input", applySearch);
     })();
