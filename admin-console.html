@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TourPulse — Admin Console</title>
+  <link rel="icon" href="favicon.ico">
+  <link rel="shortcut icon" href="favicon.ico">
+
+  <!-- Sitewide CSS -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Page-specific polish (scoped) -->
+  <style>
+    body.tp-admin .grid2{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:14px;
+      margin-top:12px;
+      align-items:start;
+    }
+    @media (max-width: 920px){
+      body.tp-admin .grid2{ grid-template-columns:1fr; }
+    }
+
+    body.tp-admin .adminToolbar{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    body.tp-admin .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid rgba(15,23,42,.12);
+      background: rgba(255,255,255,.72);
+      border-radius: 999px;
+      padding:8px 10px;
+      box-shadow: 0 16px 40px rgba(2,6,23,.06);
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    body.tp-admin .pillDot{
+      width:8px; height:8px; border-radius:99px;
+      background: rgba(10,166,181,.95);
+      box-shadow: 0 0 0 4px rgba(10,166,181,.12);
+    }
+
+    body.tp-admin .userList{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:12px;
+    }
+    body.tp-admin .userRow{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      border:1px solid rgba(15,23,42,.12);
+      background: rgba(255,255,255,.78);
+      border-radius: 18px;
+      padding:12px 12px;
+      box-shadow: 0 16px 40px rgba(2,6,23,.07);
+    }
+    body.tp-admin .userMain{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width: 0;
+    }
+    body.tp-admin .userName{
+      font-weight:1100;
+      letter-spacing:.2px;
+      color: rgba(15,23,42,.92);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    body.tp-admin .userMeta{
+      font-size:12px;
+      font-weight:850;
+      color: rgba(15,23,42,.55);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    body.tp-admin .rowBtns{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-shrink:0;
+    }
+    body.tp-admin .miniBtn{
+      border:1px solid rgba(15,23,42,.14);
+      background: rgba(255,255,255,.74);
+      border-radius: 14px;
+      padding:10px 12px;
+      font-weight:1000;
+      letter-spacing:.2px;
+      cursor:pointer;
+      transition: transform .08s ease, box-shadow .12s ease;
+      box-shadow: 0 10px 24px rgba(2,6,23,.08);
+    }
+    body.tp-admin .miniBtn:hover{ transform: translateY(-1px); }
+    body.tp-admin .miniBtn:active{ transform: translateY(0px); }
+
+    body.tp-admin .emptyState{
+      border:1px dashed rgba(15,23,42,.22);
+      border-radius: 18px;
+      padding:14px;
+      color: rgba(15,23,42,.62);
+      background: rgba(255,255,255,.55);
+      margin-top:12px;
+      font-weight:850;
+    }
+
+    /* Modal */
+    body.tp-admin .adminOverlay{
+      position:fixed; inset:0;
+      display:none;
+      background: rgba(2,6,23,.55);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 999;
+      padding: 18px;
+    }
+    body.tp-admin .adminOverlay.show{ display:flex; align-items:center; justify-content:center; }
+
+    body.tp-admin .adminModal{
+      width: min(860px, 100%);
+      max-height: min(86vh, 820px);
+      overflow:auto;
+      border-radius: 22px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.88);
+      box-shadow: 0 30px 90px rgba(2,6,23,.45);
+    }
+    body.tp-admin .adminModalHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 14px 16px;
+      border-bottom:1px solid rgba(15,23,42,.10);
+      position: sticky;
+      top:0;
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      z-index: 2;
+    }
+    body.tp-admin .adminModalTitle{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width: 0;
+    }
+    body.tp-admin .adminModalTitle .t{
+      font-weight:1200;
+      letter-spacing:.2px;
+      color: rgba(15,23,42,.92);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    body.tp-admin .adminModalTitle .s{
+      font-size:12px;
+      font-weight:850;
+      color: rgba(15,23,42,.55);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    body.tp-admin .xBtn{
+      width:42px; height:42px;
+      border-radius: 14px;
+      border:1px solid rgba(15,23,42,.12);
+      background: rgba(255,255,255,.84);
+      font-size:22px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:1100;
+      box-shadow: 0 10px 24px rgba(2,6,23,.10);
+    }
+
+    body.tp-admin .adminModalBody{
+      padding: 14px 16px 16px;
+    }
+
+    body.tp-admin .kpiGrid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:12px;
+      margin-top: 12px;
+    }
+    @media (max-width: 820px){
+      body.tp-admin .kpiGrid{ grid-template-columns: 1fr; }
+    }
+
+    body.tp-admin .kpiTile{
+      border:1px solid rgba(15,23,42,.12);
+      background: rgba(255,255,255,.78);
+      border-radius: 18px;
+      padding:14px 14px;
+      box-shadow: 0 16px 40px rgba(2,6,23,.08);
+      min-height: 104px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+    body.tp-admin .kpiLabel{
+      font-size:12px;
+      font-weight:1100;
+      letter-spacing:.22px;
+      text-transform:uppercase;
+      color: rgba(15,23,42,.62);
+    }
+    body.tp-admin .kpiValue{
+      font-size:24px;
+      font-weight:1200;
+      letter-spacing:.2px;
+      color: rgba(15,23,42,.92);
+      line-height:1.1;
+      margin-top:6px;
+    }
+    body.tp-admin .kpiHint{
+      font-size:12px;
+      font-weight:850;
+      color: rgba(15,23,42,.55);
+      margin-top:8px;
+    }
+
+    body.tp-admin .mono{ font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+    body.tp-admin .warn{
+      margin-top:10px;
+      padding:12px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(245,158,11,.22);
+      background: rgba(245,158,11,.10);
+      color: rgba(15,23,42,.78);
+      font-weight:900;
+    }
+  </style>
+
+  <!-- Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body class="tp-admin">
+  <div class="wrap">
+    <section class="panel" aria-label="Admin Console">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logoBox" aria-hidden="true">
+            <img src="images/MTK-logo.png" alt="TourPulse Logo" />
+          </div>
+          <div class="brandText">
+            <p class="title">TourPulse</p>
+            <p class="sub">Powered by F8</p>
+          </div>
+        </div>
+
+        <div class="rightStack">
+          <div class="userPill" title="Signed-in account">
+            <div class="name" id="userName">—</div>
+            <div class="emp" id="userEmp">—</div>
+          </div>
+
+          <button class="btnGhost" type="button" id="btnBack">← Back</button>
+          <button class="btnGhost" type="button" id="btnSignOut">Sign Out</button>
+        </div>
+      </div>
+
+      <!-- Banner -->
+      <div class="banner" aria-label="Admin banner">
+        <div class="bannerBg" aria-hidden="true"></div>
+        <div class="bannerShade" aria-hidden="true"></div>
+
+        <div class="bannerInner">
+          <div class="bannerLeft">
+            <p class="k">Admin Console</p>
+            <p class="site" id="adminTitle">Usage & Stats</p>
+          </div>
+
+          <div class="bannerActions">
+            <div class="pill" title="Read-only admin view (for now)">
+              <span class="pillDot" aria-hidden="true"></span>
+              Read-only
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <!-- LEFT: Users -->
+        <div class="card">
+          <h1>Accounts</h1>
+          <p class="muted">Select a user to open a snapshot modal (template for now).</p>
+
+          <div class="adminToolbar">
+            <div class="search" role="search" aria-label="Search users">
+              <span class="searchIcon" aria-hidden="true"></span>
+              <input id="searchUsers" type="text" placeholder="Search users…" autocomplete="off" />
+            </div>
+
+            <button class="btn" type="button" id="btnRefresh">Refresh</button>
+          </div>
+
+          <div class="userList" id="userList"></div>
+          <div class="emptyState" id="emptyState" style="display:none;">No users found.</div>
+
+          <div class="warn">
+            Heads up: listing auth users from the browser requires an admin-safe RPC or table.
+            This page expects a read-only view/table you control in Supabase (we’ll wire it next).
+          </div>
+        </div>
+
+        <!-- RIGHT: Quick totals (placeholder card) -->
+        <div class="card">
+          <h1>Overview</h1>
+          <p class="muted">Template overview block (we’ll populate later).</p>
+
+          <div class="kpiGrid" style="grid-template-columns:1fr;">
+            <div class="kpiTile">
+              <div>
+                <div class="kpiLabel">Total Users</div>
+                <div class="kpiValue mono" id="kpiTotalUsers">—</div>
+              </div>
+              <div class="kpiHint">From Supabase list</div>
+            </div>
+
+            <div class="kpiTile">
+              <div>
+                <div class="kpiLabel">Most Recent Activity</div>
+                <div class="kpiValue mono" id="kpiRecent">—</div>
+              </div>
+              <div class="kpiHint">Placeholder</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- MODAL -->
+  <div class="adminOverlay" id="adminOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="adminModal">
+      <div class="adminModalHeader">
+        <div class="adminModalTitle">
+          <div class="t" id="modalTitle">User Snapshot</div>
+          <div class="s" id="modalSub">—</div>
+        </div>
+        <button class="xBtn" type="button" id="btnCloseModal" aria-label="Close">×</button>
+      </div>
+
+      <div class="adminModalBody">
+        <p class="muted" style="margin:0;">
+          Template snapshot. Once we wire the data, this will show: trip points, pay-calc current month entries,
+          site-calc current site/month totals, and usage timestamps.
+        </p>
+
+        <div class="kpiGrid">
+          <div class="kpiTile">
+            <div>
+              <div class="kpiLabel">Trip Points (Running)</div>
+              <div class="kpiValue mono" id="snapTripPoints">—</div>
+            </div>
+            <div class="kpiHint">From pay-calc state</div>
+          </div>
+
+          <div class="kpiTile">
+            <div>
+              <div class="kpiLabel">Current Pay (Month-to-Date)</div>
+              <div class="kpiValue mono" id="snapPayMtd">—</div>
+            </div>
+            <div class="kpiHint">From pay-calc summary</div>
+          </div>
+
+          <div class="kpiTile">
+            <div>
+              <div class="kpiLabel">Tours In (Site Calc MTD)</div>
+              <div class="kpiValue mono" id="snapToursMtd">—</div>
+            </div>
+            <div class="kpiHint">From site-calc current month</div>
+          </div>
+
+          <div class="kpiTile">
+            <div>
+              <div class="kpiLabel">Manager Pay (Site Calc MTD)</div>
+              <div class="kpiValue mono" id="snapMgrPay">—</div>
+            </div>
+            <div class="kpiHint">Override × tours-to-date</div>
+          </div>
+
+          <div class="kpiTile">
+            <div>
+              <div class="kpiLabel">% Budget Completed</div>
+              <div class="kpiValue mono" id="snapPct">—</div>
+            </div>
+            <div class="kpiHint">Monthly % (no cap)</div>
+          </div>
+
+          <div class="kpiTile">
+            <div>
+              <div class="kpiLabel">Last Seen</div>
+              <div class="kpiValue mono" id="snapLastSeen">—</div>
+            </div>
+            <div class="kpiHint">Placeholder</div>
+          </div>
+        </div>
+
+        <div class="warn" style="margin-top:14px;">
+          Wiring note: the modal currently displays placeholders. Next we’ll connect it to your
+          tp_calc_state rows and your trip-points log storage once you confirm where pay-calc stores it.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    /***********************
+     * SUPABASE CONFIG (yours)
+     ***********************/
+    const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
+
+    const SIGNIN_PAGE = "signin.html";
+    const BACK_PAGE = "choose-calc.html";
+
+    /***********************
+     * ADMIN GATE (match what you used in choose-calc)
+     ***********************/
+    const ADMIN_EMPS = ["078195"];
+
+    const sb = (window.supabase && window.supabase.createClient)
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    const $ = (id) => document.getElementById(id);
+
+    function showToast(msg, ms = 1800){
+      const t = $("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      window.clearTimeout(showToast._timer);
+      showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
+    }
+
+    function goSignin(){ window.location.replace(SIGNIN_PAGE); }
+    function getEmpFromEmail(email){ return String(email || "").split("@")[0] || ""; }
+    function isAdminEmp(emp){ return ADMIN_EMPS.includes(String(emp || "").trim()); }
+
+    async function requireAdminOrRedirect(){
+      if(!sb) return goSignin();
+      const { data: { session } } = await sb.auth.getSession();
+      if(!session?.user) return goSignin();
+
+      const user = session.user;
+      const first = user.user_metadata?.first_name || "";
+      const emp = getEmpFromEmail(user.email);
+
+      $("userName").textContent = first || "Signed In";
+      $("userEmp").textContent = emp ? `#${emp}` : "";
+
+      if(!isAdminEmp(emp)){
+        showToast("Not authorized.");
+        window.location.replace(BACK_PAGE);
+        return false;
+      }
+      return true;
+    }
+
+    async function signOut(){
+      if(!sb) return goSignin();
+      const { error } = await sb.auth.signOut();
+      if(error){ showToast(error.message || "Sign out failed."); return; }
+      showToast("Signed out.");
+      goSignin();
+    }
+
+    $("btnSignOut").addEventListener("click", () => signOut());
+    $("btnBack").addEventListener("click", () => window.location.href = BACK_PAGE);
+
+    if(sb){
+      sb.auth.onAuthStateChange((event, session) => {
+        if(event === "SIGNED_OUT" || !session?.user) goSignin();
+      });
+    }
+
+    /***********************
+     * USERS LIST (WIRED TO A SAFE TABLE/VIEW)
+     * Expected columns:
+     * - user_id (uuid / text)
+     * - emp (text)
+     * - name (text)
+     * - email (text)  [optional]
+     * - last_seen (timestamp) [optional]
+     *
+     * Create this as a VIEW or TABLE you can read with RLS allowing only admins.
+     * For now, if it doesn't exist, you'll see a friendly error toast.
+     ***********************/
+    const ADMIN_USERS_SOURCE = "tp_admin_users"; // <- create later (view/table)
+
+    let _allUsers = [];
+
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function formatTs(ts){
+      if(!ts) return "—";
+      const d = new Date(ts);
+      if(Number.isNaN(d.getTime())) return "—";
+      return d.toLocaleString(undefined, { year:"numeric", month:"short", day:"numeric", hour:"numeric", minute:"2-digit" });
+    }
+
+    function renderUsers(list){
+      const wrap = $("userList");
+      wrap.innerHTML = "";
+
+      $("emptyState").style.display = list.length ? "none" : "block";
+      $("kpiTotalUsers").textContent = list.length ? String(list.length) : "0";
+
+      list.forEach(u => {
+        const row = document.createElement("div");
+        row.className = "userRow";
+
+        const name = u.name || "User";
+        const emp  = u.emp || "—";
+        const email = u.email || "";
+        const lastSeen = u.last_seen ? formatTs(u.last_seen) : "—";
+
+        row.innerHTML = `
+          <div class="userMain">
+            <div class="userName">${escapeHtml(name)}</div>
+            <div class="userMeta">${escapeHtml(emp)}${email ? " • " + escapeHtml(email) : ""} • Last: ${escapeHtml(lastSeen)}</div>
+          </div>
+          <div class="rowBtns">
+            <button class="miniBtn" type="button" data-open="${escapeHtml(u.user_id || "")}">Open</button>
+          </div>
+        `;
+        wrap.appendChild(row);
+      });
+    }
+
+    function applyUserSearch(){
+      const q = String($("searchUsers").value || "").trim().toLowerCase();
+      if(!q) return renderUsers(_allUsers);
+
+      const filtered = _allUsers.filter(u => {
+        const hay = `${u.name||""} ${u.emp||""} ${u.email||""} ${u.user_id||""}`.toLowerCase();
+        return hay.includes(q);
+      });
+      renderUsers(filtered);
+    }
+
+    async function loadUsers(){
+      if(!sb) return;
+
+      $("kpiRecent").textContent = "—";
+      $("kpiTotalUsers").textContent = "—";
+      $("emptyState").style.display = "none";
+      $("userList").innerHTML = "";
+
+      const { data, error } = await sb
+        .from(ADMIN_USERS_SOURCE)
+        .select("user_id,emp,name,email,last_seen")
+        .order("name", { ascending: true });
+
+      if(error){
+        console.warn("Admin users list error:", error);
+        showToast("Admin users source not wired yet.");
+        _allUsers = [];
+        renderUsers([]);
+        return;
+      }
+
+      _allUsers = (data || []).map(r => ({
+        user_id: r.user_id,
+        emp: r.emp,
+        name: r.name,
+        email: r.email,
+        last_seen: r.last_seen
+      }));
+
+      // Best-effort “recent”
+      const recent = _allUsers
+        .filter(u => u.last_seen)
+        .sort((a,b) => new Date(b.last_seen).getTime() - new Date(a.last_seen).getTime())[0];
+
+      $("kpiRecent").textContent = recent ? `${recent.name || recent.emp || "User"} • ${formatTs(recent.last_seen)}` : "—";
+
+      renderUsers(_allUsers);
+    }
+
+    /***********************
+     * MODAL (TEMPLATE SNAPSHOT)
+     ***********************/
+    function openModalForUser(u){
+      $("modalTitle").textContent = u?.name ? `${u.name} — Snapshot` : "User Snapshot";
+      const metaBits = [];
+      if(u?.emp) metaBits.push(`#${u.emp}`);
+      if(u?.email) metaBits.push(u.email);
+      if(u?.user_id) metaBits.push(String(u.user_id).slice(0,8) + "…");
+      $("modalSub").textContent = metaBits.join(" • ") || "—";
+
+      // Placeholder values (wired later)
+      $("snapTripPoints").textContent = "—";
+      $("snapPayMtd").textContent = "—";
+      $("snapToursMtd").textContent = "—";
+      $("snapMgrPay").textContent = "—";
+      $("snapPct").textContent = "—";
+      $("snapLastSeen").textContent = u?.last_seen ? formatTs(u.last_seen) : "—";
+
+      $("adminOverlay").classList.add("show");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeModal(){
+      $("adminOverlay").classList.remove("show");
+      document.body.style.overflow = "";
+    }
+
+    $("btnCloseModal").addEventListener("click", closeModal);
+    $("adminOverlay").addEventListener("click", (e) => {
+      if(e.target === $("adminOverlay")) closeModal();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if(e.key === "Escape") closeModal();
+    });
+
+    $("userList").addEventListener("click", (e) => {
+      const btn = e.target?.closest?.("button[data-open]");
+      if(!btn) return;
+      const id = btn.getAttribute("data-open") || "";
+      const u = _allUsers.find(x => String(x.user_id) === String(id));
+      if(!u) return;
+      openModalForUser(u);
+    });
+
+    $("btnRefresh").addEventListener("click", () => loadUsers());
+    $("searchUsers").addEventListener("input", applyUserSearch);
+
+    (async function init(){
+      const ok = await requireAdminOrRedirect();
+      if(!ok) return;
+      await loadUsers();
+    })();
+  </script>
+</body>
+</html>
