@@ -91,17 +91,38 @@
     }
 
     /***********************
-     * ADMIN GATE (ONLY YOUR ACCOUNT)
-     * - Put YOUR employee number (email prefix) here.
-     * - Example: if your login email is 12345@whatever.com → use "12345"
+     * ADMIN GATE
+     * - Primary: Supabase RPC "tp_admin_is_admin" (recommended)
+     * - Fallback: hardcoded emp allowlist
+     *
+     * NOTE: If your RPC name differs, change RPC_IS_ADMIN below.
      ***********************/
-    const ADMIN_EMPS = [
-      "078195"
-    ];
+    const RPC_IS_ADMIN = "tp_admin_is_admin"; // expects: returns boolean true/false (single value)
+    const ADMIN_EMPS_FALLBACK = ["078195"];
 
-    function isAdminEmp(emp){
+    function isAdminEmpFallback(emp){
       const e = String(emp || "").trim();
-      return !!e && ADMIN_EMPS.includes(e);
+      return !!e && ADMIN_EMPS_FALLBACK.includes(e);
+    }
+
+    async function checkIsAdmin(userId, emp){
+      // 1) Try RPC (preferred)
+      if(sb && userId){
+        try{
+          const { data, error } = await sb.rpc(RPC_IS_ADMIN, { p_user_id: userId });
+          if(!error){
+            // accept true/false, or {is_admin:true}
+            if(typeof data === "boolean") return data;
+            if(data && typeof data === "object" && typeof data.is_admin === "boolean") return data.is_admin;
+          }else{
+            console.warn("admin rpc error:", error);
+          }
+        }catch(err){
+          console.warn("admin rpc exception:", err);
+        }
+      }
+      // 2) Fallback allowlist
+      return isAdminEmpFallback(emp);
     }
 
     /***********************
@@ -123,12 +144,12 @@
         locked: false
       },
 
-      // ✅ Admin gateway (hidden unless your account)
+      // ✅ Admin gateway (hidden unless admin)
       {
         key: "admin",
         title: "Admin Console",
-        desc: "View logins, usage, and captured tour inputs across calculators.",
-        path: "admin.html",
+        desc: "View users + snapshots of their current inputs and activity.",
+        path: "admin-console.html",
         locked: false,
         adminOnly: true
       },
@@ -164,7 +185,11 @@
         card.className = "calcCard";
 
         const locked = !!item.locked;
-        const badge = locked ? `<span class="badge">LOCKED</span>` : ``;
+        const isAdminCard = !!item.adminOnly;
+
+        const badge = locked
+          ? `<span class="badge">LOCKED</span>`
+          : (isAdminCard ? `<span class="badge">ADMIN</span>` : ``);
 
         const btnClass = locked ? "goBtn locked" : "goBtn open";
         const btnText  = locked ? "Locked" : "Open";
@@ -236,15 +261,13 @@
       const first = user.user_metadata?.first_name || "";
       const emp = getEmpFromEmail(user.email);
 
-      _isAdmin = isAdminEmp(emp);
+      _isAdmin = await checkIsAdmin(user.id, emp);
 
       $("userName").textContent = first || "Signed In";
       $("userEmp").textContent = emp ? `#${emp}` : "";
       $("welcomeLine").textContent = "Powered by F8";
 
       $("heroTitle").textContent = first ? `What are we running today, ${first}?` : "Choose a Calculator";
-
-      // Optional subtle nudge for you only
       if(_isAdmin){
         $("heroSub").textContent = "Admin Console is enabled for your account.";
       }
