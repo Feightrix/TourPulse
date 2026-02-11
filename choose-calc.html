@@ -91,13 +91,12 @@
     }
 
     /***********************
-     * ADMIN GATE
-     * - Primary: Supabase RPC "tp_admin_is_admin" (recommended)
-     * - Fallback: hardcoded emp allowlist
-     *
-     * NOTE: If your RPC name differs, change RPC_IS_ADMIN below.
+     * ADMIN GATE (wired to your existing RPC)
+     * We infer admin status by attempting tp_admin_list_users:
+     * - success => admin
+     * - failure => not admin (fallback to emp allowlist)
      ***********************/
-    const RPC_IS_ADMIN = "tp_admin_is_admin"; // expects: returns boolean true/false (single value)
+    const RPC_LIST_USERS = "tp_admin_list_users";
     const ADMIN_EMPS_FALLBACK = ["078195"];
 
     function isAdminEmpFallback(emp){
@@ -105,23 +104,46 @@
       return !!e && ADMIN_EMPS_FALLBACK.includes(e);
     }
 
-    async function checkIsAdmin(userId, emp){
-      // 1) Try RPC (preferred)
-      if(sb && userId){
+    async function tryRpcListUsers(payload){
+      const { data, error } = await sb.rpc(RPC_LIST_USERS, payload);
+      if(error) return { ok:false, error };
+      return { ok:true, data };
+    }
+
+    async function checkIsAdmin(emp){
+      // no supabase? fallback
+      if(!sb) return isAdminEmpFallback(emp);
+
+      // Try a few payload shapes safely (covers different function signatures)
+      const attempts = [
+        {}, // if function takes no params
+        { p_search: null, p_limit: 1, p_offset: 0 },
+        { p_search: "",   p_limit: 1, p_offset: 0 },
+        { search: null,   limit: 1,   offset: 0 },
+        { search: "",     limit: 1,   offset: 0 }
+      ];
+
+      for(const payload of attempts){
         try{
-          const { data, error } = await sb.rpc(RPC_IS_ADMIN, { p_user_id: userId });
-          if(!error){
-            // accept true/false, or {is_admin:true}
-            if(typeof data === "boolean") return data;
-            if(data && typeof data === "object" && typeof data.is_admin === "boolean") return data.is_admin;
-          }else{
-            console.warn("admin rpc error:", error);
+          const res = await tryRpcListUsers(payload);
+          if(res.ok){
+            // If we can list users at all, this account is admin.
+            return true;
           }
+          // If we got a “not found” or signature mismatch, keep trying other payloads
+          const code = res.error?.code || "";
+          if(code === "PGRST202" || code === "404") continue;
+
+          // Permission denied / RLS / other failures => treat as not admin
+          console.warn("admin rpc error:", res.error);
+          return isAdminEmpFallback(emp);
         }catch(err){
           console.warn("admin rpc exception:", err);
+          return isAdminEmpFallback(emp);
         }
       }
-      // 2) Fallback allowlist
+
+      // None of the payload shapes matched the RPC signature
       return isAdminEmpFallback(emp);
     }
 
@@ -148,7 +170,7 @@
       {
         key: "admin",
         title: "Admin Console",
-        desc: "View users + snapshots of their current inputs and activity.",
+        desc: "View logins, usage, and captured tour inputs across calculators.",
         path: "admin-console.html",
         locked: false,
         adminOnly: true
@@ -261,13 +283,14 @@
       const first = user.user_metadata?.first_name || "";
       const emp = getEmpFromEmail(user.email);
 
-      _isAdmin = await checkIsAdmin(user.id, emp);
+      _isAdmin = await checkIsAdmin(emp);
 
       $("userName").textContent = first || "Signed In";
       $("userEmp").textContent = emp ? `#${emp}` : "";
       $("welcomeLine").textContent = "Powered by F8";
 
       $("heroTitle").textContent = first ? `What are we running today, ${first}?` : "Choose a Calculator";
+
       if(_isAdmin){
         $("heroSub").textContent = "Admin Console is enabled for your account.";
       }
