@@ -13,265 +13,307 @@
   <!-- Supabase JS v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <!-- Page polish (matches TourPulse cards + soft admin look) -->
   <style>
-    body.tp-admin .adminBanner{
+    body.tp-admin .grid2{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap:18px;
+      align-items:start;
+      margin-top:16px;
+    }
+    body.tp-admin .adminHero{
+      margin-top:14px;
       border:1px solid rgba(15,23,42,.10);
-      background: rgba(255,255,255,.76);
+      background: rgba(255,255,255,.72);
       border-radius: 22px;
-      padding: 18px 18px;
-      box-shadow: 0 18px 50px rgba(2,6,23,.10);
+      padding:18px 18px;
+      box-shadow: 0 22px 60px rgba(2,6,23,.08);
       position:relative;
       overflow:hidden;
-      margin-top: 12px;
     }
-    body.tp-admin .adminBanner:before{
+    body.tp-admin .adminHero:before{
       content:"";
-      position:absolute; inset:-40% -30%;
-      background: radial-gradient(circle at 20% 20%, rgba(10,166,181,.14), transparent 52%),
-                  radial-gradient(circle at 85% 40%, rgba(15,23,42,.06), transparent 55%);
+      position:absolute;
+      inset:-60px -40px auto -40px;
+      height:220px;
+      background: radial-gradient(closest-side, rgba(10,166,181,.14), transparent 65%);
       pointer-events:none;
     }
-    body.tp-admin .adminBannerInner{ position:relative; display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    body.tp-admin .adminBannerTitle{ display:flex; flex-direction:column; gap:2px; }
-    body.tp-admin .adminBannerTitle .k{
-      font-size:12px; font-weight:1100; letter-spacing:.22px; text-transform:uppercase;
-      color: rgba(15,23,42,.62); margin:0;
-    }
-    body.tp-admin .adminBannerTitle .h{
-      font-size:26px; font-weight:1300; letter-spacing:.2px;
-      color: rgba(15,23,42,.92); margin:0; line-height:1.05;
-    }
-    body.tp-admin .adminPill{
-      display:inline-flex; align-items:center; gap:10px;
-      padding:10px 14px; border-radius: 999px;
-      border:1px solid rgba(15,23,42,.12);
-      background: rgba(255,255,255,.78);
-      box-shadow: 0 12px 30px rgba(2,6,23,.08);
-      font-weight:1100; color: rgba(15,23,42,.82);
-      white-space:nowrap;
-    }
-    body.tp-admin .dot{
-      width:10px; height:10px; border-radius:999px;
-      background: rgba(10,166,181,.95);
-      box-shadow: 0 0 0 6px rgba(10,166,181,.14);
-      display:inline-block;
-    }
-
-    body.tp-admin .adminGrid{
-      display:grid;
-      grid-template-columns: 1.15fr .95fr;
-      gap:16px;
-      margin-top: 16px;
-    }
-    @media (max-width: 980px){
-      body.tp-admin .adminGrid{ grid-template-columns: 1fr; }
-    }
-
-    body.tp-admin .card h2{
-      margin:0;
-      font-size:22px;
-      font-weight:1300;
-      color: rgba(15,23,42,.92);
-      letter-spacing:.1px;
-    }
-    body.tp-admin .subline{
-      margin:8px 0 0;
-      color: rgba(15,23,42,.62);
-      font-weight:850;
-    }
-
-    body.tp-admin .accountsTop{
+    body.tp-admin .heroRow{
       display:flex;
-      align-items:center;
+      align-items:flex-start;
       justify-content:space-between;
       gap:12px;
-      margin-top: 12px;
+      position:relative;
+      z-index:1;
     }
-    body.tp-admin .searchRow{ flex: 1 1 auto; display:flex; align-items:center; gap:10px; min-width: 240px; }
-    body.tp-admin .searchRow .search{ flex: 1 1 auto; }
-
-    body.tp-admin .btnSoft{
-      display:inline-flex; align-items:center; justify-content:center;
-      border-radius: 14px;
-      padding: 12px 14px;
-      border:1px solid rgba(10,166,181,.22);
-      background: linear-gradient(180deg, rgba(10,166,181,.96), rgba(7,131,143,.96));
-      color: rgba(255,255,255,.96);
-      font-weight:1200;
-      letter-spacing:.1px;
-      box-shadow: 0 18px 40px rgba(2,6,23,.10);
-      cursor:pointer;
-      min-width: 118px;
+    body.tp-admin .heroTitleSmall{
+      font-size:14px;
+      font-weight:1100;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      color: rgba(15,23,42,.62);
+      margin:0 0 4px;
     }
-    body.tp-admin .btnSoft:active{ transform: translateY(1px); }
-
-    body.tp-admin .listBox{
-      margin-top: 12px;
-      border-radius: 18px;
-      border:1px dashed rgba(15,23,42,.20);
-      background: rgba(255,255,255,.55);
-      padding: 10px;
-      min-height: 210px;
+    body.tp-admin .heroTitleBig{
+      font-size:34px;
+      line-height:1.05;
+      margin:0;
+      font-weight:1300;
+      letter-spacing:.2px;
+      color: rgba(15,23,42,.92);
     }
-
-    body.tp-admin .userRow{
-      display:flex; align-items:center; justify-content:space-between; gap:12px;
-      padding: 10px 10px;
-      border-radius: 14px;
-      border:1px solid rgba(15,23,42,.10);
-      background: rgba(255,255,255,.75);
-      box-shadow: 0 10px 26px rgba(2,6,23,.06);
-      margin-bottom: 10px;
-      cursor:pointer;
-      user-select:none;
-    }
-    body.tp-admin .userRow:hover{
-      outline: 3px solid rgba(10,166,181,.18);
-      outline-offset: 2px;
-    }
-    body.tp-admin .userMeta{ display:flex; flex-direction:column; gap:3px; }
-    body.tp-admin .userName{ font-weight:1300; color: rgba(15,23,42,.92); letter-spacing:.1px; line-height:1.05; }
-    body.tp-admin .userSub{
-      font-weight:900; color: rgba(15,23,42,.62);
-      font-size: 12px; letter-spacing:.18px; text-transform:uppercase;
-    }
-    body.tp-admin .pillTiny{
-      padding: 6px 10px;
+    body.tp-admin .pillStatus{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 14px;
       border-radius: 999px;
       border:1px solid rgba(15,23,42,.12);
-      background: rgba(255,255,255,.8);
+      background: rgba(255,255,255,.78);
       font-weight:1100;
       color: rgba(15,23,42,.78);
       white-space:nowrap;
     }
-
-    body.tp-admin .empty{
-      border:1px dashed rgba(15,23,42,.22);
-      border-radius: 16px;
-      padding: 16px 14px;
-      background: rgba(255,255,255,.55);
-      font-weight:1200;
-      color: rgba(15,23,42,.62);
-      margin: 8px 0 0;
+    body.tp-admin .dot{
+      width:10px;height:10px;border-radius:50%;
+      background: rgba(10,166,181,.95);
+      box-shadow: 0 0 0 6px rgba(10,166,181,.16);
+      flex:0 0 auto;
     }
 
-    /* small note (replaces big warning) */
-    body.tp-admin .note{
-      margin-top: 10px;
-      font-size: 12px;
-      font-weight: 950;
-      color: rgba(15,23,42,.58);
-      display:none;
+    /* Accounts list UI */
+    body.tp-admin .rowBar{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      margin-top:10px;
+      flex-wrap:wrap;
     }
-    body.tp-admin .note.show{ display:block; }
-
-    body.tp-admin .miniGrid{ display:grid; grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
-    body.tp-admin .mini{
-      border-radius: 18px;
-      border:1px solid rgba(15,23,42,.12);
-      background: rgba(255,255,255,.75);
-      box-shadow: 0 14px 34px rgba(2,6,23,.08);
-      padding: 14px 14px;
-    }
-    body.tp-admin .mini .label{
-      font-size:12px; font-weight:1100; letter-spacing:.22px; text-transform:uppercase;
-      color: rgba(15,23,42,.62);
-    }
-    body.tp-admin .mini .value{
-      margin-top: 6px; font-size: 30px; font-weight: 1400; letter-spacing:.2px;
-      color: rgba(15,23,42,.92); line-height:1.05;
-    }
-    body.tp-admin .mini .hint{ margin-top: 10px; font-size: 13px; font-weight: 950; color: rgba(15,23,42,.62); }
-
-    body.tp-admin .snapOverlay{
-      position: fixed; inset: 0; background: rgba(2,6,23,.55);
-      display:none; align-items:center; justify-content:center;
-      padding: 18px; z-index: 1200;
-    }
-    body.tp-admin .snapOverlay.show{ display:flex; }
-    body.tp-admin .snapModal{
-      width: min(980px, 100%);
-      border-radius: 22px;
-      border:1px solid rgba(255,255,255,.18);
-      background: rgba(255,255,255,.92);
-      box-shadow: 0 30px 90px rgba(2,6,23,.35);
-      overflow:hidden;
-    }
-    body.tp-admin .snapHeader{
-      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
-      padding: 16px 16px;
-      border-bottom: 1px solid rgba(15,23,42,.10);
-      background: linear-gradient(180deg, rgba(10,166,181,.10), rgba(255,255,255,.0));
-    }
-    body.tp-admin .snapHeader h3{
-      margin:0; font-size:20px; font-weight:1400;
-      color: rgba(15,23,42,.92); letter-spacing:.1px; line-height:1.1;
-    }
-    body.tp-admin .snapHeader .small{
-      margin-top: 6px; color: rgba(15,23,42,.62);
-      font-weight: 950; font-size: 13px;
-    }
-    body.tp-admin .snapBody{
-      padding: 14px 16px 16px;
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-    @media (max-width: 920px){
-      body.tp-admin .snapBody{ grid-template-columns: 1fr; }
-    }
-    body.tp-admin .snapCard{
-      border-radius: 18px;
+    body.tp-admin .searchWrap{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex:1 1 320px;
+      min-width:240px;
       border:1px solid rgba(15,23,42,.12);
       background: rgba(255,255,255,.78);
-      box-shadow: 0 14px 34px rgba(2,6,23,.08);
-      padding: 14px 14px;
-      overflow:hidden;
+      border-radius: 16px;
+      padding:10px 12px;
+      box-shadow: 0 10px 24px rgba(2,6,23,.06);
     }
-    body.tp-admin .snapCard .t{
-      font-size:12px; font-weight:1100; letter-spacing:.22px; text-transform:uppercase;
-      color: rgba(15,23,42,.62); margin:0;
+    body.tp-admin .searchDot{
+      width:16px;height:16px;border-radius:50%;
+      background: rgba(15,23,42,.10);
+      box-shadow: inset 0 0 0 3px rgba(15,23,42,.10);
+      flex:0 0 auto;
     }
-    body.tp-admin .snapCard .big{
-      margin-top: 8px; font-size: 18px; font-weight: 1300;
-      color: rgba(15,23,42,.92); letter-spacing:.1px;
+    body.tp-admin .searchWrap input{
+      border:0;
+      outline:none;
+      background:transparent;
+      width:100%;
+      font-size:16px;
+      font-weight:900;
+      color: rgba(15,23,42,.88);
     }
-    body.tp-admin .kv{
-      margin-top: 10px;
-      display:grid;
-      grid-template-columns: 1fr auto;
-      gap: 10px 12px;
+    body.tp-admin .userList{
+      margin-top:12px;
+      border:1px dashed rgba(15,23,42,.20);
+      border-radius: 18px;
+      padding:10px;
+      background: rgba(255,255,255,.60);
+      min-height: 118px;
+    }
+    body.tp-admin .uRow{
+      width:100%;
+      display:flex;
       align-items:center;
-      font-weight:1100;
-    }
-    body.tp-admin .kv .k{ color: rgba(15,23,42,.62); }
-    body.tp-admin .kv .v{ color: rgba(15,23,42,.92); font-weight:1400; }
-    body.tp-admin pre.mono{
-      margin: 10px 0 0;
-      padding: 12px 12px;
+      justify-content:space-between;
+      gap:12px;
+      padding:12px 12px;
       border-radius: 14px;
       border:1px solid rgba(15,23,42,.10);
-      background: rgba(2,6,23,.04);
-      max-height: 260px;
-      overflow:auto;
-      font-size: 12px;
-      line-height: 1.35;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    body.tp-admin .xBtn{
-      border:0;
-      background: rgba(255,255,255,.0);
-      width: 40px; height: 40px;
-      border-radius: 12px;
-      font-size: 26px;
-      line-height: 40px;
+      background: rgba(255,255,255,.78);
+      box-shadow: 0 12px 26px rgba(2,6,23,.06);
       cursor:pointer;
-      color: rgba(15,23,42,.72);
+      user-select:none;
     }
-    body.tp-admin .xBtn:hover{
-      background: rgba(15,23,42,.06);
+    body.tp-admin .uRow + .uRow{ margin-top:10px; }
+    body.tp-admin .uLeft{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width:0;
+    }
+    body.tp-admin .uName{
+      font-weight:1200;
       color: rgba(15,23,42,.92);
+      font-size:16px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 560px;
+    }
+    body.tp-admin .uMeta{
+      font-weight:900;
+      color: rgba(15,23,42,.58);
+      font-size:13px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width: 560px;
+    }
+    body.tp-admin .uRight{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex:0 0 auto;
+    }
+    body.tp-admin .pillMini{
+      border-radius:999px;
+      padding:8px 10px;
+      border:1px solid rgba(15,23,42,.10);
+      background: rgba(10,166,181,.10);
+      color: rgba(10,166,181,.98);
+      font-weight:1200;
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+    body.tp-admin .openMini{
+      border-radius:999px;
+      padding:8px 10px;
+      border:1px solid rgba(15,23,42,.12);
+      background: rgba(255,255,255,.86);
+      color: rgba(15,23,42,.78);
+      font-weight:1100;
+      font-size:12px;
+      white-space:nowrap;
+    }
+
+    /* Overview tiles */
+    body.tp-admin .miniCard{
+      border:1px solid rgba(15,23,42,.12);
+      background: rgba(255,255,255,.78);
+      border-radius: 18px;
+      padding:14px 14px;
+      box-shadow: 0 16px 40px rgba(2,6,23,.08);
+    }
+    body.tp-admin .miniLabel{
+      font-size:12px;
+      font-weight:1100;
+      letter-spacing:.22px;
+      text-transform:uppercase;
+      color: rgba(15,23,42,.62);
+    }
+    body.tp-admin .miniValue{
+      font-size:30px;
+      font-weight:1300;
+      letter-spacing:.2px;
+      color: rgba(15,23,42,.92);
+      line-height:1.1;
+      margin-top:8px;
+    }
+    body.tp-admin .miniHint{
+      margin-top:10px;
+      font-size:13px;
+      font-weight:900;
+      color: rgba(15,23,42,.58);
+    }
+
+    /* Modal */
+    body.tp-admin .adminModal{
+      max-width: 820px;
+    }
+    body.tp-admin .snapTop{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    body.tp-admin .snapTitle{
+      margin:0;
+      font-size:22px;
+      font-weight:1300;
+      color: rgba(15,23,42,.92);
+      line-height:1.15;
+    }
+    body.tp-admin .snapSub{
+      margin:6px 0 0;
+      font-size:13px;
+      font-weight:900;
+      color: rgba(15,23,42,.60);
+    }
+    body.tp-admin .snapGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+      margin-top:14px;
+    }
+    body.tp-admin .snapBox{
+      border:1px solid rgba(15,23,42,.10);
+      background: rgba(255,255,255,.84);
+      border-radius: 16px;
+      padding:12px 12px;
+    }
+    body.tp-admin .snapBox h4{
+      margin:0 0 8px;
+      font-size:12px;
+      font-weight:1100;
+      letter-spacing:.22em;
+      text-transform:uppercase;
+      color: rgba(15,23,42,.62);
+    }
+    body.tp-admin .kv{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:7px 0;
+      border-top:1px dashed rgba(15,23,42,.14);
+      font-weight:1000;
+      color: rgba(15,23,42,.84);
+    }
+    body.tp-admin .kv:first-of-type{ border-top:0; }
+    body.tp-admin .kv .k{ color: rgba(15,23,42,.58); font-weight:1000; }
+    body.tp-admin .kv .v{ font-weight:1200; color: rgba(15,23,42,.92); }
+
+    body.tp-admin .tableMini{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      margin-top:10px;
+      border:1px solid rgba(15,23,42,.12);
+      border-radius: 14px;
+      overflow:hidden;
+      background: rgba(255,255,255,.86);
+    }
+    body.tp-admin .tableMini th, body.tp-admin .tableMini td{
+      padding:10px 10px;
+      text-align:left;
+      font-size:13px;
+      font-weight:950;
+      color: rgba(15,23,42,.82);
+      border-top:1px solid rgba(15,23,42,.08);
+    }
+    body.tp-admin .tableMini th{
+      border-top:0;
+      font-size:12px;
+      font-weight:1100;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color: rgba(15,23,42,.58);
+      background: rgba(10,166,181,.08);
+    }
+    body.tp-admin .tableMini tr:first-child td{ border-top:0; }
+
+    @media (max-width: 980px){
+      body.tp-admin .grid2{ grid-template-columns: 1fr; }
+      body.tp-admin .snapGrid{ grid-template-columns: 1fr; }
+      body.tp-admin .uName, body.tp-admin .uMeta{ max-width: 70vw; }
     }
   </style>
 </head>
@@ -300,56 +342,61 @@
         </div>
       </div>
 
-      <div class="adminBanner">
-        <div class="adminBannerInner">
-          <div class="adminBannerTitle">
-            <p class="k">Admin Console</p>
-            <p class="h">Usage &amp; Stats</p>
+      <div class="adminHero" aria-label="Admin Console hero">
+        <div class="heroRow">
+          <div>
+            <p class="heroTitleSmall">Admin Console</p>
+            <h1 class="heroTitleBig">Usage &amp; Stats</h1>
           </div>
-          <div class="adminPill" aria-label="Read-only indicator">
+          <div class="pillStatus" title="Read-only">
             <span class="dot" aria-hidden="true"></span>
-            <span>Read-only</span>
+            Read-only
           </div>
         </div>
       </div>
 
-      <div class="adminGrid">
+      <div class="grid2">
+        <!-- LEFT: Accounts -->
         <div class="card">
-          <h2>Accounts</h2>
-          <p class="subline">Select a user to open a snapshot modal (template for now).</p>
+          <h1 style="margin-bottom:6px;">Accounts</h1>
+          <p class="muted" style="margin-top:0;">
+            Select a user to open a snapshot modal.
+          </p>
 
-          <div class="accountsTop">
-            <div class="searchRow">
-              <div class="search" role="search" aria-label="Search users">
-                <span class="searchIcon" aria-hidden="true"></span>
-                <input id="searchUsers" type="text" placeholder="Search users…" autocomplete="off" />
-              </div>
+          <div class="rowBar">
+            <div class="searchWrap" role="search" aria-label="Search users">
+              <span class="searchDot" aria-hidden="true"></span>
+              <input id="searchUsers" type="text" placeholder="Search users…" autocomplete="off" />
             </div>
-            <button class="btnSoft" type="button" id="btnRefresh">Refresh</button>
+            <button class="btn" type="button" id="btnRefresh">Refresh</button>
           </div>
 
-          <div class="listBox" id="usersList" aria-label="Users list">
-            <div class="empty">Loading…</div>
+          <div class="userList" id="userList" aria-label="Users list">
+            <div class="muted" style="padding:10px 8px; font-weight:1000;">Loading…</div>
           </div>
-
-          <div class="note" id="sourceNote"></div>
         </div>
 
-        <div class="card">
-          <h2>Overview</h2>
-          <p class="subline">Template overview block (we’ll populate later).</p>
+        <!-- RIGHT: Overview -->
+        <div class="card summaryCard">
+          <div class="summaryTop">
+            <p class="summaryTitle"><span>Overview</span></p>
+          </div>
 
-          <div class="miniGrid">
-            <div class="mini">
-              <div class="label">Total Users</div>
-              <div class="value mono" id="kpiTotalUsers">0</div>
-              <div class="hint">From Supabase list</div>
+          <div class="summaryBody">
+            <p class="muted" style="margin-top:0;">Live from Supabase user list.</p>
+
+            <div class="miniCard" style="margin-top:10px;">
+              <div class="miniLabel">Total Users</div>
+              <div class="miniValue mono" id="totalUsers">0</div>
+              <div class="miniHint">From tp_admin_list_users()</div>
             </div>
 
-            <div class="mini">
-              <div class="label">Most Recent Activity</div>
-              <div class="value mono" id="kpiLastSeen">—</div>
-              <div class="hint">Placeholder</div>
+            <div style="height:12px;"></div>
+
+            <div class="miniCard">
+              <div class="miniLabel">Most Recent Activity</div>
+              <div class="miniValue mono" id="recentActivity">—</div>
+              <div class="miniHint" id="recentHint">Placeholder</div>
             </div>
           </div>
         </div>
@@ -357,39 +404,71 @@
     </section>
   </div>
 
-  <div class="snapOverlay" id="snapOverlay" role="dialog" aria-modal="true" aria-labelledby="snapTitle">
-    <div class="snapModal">
-      <div class="snapHeader">
-        <div>
-          <h3 id="snapTitle">Account Snapshot</h3>
-          <div class="small" id="snapSub">—</div>
-        </div>
-        <button class="xBtn" type="button" id="snapClose" aria-label="Close">×</button>
+  <!-- SNAPSHOT MODAL -->
+  <div class="settingsOverlay" id="snapOverlay" role="dialog" aria-modal="true" aria-labelledby="snapTitle">
+    <div class="settingsModal adminModal">
+      <div class="settingsHeader">
+        <h2 id="snapTitle">Account Snapshot</h2>
+        <button class="x" type="button" id="closeSnapX" aria-label="Close">×</button>
       </div>
-
-      <div class="snapBody">
-        <div class="snapCard">
-          <p class="t">At-a-glance</p>
-          <div class="big" id="snapName">—</div>
-
-          <div class="kv">
-            <div class="k">Emp</div><div class="v mono" id="snapEmp">—</div>
-            <div class="k">Email</div><div class="v mono" id="snapEmail">—</div>
-            <div class="k">Last Seen</div><div class="v mono" id="snapLastSeen">—</div>
-          </div>
-        </div>
-
-        <div class="snapCard">
-          <p class="t">Snapshot (template)</p>
-          <div class="big">Current Stats</div>
-
-          <div class="kv">
-            <div class="k">Trip Points</div><div class="v mono" id="snapTripPoints">—</div>
-            <div class="k">Pay Calc</div><div class="v mono" id="snapPayCalc">—</div>
-            <div class="k">Site Calc</div><div class="v mono" id="snapSiteCalc">—</div>
+      <div class="settingsBody">
+        <div class="sectionCard">
+          <div class="snapTop">
+            <div>
+              <p class="snapTitle" id="snapName">—</p>
+              <p class="snapSub" id="snapMeta">—</p>
+            </div>
+            <div class="pillStatus" style="padding:8px 12px;">
+              <span class="dot" aria-hidden="true"></span>
+              Read-only
+            </div>
           </div>
 
-          <pre class="mono" id="snapJson">{}</pre>
+          <div class="snapGrid">
+            <div class="snapBox">
+              <h4>Site Calculator (latest state)</h4>
+              <div class="kv"><div class="k">Month Key</div><div class="v mono" id="scMonth">—</div></div>
+              <div class="kv"><div class="k">Site Key</div><div class="v" id="scSite">—</div></div>
+              <div class="kv"><div class="k">Monthly Budget</div><div class="v mono" id="scBudget">0</div></div>
+              <div class="kv"><div class="k">Tours In (Month)</div><div class="v mono" id="scActual">0</div></div>
+              <div class="kv"><div class="k">% Complete</div><div class="v mono" id="scPct">0%</div></div>
+              <div class="kv"><div class="k">Mgr Override</div><div class="v mono" id="scMgrRate">$0.00</div></div>
+              <div class="kv"><div class="k">Updated</div><div class="v" id="scUpdated">—</div></div>
+              <p class="muted" style="margin:10px 0 0;">
+                This is computed from <span class="mono">tp_calc_state</span>.
+              </p>
+            </div>
+
+            <div class="snapBox">
+              <h4>Marketer Pay / Trip Points</h4>
+              <p class="muted" style="margin:0;">
+                Template block. Once we wire pay-calc + points into storage,
+                we’ll populate this panel with those fields.
+              </p>
+              <div style="height:8px;"></div>
+              <div class="kv"><div class="k">Trip Points (running)</div><div class="v mono">—</div></div>
+              <div class="kv"><div class="k">Current Pay (MTD)</div><div class="v mono">—</div></div>
+              <div class="kv"><div class="k">Last Pay Entry</div><div class="v mono">—</div></div>
+            </div>
+          </div>
+
+          <div style="height:14px;"></div>
+
+          <h3 style="margin:0 0 8px; font-weight:1300; color:rgba(15,23,42,.9);">Recent Calculator States</h3>
+          <table class="tableMini" aria-label="Recent calc states">
+            <thead>
+              <tr>
+                <th>Calc</th>
+                <th>Site</th>
+                <th>Month</th>
+                <th>Updated</th>
+              </tr>
+            </thead>
+            <tbody id="statesTbody">
+              <tr><td colspan="4" class="muted" style="font-weight:1000;">—</td></tr>
+            </tbody>
+          </table>
+
         </div>
       </div>
     </div>
@@ -398,18 +477,14 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    /***********************
+     * SUPABASE CONFIG (yours)
+     ***********************/
     const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
 
     const SIGNIN_PAGE = "signin.html";
-    const BACK_PAGE = "choose-calc.html";
-
-    const ADMIN_EMP = "078195";
-
-    const USERS_SOURCE_TABLE = "tp_admin_users";
-    const SNAPSHOT_RPC = "tp_admin_snapshot_user";
-    const SNAPSHOT_TABLE = "tp_admin_user_snapshot";
-    const CALC_STATE_TABLE = "tp_calc_state";
+    const BACK_PAGE   = "choose-calc.html";
 
     const sb = (window.supabase && window.supabase.createClient)
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -417,15 +492,15 @@
 
     const $ = (id) => document.getElementById(id);
 
-    function showToast(msg, ms = 2200){
+    function showToast(msg, ms = 2000){
       const t = $("toast");
       t.textContent = msg;
       t.classList.add("show");
       window.clearTimeout(showToast._timer);
       showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
     }
+
     function goSignin(){ window.location.replace(SIGNIN_PAGE); }
-    function goBack(){ window.location.href = BACK_PAGE; }
     function getEmpFromEmail(email){ return String(email || "").split("@")[0] || ""; }
 
     function escapeHtml(s){
@@ -436,32 +511,22 @@
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
-    function formatTime(ts){
+
+    function money(n){
+      const x = Number(n || 0);
+      return x.toLocaleString(undefined, { style:"currency", currency:"USD" });
+    }
+    function num(n){ return Number(n || 0).toLocaleString(); }
+    function pct(x){
+      let v = Number(x);
+      if(!Number.isFinite(v) || v < 0) v = 0;
+      return (v * 100).toFixed(0) + "%";
+    }
+    function prettyTs(ts){
       if(!ts) return "—";
       const d = new Date(ts);
-      if(Number.isNaN(d.getTime())) return "—";
+      if(Number.isNaN(d.getTime())) return String(ts);
       return d.toLocaleString(undefined, { month:"short", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit" });
-    }
-
-    async function requireAuthOrRedirect(){
-      if(!sb) return goSignin();
-
-      const { data: { session } } = await sb.auth.getSession();
-      if(!session?.user) return goSignin();
-
-      const user = session.user;
-      const first = user.user_metadata?.first_name || "";
-      const emp = getEmpFromEmail(user.email);
-
-      $("userName").textContent = first || "Signed In";
-      $("userEmp").textContent = emp ? `#${emp}` : "";
-
-      if(String(emp) !== String(ADMIN_EMP)){
-        showToast("Admin access denied.");
-        return goBack();
-      }
-
-      return { user, emp, first };
     }
 
     async function signOut(){
@@ -472,8 +537,8 @@
       goSignin();
     }
 
-    $("btnBack").addEventListener("click", goBack);
     $("btnSignOut").addEventListener("click", () => signOut());
+    $("btnBack").addEventListener("click", () => window.location.href = BACK_PAGE);
 
     if(sb){
       sb.auth.onAuthStateChange((event, session) => {
@@ -481,168 +546,208 @@
       });
     }
 
+    let AUTHUSERID = "";
+    let AUTHEMP = "";
+    let AUTHNAME = "";
+
+    async function requireAuthOrRedirect(){
+      if(!sb) return goSignin();
+
+      const { data: { session } } = await sb.auth.getSession();
+      if(!session?.user) return goSignin();
+
+      const user = session.user;
+      AUTHUSERID = user.id;
+      AUTHNAME = user.user_metadata?.first_name || "";
+      AUTHEMP = getEmpFromEmail(user.email);
+
+      $("userName").textContent = AUTHNAME || "Signed In";
+      $("userEmp").textContent  = AUTHEMP ? `#${AUTHEMP}` : "";
+      $("welcomeLine").textContent = "Powered by F8";
+    }
+
+    /***********************
+     * ADMIN DATA
+     ***********************/
     let ALL_USERS = [];
 
-    function renderUsers(list){
-      const box = $("usersList");
-      box.innerHTML = "";
+    async function fetchUsers(){
+      $("userList").innerHTML = `<div class="muted" style="padding:10px 8px; font-weight:1000;">Loading…</div>`;
 
-      if(!list.length){
-        box.innerHTML = `<div class="empty">No users found.</div>`;
-        $("kpiTotalUsers").textContent = "0";
-        $("kpiLastSeen").textContent = "—";
+      const { data, error } = await sb.rpc("tp_admin_list_users");
+
+      // If you aren't authorized, this returns an empty set by design
+      if(error){
+        console.warn("tp_admin_list_users error:", error);
+        showToast("Not authorized for admin console.");
+        window.location.href = BACK_PAGE;
         return;
       }
 
-      $("kpiTotalUsers").textContent = String(list.length);
+      ALL_USERS = Array.isArray(data) ? data : [];
+      paintUsers();
+      paintOverview();
+    }
+
+    function paintOverview(){
+      $("totalUsers").textContent = num(ALL_USERS.length);
+
+      const latest = ALL_USERS.find(u => !!u.last_seen_at) || null;
+      $("recentActivity").textContent = latest?.last_seen_at ? prettyTs(latest.last_seen_at) : "—";
+      $("recentHint").textContent = latest
+        ? `${(latest.first_name || "User")} (#${latest.emp || "—"}) last sign-in`
+        : "No recent activity found";
+    }
+
+    function paintUsers(){
+      const q = String($("searchUsers").value || "").trim().toLowerCase();
+
+      const list = !q ? ALL_USERS : ALL_USERS.filter(u => {
+        const name = String(u.first_name || "").toLowerCase();
+        const emp = String(u.emp || "").toLowerCase();
+        const email = String(u.email || "").toLowerCase();
+        return name.includes(q) || emp.includes(q) || email.includes(q);
+      });
+
+      const wrap = $("userList");
+      wrap.innerHTML = "";
+
+      if(list.length === 0){
+        wrap.innerHTML = `<div class="muted" style="padding:10px 8px; font-weight:1100;">No users found.</div>`;
+        return;
+      }
 
       list.forEach(u => {
-        const row = document.createElement("div");
-        row.className = "userRow";
-        row.setAttribute("data-userid", u.user_id || "");
-        row.setAttribute("role", "button");
-        row.setAttribute("tabindex", "0");
+        const btn = document.createElement("div");
+        btn.className = "uRow";
+        btn.setAttribute("role","button");
+        btn.setAttribute("tabindex","0");
+        btn.dataset.uid = u.user_id;
 
-        const name = u.first_name || u.name || "User";
-        const emp = u.emp ? `#${u.emp}` : "—";
-        const email = u.email || "—";
-        const last = u.last_seen_at ? formatTime(u.last_seen_at) : "—";
+        const displayName = u.first_name ? u.first_name : "Unnamed";
+        const emp = u.emp ? `#${u.emp}` : "#—";
+        const email = u.email || "";
 
-        row.innerHTML = `
-          <div class="userMeta">
-            <div class="userName">${escapeHtml(name)}</div>
-            <div class="userSub">${escapeHtml(emp)} • ${escapeHtml(email)} • ${escapeHtml(last)}</div>
+        btn.innerHTML = `
+          <div class="uLeft">
+            <div class="uName">${escapeHtml(displayName)} <span style="opacity:.55; font-weight:1100; margin-left:6px;">${escapeHtml(emp)}</span></div>
+            <div class="uMeta">${escapeHtml(email)}</div>
           </div>
-          <div class="pillTiny">View</div>
+          <div class="uRight">
+            <span class="pillMini">View</span>
+            <span class="openMini">${escapeHtml(u.last_seen_at ? prettyTs(u.last_seen_at) : "Never")}</span>
+          </div>
         `;
 
-        row.addEventListener("click", () => openSnapshot(u));
-        row.addEventListener("keydown", (e) => {
+        btn.addEventListener("click", () => openSnapshot(u));
+        btn.addEventListener("keydown", (e) => {
           if(e.key === "Enter" || e.key === " "){
             e.preventDefault();
             openSnapshot(u);
           }
         });
 
-        box.appendChild(row);
+        wrap.appendChild(btn);
       });
-
-      const newest = list
-        .filter(x => x.last_seen_at)
-        .sort((a,b) => new Date(b.last_seen_at) - new Date(a.last_seen_at))[0];
-
-      $("kpiLastSeen").textContent = newest?.last_seen_at ? formatTime(newest.last_seen_at) : "—";
     }
 
-    function applyUserSearch(){
-      const q = String($("searchUsers").value || "").trim().toLowerCase();
-      if(!q) return renderUsers(ALL_USERS);
-
-      const filtered = ALL_USERS.filter(u => {
-        const s = [u.first_name, u.name, u.emp, u.email, u.user_id]
-          .map(x => String(x || "").toLowerCase()).join(" ");
-        return s.includes(q);
-      });
-
-      renderUsers(filtered);
-    }
-
-    function setSourceNote(text){
-      const el = $("sourceNote");
-      if(!text){
-        el.textContent = "";
-        el.classList.remove("show");
-        return;
-      }
-      el.textContent = text;
-      el.classList.add("show");
-    }
-
-    async function fetchUsers(){
-      setSourceNote("");
-      $("usersList").innerHTML = `<div class="empty">Loading…</div>`;
-
-      // Preferred: tp_admin_users view/table (we’ll wire later)
-      const primary = await sb
-        .from(USERS_SOURCE_TABLE)
-        .select("user_id,emp,first_name,email,last_seen_at")
-        .order("last_seen_at", { ascending: false, nullsFirst: false });
-
-      if(!primary.error && Array.isArray(primary.data)){
-        ALL_USERS = primary.data.map(x => ({
-          user_id: x.user_id,
-          emp: x.emp,
-          first_name: x.first_name,
-          email: x.email,
-          last_seen_at: x.last_seen_at
-        }));
-        setSourceNote(""); // no note when the “real” source works
-        renderUsers(ALL_USERS);
-        return;
-      }
-
-      // Fallback: infer users from tp_calc_state (still Supabase)
-      const fallback = await sb
-        .from(CALC_STATE_TABLE)
-        .select("user_id,updated_at")
-        .order("updated_at", { ascending: false })
-        .limit(500);
-
-      if(!fallback.error && Array.isArray(fallback.data)){
-        const seen = new Map();
-        (fallback.data || []).forEach(r => {
-          const uid = String(r.user_id || "");
-          if(!uid) return;
-          if(!seen.has(uid)){
-            seen.set(uid, {
-              user_id: uid,
-              emp: "",
-              first_name: "",
-              email: "",
-              last_seen_at: r.updated_at
-            });
-          }
-        });
-
-        ALL_USERS = Array.from(seen.values());
-        setSourceNote("Using fallback source (tp_calc_state). Names/emails will appear after we wire tp_admin_users.");
-        renderUsers(ALL_USERS);
-        return;
-      }
-
-      // Nothing works yet
-      ALL_USERS = [];
-      setSourceNote("No admin user source is available yet. We’ll wire tp_admin_users next.");
-      renderUsers([]);
-    }
-
-    $("searchUsers").addEventListener("input", applyUserSearch);
+    $("searchUsers").addEventListener("input", paintUsers);
     $("btnRefresh").addEventListener("click", () => fetchUsers());
+    $("btnRefresh").id = "btnRefresh"; // keep label stable
 
-    // Snapshot modal (template)
-    function openModal(){ $("snapOverlay").classList.add("show"); }
-    function closeModal(){ $("snapOverlay").classList.remove("show"); }
+    /***********************
+     * SNAPSHOT MODAL (template + real site-calc read)
+     ***********************/
+    function openSnap(){
+      $("snapOverlay").classList.add("show");
+    }
+    function closeSnap(){
+      $("snapOverlay").classList.remove("show");
+    }
+    $("closeSnapX").addEventListener("click", closeSnap);
+    $("snapOverlay").addEventListener("click", (e) => { if(e.target === $("snapOverlay")) closeSnap(); });
 
-    $("snapClose").addEventListener("click", closeModal);
-    $("snapOverlay").addEventListener("click", (e) => { if(e.target === $("snapOverlay")) closeModal(); });
-    document.addEventListener("keydown", (e) => { if(e.key === "Escape") closeModal(); });
+    document.addEventListener("keydown", (e) => {
+      if(e.key === "Escape") closeSnap();
+    });
 
-    async function openSnapshot(u){
-      $("snapTitle").textContent = "Account Snapshot";
-      $("snapSub").textContent = "Template (we’ll wire data next)";
-      $("snapName").textContent = u.first_name || u.name || "User";
-      $("snapEmp").textContent = u.emp ? `#${u.emp}` : "—";
-      $("snapEmail").textContent = u.email || "—";
-      $("snapLastSeen").textContent = u.last_seen_at ? formatTime(u.last_seen_at) : "—";
+    async function openSnapshot(userRow){
+      $("snapName").textContent = `${userRow.first_name || "Unnamed"} ${userRow.emp ? `(#${userRow.emp})` : ""}`.trim();
+      $("snapMeta").textContent = userRow.email || "—";
 
-      $("snapTripPoints").textContent = "—";
-      $("snapPayCalc").textContent = "—";
-      $("snapSiteCalc").textContent = "—";
-      $("snapJson").textContent = JSON.stringify(u, null, 2);
+      // reset fields
+      $("scMonth").textContent = "—";
+      $("scSite").textContent = "—";
+      $("scBudget").textContent = "0";
+      $("scActual").textContent = "0";
+      $("scPct").textContent = "0%";
+      $("scMgrRate").textContent = "$0.00";
+      $("scUpdated").textContent = "—";
+      $("statesTbody").innerHTML = `<tr><td colspan="4" class="muted" style="font-weight:1000;">Loading…</td></tr>`;
 
-      openModal();
+      openSnap();
+
+      // Pull the most recent calc states for that user (read-only)
+      const { data, error } = await sb
+        .from("tp_calc_state")
+        .select("calc_key,site_key,month_key,state,updated_at")
+        .eq("user_id", userRow.user_id)
+        .order("updated_at", { ascending:false })
+        .limit(12);
+
+      if(error){
+        console.warn("tp_calc_state read error:", error);
+        $("statesTbody").innerHTML = `<tr><td colspan="4" class="muted" style="font-weight:1100;">Unable to load states.</td></tr>`;
+        return;
+      }
+
+      const rows = Array.isArray(data) ? data : [];
+      if(rows.length === 0){
+        $("statesTbody").innerHTML = `<tr><td colspan="4" class="muted" style="font-weight:1100;">No calculator data yet.</td></tr>`;
+        return;
+      }
+
+      // Table
+      $("statesTbody").innerHTML = rows.map(r => `
+        <tr>
+          <td>${escapeHtml(r.calc_key || "—")}</td>
+          <td>${escapeHtml(r.site_key || "—")}</td>
+          <td>${escapeHtml(r.month_key || "—")}</td>
+          <td>${escapeHtml(prettyTs(r.updated_at))}</td>
+        </tr>
+      `).join("");
+
+      // Compute "Site Calculator (latest state)" if present
+      const sc = rows.find(r => String(r.calc_key || "") === "site-calc") || null;
+      if(sc && sc.state && typeof sc.state === "object"){
+        const byDate = (sc.state.byDate && typeof sc.state.byDate === "object") ? sc.state.byDate : {};
+        let budgetTotal = 0;
+        let actualTotal = 0;
+
+        for(const k in byDate){
+          const v = byDate[k] || {};
+          const b = parseInt(String(v.budget ?? "0"), 10);
+          const a = parseInt(String(v.actual ?? "0"), 10);
+          budgetTotal += Number.isFinite(b) && b > 0 ? b : 0;
+          actualTotal += Number.isFinite(a) && a > 0 ? a : 0;
+        }
+
+        const mgr = parseFloat(String(sc.state.mgrOverrideRate ?? "0"));
+        const mgrRate = Number.isFinite(mgr) && mgr > 0 ? mgr : 0;
+
+        $("scMonth").textContent = sc.month_key || "—";
+        $("scSite").textContent = sc.site_key || "—";
+        $("scBudget").textContent = num(budgetTotal);
+        $("scActual").textContent = num(actualTotal);
+        $("scPct").textContent = budgetTotal > 0 ? pct(actualTotal / budgetTotal) : "0%";
+        $("scMgrRate").textContent = money(mgrRate);
+        $("scUpdated").textContent = prettyTs(sc.updated_at);
+      }
     }
 
+    /***********************
+     * INIT
+     ***********************/
     (async function init(){
       await requireAuthOrRedirect();
       await fetchUsers();
