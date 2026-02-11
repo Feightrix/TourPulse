@@ -13,7 +13,6 @@
   <!-- Supabase JS v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- Page-specific polish (scoped) -->
   <style>
     body.tp-admin .adminBanner{
       border:1px solid rgba(15,23,42,.10);
@@ -28,41 +27,27 @@
     body.tp-admin .adminBanner:before{
       content:"";
       position:absolute; inset:-40% -30%;
-      background: radial-gradient( circle at 20% 20%, rgba(10,166,181,.14), transparent 52%),
-                  radial-gradient( circle at 85% 40%, rgba(15,23,42,.06), transparent 55%);
+      background: radial-gradient(circle at 20% 20%, rgba(10,166,181,.14), transparent 52%),
+                  radial-gradient(circle at 85% 40%, rgba(15,23,42,.06), transparent 55%);
       pointer-events:none;
     }
     body.tp-admin .adminBannerInner{ position:relative; display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    body.tp-admin .adminBannerTitle{
-      display:flex; flex-direction:column; gap:2px;
-    }
+    body.tp-admin .adminBannerTitle{ display:flex; flex-direction:column; gap:2px; }
     body.tp-admin .adminBannerTitle .k{
-      font-size:12px;
-      font-weight:1100;
-      letter-spacing:.22px;
-      text-transform:uppercase;
-      color: rgba(15,23,42,.62);
-      margin:0;
+      font-size:12px; font-weight:1100; letter-spacing:.22px; text-transform:uppercase;
+      color: rgba(15,23,42,.62); margin:0;
     }
     body.tp-admin .adminBannerTitle .h{
-      font-size:26px;
-      font-weight:1300;
-      letter-spacing:.2px;
-      color: rgba(15,23,42,.92);
-      margin:0;
-      line-height:1.05;
+      font-size:26px; font-weight:1300; letter-spacing:.2px;
+      color: rgba(15,23,42,.92); margin:0; line-height:1.05;
     }
     body.tp-admin .adminPill{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      padding:10px 14px;
-      border-radius: 999px;
+      display:inline-flex; align-items:center; gap:10px;
+      padding:10px 14px; border-radius: 999px;
       border:1px solid rgba(15,23,42,.12);
       background: rgba(255,255,255,.78);
       box-shadow: 0 12px 30px rgba(2,6,23,.08);
-      font-weight:1100;
-      color: rgba(15,23,42,.82);
+      font-weight:1100; color: rgba(15,23,42,.82);
       white-space:nowrap;
     }
     body.tp-admin .dot{
@@ -102,20 +87,11 @@
       gap:12px;
       margin-top: 12px;
     }
-    body.tp-admin .searchRow{
-      flex: 1 1 auto;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      min-width: 240px;
-    }
-    body.tp-admin .searchRow .search{
-      flex: 1 1 auto;
-    }
+    body.tp-admin .searchRow{ flex: 1 1 auto; display:flex; align-items:center; gap:10px; min-width: 240px; }
+    body.tp-admin .searchRow .search{ flex: 1 1 auto; }
+
     body.tp-admin .btnSoft{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
+      display:inline-flex; align-items:center; justify-content:center;
       border-radius: 14px;
       padding: 12px 14px;
       border:1px solid rgba(10,166,181,.22);
@@ -139,10 +115,7 @@
     }
 
     body.tp-admin .userRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
       padding: 10px 10px;
       border-radius: 14px;
       border:1px solid rgba(15,23,42,.10);
@@ -157,18 +130,10 @@
       outline-offset: 2px;
     }
     body.tp-admin .userMeta{ display:flex; flex-direction:column; gap:3px; }
-    body.tp-admin .userName{
-      font-weight:1300;
-      color: rgba(15,23,42,.92);
-      letter-spacing:.1px;
-      line-height:1.05;
-    }
+    body.tp-admin .userName{ font-weight:1300; color: rgba(15,23,42,.92); letter-spacing:.1px; line-height:1.05; }
     body.tp-admin .userSub{
-      font-weight:900;
-      color: rgba(15,23,42,.62);
-      font-size: 12px;
-      letter-spacing:.18px;
-      text-transform:uppercase;
+      font-weight:900; color: rgba(15,23,42,.62);
+      font-size: 12px; letter-spacing:.18px; text-transform:uppercase;
     }
     body.tp-admin .pillTiny{
       padding: 6px 10px;
@@ -190,24 +155,17 @@
       margin: 8px 0 0;
     }
 
-    body.tp-admin .warn{
-      margin-top: 12px;
-      border-radius: 18px;
-      border:1px solid rgba(255,153,0,.32);
-      background: rgba(255,173,51,.10);
-      padding: 14px 14px;
-      color: rgba(15,23,42,.82);
-      font-weight:1100;
-      line-height:1.25;
+    /* small note (replaces big warning) */
+    body.tp-admin .note{
+      margin-top: 10px;
+      font-size: 12px;
+      font-weight: 950;
+      color: rgba(15,23,42,.58);
+      display:none;
     }
+    body.tp-admin .note.show{ display:block; }
 
-    /* Overview mini tiles */
-    body.tp-admin .miniGrid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-      margin-top: 12px;
-    }
+    body.tp-admin .miniGrid{ display:grid; grid-template-columns: 1fr; gap: 12px; margin-top: 12px; }
     body.tp-admin .mini{
       border-radius: 18px;
       border:1px solid rgba(15,23,42,.12);
@@ -216,37 +174,19 @@
       padding: 14px 14px;
     }
     body.tp-admin .mini .label{
-      font-size:12px;
-      font-weight:1100;
-      letter-spacing:.22px;
-      text-transform:uppercase;
+      font-size:12px; font-weight:1100; letter-spacing:.22px; text-transform:uppercase;
       color: rgba(15,23,42,.62);
     }
     body.tp-admin .mini .value{
-      margin-top: 6px;
-      font-size: 30px;
-      font-weight: 1400;
-      letter-spacing:.2px;
-      color: rgba(15,23,42,.92);
-      line-height:1.05;
+      margin-top: 6px; font-size: 30px; font-weight: 1400; letter-spacing:.2px;
+      color: rgba(15,23,42,.92); line-height:1.05;
     }
-    body.tp-admin .mini .hint{
-      margin-top: 10px;
-      font-size: 13px;
-      font-weight: 950;
-      color: rgba(15,23,42,.62);
-    }
+    body.tp-admin .mini .hint{ margin-top: 10px; font-size: 13px; font-weight: 950; color: rgba(15,23,42,.62); }
 
-    /* Snapshot modal */
     body.tp-admin .snapOverlay{
-      position: fixed;
-      inset: 0;
-      background: rgba(2,6,23,.55);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding: 18px;
-      z-index: 1200;
+      position: fixed; inset: 0; background: rgba(2,6,23,.55);
+      display:none; align-items:center; justify-content:center;
+      padding: 18px; z-index: 1200;
     }
     body.tp-admin .snapOverlay.show{ display:flex; }
     body.tp-admin .snapModal{
@@ -258,27 +198,18 @@
       overflow:hidden;
     }
     body.tp-admin .snapHeader{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
       padding: 16px 16px;
       border-bottom: 1px solid rgba(15,23,42,.10);
       background: linear-gradient(180deg, rgba(10,166,181,.10), rgba(255,255,255,.0));
     }
     body.tp-admin .snapHeader h3{
-      margin:0;
-      font-size:20px;
-      font-weight:1400;
-      color: rgba(15,23,42,.92);
-      letter-spacing:.1px;
-      line-height:1.1;
+      margin:0; font-size:20px; font-weight:1400;
+      color: rgba(15,23,42,.92); letter-spacing:.1px; line-height:1.1;
     }
     body.tp-admin .snapHeader .small{
-      margin-top: 6px;
-      color: rgba(15,23,42,.62);
-      font-weight: 950;
-      font-size: 13px;
+      margin-top: 6px; color: rgba(15,23,42,.62);
+      font-weight: 950; font-size: 13px;
     }
     body.tp-admin .snapBody{
       padding: 14px 16px 16px;
@@ -298,19 +229,12 @@
       overflow:hidden;
     }
     body.tp-admin .snapCard .t{
-      font-size:12px;
-      font-weight:1100;
-      letter-spacing:.22px;
-      text-transform:uppercase;
-      color: rgba(15,23,42,.62);
-      margin:0;
+      font-size:12px; font-weight:1100; letter-spacing:.22px; text-transform:uppercase;
+      color: rgba(15,23,42,.62); margin:0;
     }
     body.tp-admin .snapCard .big{
-      margin-top: 8px;
-      font-size: 18px;
-      font-weight: 1300;
-      color: rgba(15,23,42,.92);
-      letter-spacing:.1px;
+      margin-top: 8px; font-size: 18px; font-weight: 1300;
+      color: rgba(15,23,42,.92); letter-spacing:.1px;
     }
     body.tp-admin .kv{
       margin-top: 10px;
@@ -338,8 +262,7 @@
     body.tp-admin .xBtn{
       border:0;
       background: rgba(255,255,255,.0);
-      width: 40px;
-      height: 40px;
+      width: 40px; height: 40px;
       border-radius: 12px;
       font-size: 26px;
       line-height: 40px;
@@ -356,7 +279,6 @@
 <body class="tp-admin">
   <div class="wrap choose-calc">
     <section class="panel" aria-label="Admin Console">
-      <!-- Topbar -->
       <div class="topbar">
         <div class="brand">
           <div class="logoBox" aria-hidden="true">
@@ -378,7 +300,6 @@
         </div>
       </div>
 
-      <!-- Banner -->
       <div class="adminBanner">
         <div class="adminBannerInner">
           <div class="adminBannerTitle">
@@ -392,9 +313,7 @@
         </div>
       </div>
 
-      <!-- Main grid -->
       <div class="adminGrid">
-        <!-- Accounts -->
         <div class="card">
           <h2>Accounts</h2>
           <p class="subline">Select a user to open a snapshot modal (template for now).</p>
@@ -406,7 +325,6 @@
                 <input id="searchUsers" type="text" placeholder="Search users…" autocomplete="off" />
               </div>
             </div>
-
             <button class="btnSoft" type="button" id="btnRefresh">Refresh</button>
           </div>
 
@@ -414,13 +332,9 @@
             <div class="empty">Loading…</div>
           </div>
 
-          <div class="warn" id="warnBox" style="display:none;">
-            Heads up: listing auth users from the browser requires an admin-safe RPC or a read-only view/table.
-            This page expects a view/table you control in Supabase (we’ll wire it next).
-          </div>
+          <div class="note" id="sourceNote"></div>
         </div>
 
-        <!-- Overview -->
         <div class="card">
           <h2>Overview</h2>
           <p class="subline">Template overview block (we’ll populate later).</p>
@@ -443,7 +357,6 @@
     </section>
   </div>
 
-  <!-- Snapshot Modal -->
   <div class="snapOverlay" id="snapOverlay" role="dialog" aria-modal="true" aria-labelledby="snapTitle">
     <div class="snapModal">
       <div class="snapHeader">
@@ -485,24 +398,17 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    /***********************
-     * SUPABASE CONFIG (yours)
-     ***********************/
     const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
 
     const SIGNIN_PAGE = "signin.html";
     const BACK_PAGE = "choose-calc.html";
 
-    // ✅ lock admin visibility to YOUR emp
     const ADMIN_EMP = "078195";
 
-    // ✅ tables/views we’ll wire next (read-only via RLS)
-    const USERS_SOURCE_TABLE = "tp_admin_users";        // expected columns: user_id, emp, first_name, email, last_seen_at
-    const SNAPSHOT_RPC = "tp_admin_snapshot_user";      // optional RPC (recommended)
-    const SNAPSHOT_TABLE = "tp_admin_user_snapshot";    // optional view/table fallback (recommended)
-
-    // existing calc state table (already in your project)
+    const USERS_SOURCE_TABLE = "tp_admin_users";
+    const SNAPSHOT_RPC = "tp_admin_snapshot_user";
+    const SNAPSHOT_TABLE = "tp_admin_user_snapshot";
     const CALC_STATE_TABLE = "tp_calc_state";
 
     const sb = (window.supabase && window.supabase.createClient)
@@ -518,13 +424,9 @@
       window.clearTimeout(showToast._timer);
       showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
     }
-
     function goSignin(){ window.location.replace(SIGNIN_PAGE); }
     function goBack(){ window.location.href = BACK_PAGE; }
-
-    function getEmpFromEmail(email){
-      return String(email || "").split("@")[0] || "";
-    }
+    function getEmpFromEmail(email){ return String(email || "").split("@")[0] || ""; }
 
     function escapeHtml(s){
       return String(s)
@@ -534,7 +436,6 @@
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
-
     function formatTime(ts){
       if(!ts) return "—";
       const d = new Date(ts);
@@ -554,9 +455,7 @@
 
       $("userName").textContent = first || "Signed In";
       $("userEmp").textContent = emp ? `#${emp}` : "";
-      $("welcomeLine").textContent = "Powered by F8";
 
-      // ✅ hard gate
       if(String(emp) !== String(ADMIN_EMP)){
         showToast("Admin access denied.");
         return goBack();
@@ -582,9 +481,6 @@
       });
     }
 
-    /***********************
-     * USERS LIST
-     ***********************/
     let ALL_USERS = [];
 
     function renderUsers(list){
@@ -594,42 +490,43 @@
       if(!list.length){
         box.innerHTML = `<div class="empty">No users found.</div>`;
         $("kpiTotalUsers").textContent = "0";
+        $("kpiLastSeen").textContent = "—";
         return;
       }
 
       $("kpiTotalUsers").textContent = String(list.length);
 
       list.forEach(u => {
-        const btn = document.createElement("div");
-        btn.className = "userRow";
-        btn.setAttribute("data-userid", u.user_id || "");
-        btn.setAttribute("role", "button");
-        btn.setAttribute("tabindex", "0");
+        const row = document.createElement("div");
+        row.className = "userRow";
+        row.setAttribute("data-userid", u.user_id || "");
+        row.setAttribute("role", "button");
+        row.setAttribute("tabindex", "0");
 
         const name = u.first_name || u.name || "User";
         const emp = u.emp ? `#${u.emp}` : "—";
+        const email = u.email || "—";
         const last = u.last_seen_at ? formatTime(u.last_seen_at) : "—";
 
-        btn.innerHTML = `
+        row.innerHTML = `
           <div class="userMeta">
             <div class="userName">${escapeHtml(name)}</div>
-            <div class="userSub">${escapeHtml(emp)} • ${escapeHtml(u.email || "—")}</div>
+            <div class="userSub">${escapeHtml(emp)} • ${escapeHtml(email)} • ${escapeHtml(last)}</div>
           </div>
           <div class="pillTiny">View</div>
         `;
 
-        btn.addEventListener("click", () => openSnapshot(u));
-        btn.addEventListener("keydown", (e) => {
+        row.addEventListener("click", () => openSnapshot(u));
+        row.addEventListener("keydown", (e) => {
           if(e.key === "Enter" || e.key === " "){
             e.preventDefault();
             openSnapshot(u);
           }
         });
 
-        box.appendChild(btn);
+        box.appendChild(row);
       });
 
-      // overview: most recent last_seen
       const newest = list
         .filter(x => x.last_seen_at)
         .sort((a,b) => new Date(b.last_seen_at) - new Date(a.last_seen_at))[0];
@@ -642,20 +539,30 @@
       if(!q) return renderUsers(ALL_USERS);
 
       const filtered = ALL_USERS.filter(u => {
-        const s = [
-          u.first_name, u.name, u.emp, u.email, u.user_id
-        ].map(x => String(x || "").toLowerCase()).join(" ");
+        const s = [u.first_name, u.name, u.emp, u.email, u.user_id]
+          .map(x => String(x || "").toLowerCase()).join(" ");
         return s.includes(q);
       });
 
       renderUsers(filtered);
     }
 
+    function setSourceNote(text){
+      const el = $("sourceNote");
+      if(!text){
+        el.textContent = "";
+        el.classList.remove("show");
+        return;
+      }
+      el.textContent = text;
+      el.classList.add("show");
+    }
+
     async function fetchUsers(){
-      $("warnBox").style.display = "none";
+      setSourceNote("");
       $("usersList").innerHTML = `<div class="empty">Loading…</div>`;
 
-      // Preferred: tp_admin_users (view/table you control with admin-safe RLS)
+      // Preferred: tp_admin_users view/table (we’ll wire later)
       const primary = await sb
         .from(USERS_SOURCE_TABLE)
         .select("user_id,emp,first_name,email,last_seen_at")
@@ -669,127 +576,60 @@
           email: x.email,
           last_seen_at: x.last_seen_at
         }));
+        setSourceNote(""); // no note when the “real” source works
         renderUsers(ALL_USERS);
         return;
       }
 
-      // Fallback: attempt to infer users from tp_calc_state (will only work if RLS allows admin read)
+      // Fallback: infer users from tp_calc_state (still Supabase)
       const fallback = await sb
         .from(CALC_STATE_TABLE)
         .select("user_id,updated_at")
         .order("updated_at", { ascending: false })
-        .limit(250);
+        .limit(500);
 
       if(!fallback.error && Array.isArray(fallback.data)){
         const seen = new Map();
         (fallback.data || []).forEach(r => {
           const uid = String(r.user_id || "");
           if(!uid) return;
-          if(!seen.has(uid)) seen.set(uid, { user_id: uid, emp: "", first_name: "", email: "", last_seen_at: r.updated_at });
+          if(!seen.has(uid)){
+            seen.set(uid, {
+              user_id: uid,
+              emp: "",
+              first_name: "",
+              email: "",
+              last_seen_at: r.updated_at
+            });
+          }
         });
 
         ALL_USERS = Array.from(seen.values());
-        $("warnBox").style.display = "block";
+        setSourceNote("Using fallback source (tp_calc_state). Names/emails will appear after we wire tp_admin_users.");
         renderUsers(ALL_USERS);
         return;
       }
 
-      // Nothing works yet (expected until we wire the view/RPC)
-      $("warnBox").style.display = "block";
+      // Nothing works yet
       ALL_USERS = [];
+      setSourceNote("No admin user source is available yet. We’ll wire tp_admin_users next.");
       renderUsers([]);
     }
 
     $("searchUsers").addEventListener("input", applyUserSearch);
     $("btnRefresh").addEventListener("click", () => fetchUsers());
 
-    /***********************
-     * SNAPSHOT MODAL
-     ***********************/
-    function openModal(){
-      $("snapOverlay").classList.add("show");
-    }
-    function closeModal(){
-      $("snapOverlay").classList.remove("show");
-    }
+    // Snapshot modal (template)
+    function openModal(){ $("snapOverlay").classList.add("show"); }
+    function closeModal(){ $("snapOverlay").classList.remove("show"); }
+
     $("snapClose").addEventListener("click", closeModal);
     $("snapOverlay").addEventListener("click", (e) => { if(e.target === $("snapOverlay")) closeModal(); });
-
-    document.addEventListener("keydown", (e) => {
-      if(e.key === "Escape") closeModal();
-    });
-
-    function safeInt(v){
-      const n = parseInt(String(v ?? "0"), 10);
-      return Number.isFinite(n) && n >= 0 ? n : 0;
-    }
-    function safeMoney(v){
-      const n = parseFloat(String(v ?? "0"));
-      return Number.isFinite(n) && n >= 0 ? n : 0;
-    }
-
-    function summarizeSiteCalcState(state){
-      // state expected: { byDate: { "YYYY-MM-DD": {budget, actual} }, mgrOverrideRate }
-      const byDate = state?.byDate && typeof state.byDate === "object" ? state.byDate : {};
-      let budgetTotal = 0, actualTotal = 0;
-
-      for(const k in byDate){
-        const rec = byDate[k] || {};
-        budgetTotal += safeInt(rec.budget);
-        actualTotal += safeInt(rec.actual);
-      }
-
-      const pct = budgetTotal > 0 ? Math.round((actualTotal / budgetTotal) * 100) : 0;
-      const mgr = safeMoney(state?.mgrOverrideRate || 0);
-      const mgrPay = mgr * actualTotal;
-
-      return {
-        budgetTotal,
-        actualTotal,
-        pct: `${pct}%`,
-        mgrRate: mgr ? mgr.toFixed(2) : "0.00",
-        mgrPay: mgrPay ? mgrPay.toFixed(2) : "0.00"
-      };
-    }
-
-    async function loadSnapshotForUser(u){
-      // Preferred: RPC (fast, one call)
-      const rpcTry = await sb.rpc(SNAPSHOT_RPC, { p_user_id: u.user_id });
-      if(!rpcTry.error && rpcTry.data){
-        return { source: "rpc", payload: rpcTry.data };
-      }
-
-      // Fallback: view/table returning a JSON snapshot
-      const viewTry = await sb
-        .from(SNAPSHOT_TABLE)
-        .select("snapshot,updated_at")
-        .eq("user_id", u.user_id)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if(!viewTry.error && viewTry.data?.snapshot){
-        return { source: "view", payload: viewTry.data.snapshot, updated_at: viewTry.data.updated_at };
-      }
-
-      // Last-resort fallback: pull latest calc state rows (admin read required)
-      const stateTry = await sb
-        .from(CALC_STATE_TABLE)
-        .select("calc_key,site_key,month_key,state,updated_at")
-        .eq("user_id", u.user_id)
-        .order("updated_at", { ascending: false })
-        .limit(60);
-
-      if(!stateTry.error && Array.isArray(stateTry.data)){
-        return { source: "calc_state", payload: stateTry.data };
-      }
-
-      return { source: "none", payload: null, error: rpcTry.error || viewTry.error || stateTry.error };
-    }
+    document.addEventListener("keydown", (e) => { if(e.key === "Escape") closeModal(); });
 
     async function openSnapshot(u){
       $("snapTitle").textContent = "Account Snapshot";
-      $("snapSub").textContent = "Loading…";
+      $("snapSub").textContent = "Template (we’ll wire data next)";
       $("snapName").textContent = u.first_name || u.name || "User";
       $("snapEmp").textContent = u.emp ? `#${u.emp}` : "—";
       $("snapEmail").textContent = u.email || "—";
@@ -798,70 +638,9 @@
       $("snapTripPoints").textContent = "—";
       $("snapPayCalc").textContent = "—";
       $("snapSiteCalc").textContent = "—";
-      $("snapJson").textContent = "{}";
+      $("snapJson").textContent = JSON.stringify(u, null, 2);
 
       openModal();
-
-      const res = await loadSnapshotForUser(u);
-
-      if(res.source === "none"){
-        $("snapSub").textContent = "No data available yet (needs admin-safe view/RPC).";
-        $("snapJson").textContent = JSON.stringify({ error: String(res.error?.message || "Unavailable") }, null, 2);
-        return;
-      }
-
-      if(res.source === "rpc" || res.source === "view"){
-        // expects payload shape you’ll define later; we render whatever comes back
-        const payload = res.payload || {};
-        $("snapSub").textContent = `Source: ${res.source}${res.updated_at ? " • " + formatTime(res.updated_at) : ""}`;
-
-        // optional fields if you include them in the snapshot later
-        if(typeof payload.trip_points !== "undefined") $("snapTripPoints").textContent = String(payload.trip_points);
-        if(payload.pay_calc_summary) $("snapPayCalc").textContent = "Available";
-        if(payload.site_calc_summary) $("snapSiteCalc").textContent = "Available";
-
-        $("snapJson").textContent = JSON.stringify(payload, null, 2);
-        return;
-      }
-
-      // calc_state rows fallback: try to surface “latest site-calc” and “latest pay-calc”
-      const rows = res.payload || [];
-      const latestSite = rows.find(r => String(r.calc_key || "") === "site-calc");
-      const latestPay  = rows.find(r => String(r.calc_key || "") === "pay-calc");
-
-      let note = [];
-      note.push("Source: tp_calc_state (fallback)");
-      if(rows[0]?.updated_at) note.push(formatTime(rows[0].updated_at));
-      $("snapSub").textContent = note.join(" • ");
-
-      if(latestSite?.state){
-        const s = summarizeSiteCalcState(latestSite.state);
-        $("snapSiteCalc").textContent = `${s.actualTotal}/${s.budgetTotal} (${s.pct})`;
-      }else{
-        $("snapSiteCalc").textContent = "—";
-      }
-
-      $("snapPayCalc").textContent = latestPay?.state ? "Available" : "—";
-      $("snapTripPoints").textContent = "—"; // placeholder until trip points table/view is wired
-
-      // show compact summary + raw rows
-      const out = {
-        summary: {
-          latest_site_calc: latestSite ? {
-            site_key: latestSite.site_key,
-            month_key: latestSite.month_key,
-            updated_at: latestSite.updated_at,
-            computed: latestSite.state ? summarizeSiteCalcState(latestSite.state) : null
-          } : null,
-          latest_pay_calc: latestPay ? {
-            month_key: latestPay.month_key,
-            updated_at: latestPay.updated_at
-          } : null
-        },
-        rows
-      };
-
-      $("snapJson").textContent = JSON.stringify(out, null, 2);
     }
 
     (async function init(){
