@@ -226,7 +226,9 @@
     }
 
     /* Modal */
-    body.tp-admin .adminModal{ max-width: 820px; }
+    body.tp-admin .adminModal{
+      max-width: 820px;
+    }
     body.tp-admin .snapTop{
       display:flex;
       align-items:flex-start;
@@ -437,15 +439,14 @@
               </p>
             </div>
 
-            <div class="snapBox">
+            <div class="snapBox" id="paySnapBox">
               <h4>Marketer Pay / Trip Points</h4>
-              <p class="muted" style="margin:0;">
-                Computed from <span class="mono">pay-calc</span> + <span class="mono">pay-calc-trip-ytd</span>.
+              <div class="kv"><div class="k">Trip Points (running)</div><div class="v mono" id="pcTripTotal">—</div></div>
+              <div class="kv"><div class="k">Current Pay (MTD)</div><div class="v mono" id="pcPayMtd">—</div></div>
+              <div class="kv"><div class="k">Last Pay Entry</div><div class="v mono" id="pcLastPay">—</div></div>
+              <p class="muted" style="margin:10px 0 0;">
+                From <span class="mono">pay-calc</span> + <span class="mono">pay-calc-trip-ytd</span>.
               </p>
-              <div style="height:8px;"></div>
-              <div class="kv"><div class="k">Trip Points (running)</div><div class="v mono" id="mpTrip">—</div></div>
-              <div class="kv"><div class="k">Current Pay (MTD)</div><div class="v mono" id="mpPay">—</div></div>
-              <div class="kv"><div class="k">Last Pay Entry</div><div class="v mono" id="mpLast">—</div></div>
             </div>
           </div>
 
@@ -482,11 +483,6 @@
 
     const SIGNIN_PAGE = "signin.html";
     const BACK_PAGE   = "choose-calc.html";
-
-    // Pay-calc constants (must match pay-calc.html)
-    const HOURLY_RATE = 15;
-    const WEEKLY_HOURS = 37.5;
-    const HOURLY_WEEK_PAY = HOURLY_RATE * WEEKLY_HOURS; // 562.50
 
     const sb = (window.supabase && window.supabase.createClient)
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -530,15 +526,11 @@
       if(Number.isNaN(d.getTime())) return String(ts);
       return d.toLocaleString(undefined, { month:"short", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit" });
     }
-    function prettyDateOnly(iso){
+    function prettyDate(iso){
       if(!iso) return "—";
       const d = new Date(String(iso) + "T00:00:00");
       if(Number.isNaN(d.getTime())) return String(iso);
-      return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
-    }
-    function safeInt(v){
-      const n = parseInt(String(v ?? "0"), 10);
-      return Number.isFinite(n) && n >= 0 ? n : 0;
+      return d.toLocaleString(undefined, { month:"short", day:"numeric", year:"numeric" });
     }
 
     async function signOut(){
@@ -588,6 +580,7 @@
 
       const { data, error } = await sb.rpc("tp_admin_list_users");
 
+      // If you aren't authorized, this returns an empty set by design
       if(error){
         console.warn("tp_admin_list_users error:", error);
         showToast("Not authorized for admin console.");
@@ -664,42 +657,22 @@
 
     $("searchUsers").addEventListener("input", paintUsers);
     $("btnRefresh").addEventListener("click", () => fetchUsers());
-    $("btnRefresh").id = "btnRefresh";
 
     /***********************
      * SNAPSHOT MODAL
      ***********************/
-    function openSnap(){ $("snapOverlay").classList.add("show"); }
-    function closeSnap(){ $("snapOverlay").classList.remove("show"); }
+    function openSnap(){
+      $("snapOverlay").classList.add("show");
+    }
+    function closeSnap(){
+      $("snapOverlay").classList.remove("show");
+    }
     $("closeSnapX").addEventListener("click", closeSnap);
     $("snapOverlay").addEventListener("click", (e) => { if(e.target === $("snapOverlay")) closeSnap(); });
-    document.addEventListener("keydown", (e) => { if(e.key === "Escape") closeSnap(); });
 
-    function findRateForTours(matrix, totalTours){
-      const m = Array.isArray(matrix) ? matrix : [];
-      const match = m.find(r => safeInt(r?.tours) === safeInt(totalTours));
-      return match ? safeInt(match.rate) : null;
-    }
-
-    function sumTripEntries(stateObj){
-      const arr = stateObj?.tripEntries;
-      if(!Array.isArray(arr)) return 0;
-      return arr.reduce((sum, e) => sum + safeInt(e?.points), 0);
-    }
-
-    function latestTripEntryDate(stateObj){
-      const arr = stateObj?.tripEntries;
-      if(!Array.isArray(arr) || arr.length === 0) return null;
-
-      // choose newest by ISO date string
-      let best = null;
-      for(const e of arr){
-        const d = String(e?.date || "");
-        if(!d) continue;
-        if(!best || d > best) best = d;
-      }
-      return best;
-    }
+    document.addEventListener("keydown", (e) => {
+      if(e.key === "Escape") closeSnap();
+    });
 
     async function openSnapshot(userRow){
       $("snapName").textContent = `${userRow.first_name || "Unnamed"} ${userRow.emp ? `(#${userRow.emp})` : ""}`.trim();
@@ -714,20 +687,21 @@
       $("scMgrRate").textContent = "$0.00";
       $("scUpdated").textContent = "—";
 
-      $("mpTrip").textContent = "—";
-      $("mpPay").textContent  = "—";
-      $("mpLast").textContent = "—";
+      $("pcTripTotal").textContent = "—";
+      $("pcPayMtd").textContent = "—";
+      $("pcLastPay").textContent = "—";
 
       $("statesTbody").innerHTML = `<tr><td colspan="4" class="muted" style="font-weight:1000;">Loading…</td></tr>`;
 
       openSnap();
 
+      // Pull the most recent calc states for that user (read-only)
       const { data, error } = await sb
         .from("tp_calc_state")
         .select("calc_key,site_key,month_key,state,updated_at")
         .eq("user_id", userRow.user_id)
         .order("updated_at", { ascending:false })
-        .limit(30);
+        .limit(12);
 
       if(error){
         console.warn("tp_calc_state read error:", error);
@@ -741,8 +715,8 @@
         return;
       }
 
-      const show = rows.slice(0, 12);
-      $("statesTbody").innerHTML = show.map(r => `
+      // Table
+      $("statesTbody").innerHTML = rows.map(r => `
         <tr>
           <td>${escapeHtml(r.calc_key || "—")}</td>
           <td>${escapeHtml(r.site_key || "—")}</td>
@@ -751,7 +725,7 @@
         </tr>
       `).join("");
 
-      // Site Calc (latest)
+      // Compute "Site Calculator (latest state)" if present
       const sc = rows.find(r => String(r.calc_key || "") === "site-calc") || null;
       if(sc && sc.state && typeof sc.state === "object"){
         const byDate = (sc.state.byDate && typeof sc.state.byDate === "object") ? sc.state.byDate : {};
@@ -778,38 +752,49 @@
         $("scUpdated").textContent = prettyTs(sc.updated_at);
       }
 
-      // ✅ Marketer Pay / Trip Points (computed from existing rows)
-      const mpMonth = rows.find(r => String(r.calc_key || "") === "pay-calc") || null;
-      const mpYtd   = rows.find(r => String(r.calc_key || "") === "pay-calc-trip-ytd") || null;
+      // ===== MARKETER PAY / TRIP POINTS (wired) =====
 
-      // Trip Points (running)
-      if(mpYtd && mpYtd.state && typeof mpYtd.state === "object"){
-        const tripTotal = sumTripEntries(mpYtd.state);
-        const lastDateIso = latestTripEntryDate(mpYtd.state);
-        $("mpTrip").textContent = num(tripTotal);
-        $("mpLast").textContent = lastDateIso ? prettyDateOnly(lastDateIso) : "—";
-      }else{
-        $("mpTrip").textContent = "—";
-        $("mpLast").textContent = "—";
+      // ---- PAY (monthly) ----
+      const pay = rows.find(r => String(r.calc_key || "") === "pay-calc") || null;
+
+      let currentPayMTD = 0;
+
+      if (pay && pay.state && typeof pay.state === "object") {
+        const st = pay.state;
+
+        const tours = Number(st.monthTours?.owners || 0)
+                    + Number(st.monthTours?.goos || 0)
+                    + Number(st.monthTours?.renters || 0);
+
+        const matrix = Array.isArray(st.matrix) ? st.matrix : [];
+        const rateRow = matrix.find(m => Number(m.tours) === Number(tours));
+        const rate = rateRow ? Number(rateRow.rate) : 0;
+
+        const toursPay = tours * rate;
+        const hourly = 15 * 37.5;
+
+        currentPayMTD = hourly + toursPay;
       }
 
-      // Current Pay (MTD)
-      if(mpMonth && mpMonth.state && typeof mpMonth.state === "object"){
-        const s = mpMonth.state;
+      // ---- TRIP POINTS (YTD) ----
+      const trip = rows.find(r => String(r.calc_key || "") === "pay-calc-trip-ytd") || null;
 
-        const owners = safeInt(s?.monthTours?.owners);
-        const goos   = safeInt(s?.monthTours?.goos);
-        const renters= safeInt(s?.monthTours?.renters);
-        const totalTours = owners + goos + renters;
+      let tripTotal = 0;
+      let lastTripDate = null;
 
-        const rate = findRateForTours(s?.matrix, totalTours);
-        const toursPay = rate === null ? 0 : (totalTours * rate);
+      if (trip && trip.state && Array.isArray(trip.state.tripEntries)) {
+        const entries = trip.state.tripEntries;
 
-        const payMtd = HOURLY_WEEK_PAY + toursPay;
-        $("mpPay").textContent = money(payMtd);
-      }else{
-        $("mpPay").textContent = "—";
+        tripTotal = entries.reduce((sum, e) => sum + Number(e.points || 0), 0);
+
+        if (entries.length > 0) {
+          lastTripDate = entries[0].date;
+        }
       }
+
+      $("pcTripTotal").textContent = num(tripTotal);
+      $("pcPayMtd").textContent = money(currentPayMTD);
+      $("pcLastPay").textContent = lastTripDate ? prettyDate(lastTripDate) : "—";
     }
 
     /***********************
