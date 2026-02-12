@@ -669,6 +669,16 @@
       };
     }
 
+    // ✅ NEW: "LATEST SNAPSHOT" row that Admin can read without knowing month/year keys
+    function cloudLatestRowKey(){
+      return {
+        user_id: AUTHUSERID || "",
+        calc_key: "pay-calc-latest",
+        site_key: SITEKEY || "nosite",
+        month_key: "latest"
+      };
+    }
+
     function safeInt(v){
       const n = parseInt(String(v ?? "0"), 10);
       return Number.isFinite(n) && n >= 0 ? n : 0;
@@ -786,7 +796,8 @@
       const k = cloudRowKey();
       if(!k.user_id || !k.site_key || !k.month_key) return false;
 
-      const payload = { ...k, state: stateObj };
+      // ✅ include a timestamp inside the state for "Last Pay Entry" if you want it
+      const payload = { ...k, state: { ...stateObj, _touched_at: new Date().toISOString() } };
 
       const { error } = await sb
         .from("tp_calc_state")
@@ -809,6 +820,95 @@
     function saveDataAndSync(data){
       writeLocalMonthData(data);
       scheduleCloudWrite(data);
+
+      // ✅ also push the admin-friendly latest snapshot
+      scheduleCloudWriteLatestSnapshot(data);
+    }
+
+    // ====== CLOUD write (LATEST SNAPSHOT for Admin modal) ======
+    let _cloudLatestTimer = null;
+
+    function findRateForTours(matrix, totalTours){
+      const match = (matrix || []).find(r => safeInt(r.tours) === safeInt(totalTours));
+      return match ? safeInt(match.rate) : null;
+    }
+
+    function currentMonthlyPoints(data){
+      const ownersTours = safeInt(data.monthTours.owners);
+      const goosTours = safeInt(data.monthTours.goos);
+      const rentersTours = safeInt(data.monthTours.renters);
+
+      const ownersPts = ownersTours * safeInt(data.pointsPerTour.owner);
+      const goosPts = goosTours * safeInt(data.pointsPerTour.goo);
+      const rentersPts = rentersTours * safeInt(data.pointsPerTour.renter);
+      return { ownersPts, goosPts, rentersPts, total: ownersPts + goosPts + rentersPts };
+    }
+
+    function computeLatestSnapshot(data){
+      const ownersTours = safeInt(data.monthTours.owners);
+      const goosTours = safeInt(data.monthTours.goos);
+      const rentersTours = safeInt(data.monthTours.renters);
+      const totalTours = ownersTours + goosTours + rentersTours;
+
+      const rate = findRateForTours(data.matrix, totalTours);
+      const toursPay = (rate === null) ? 0 : totalTours * rate;
+
+      const hourlyPay = HOURLY_WEEK_PAY;
+      const grandTotal = hourlyPay + toursPay;
+
+      const pts = currentMonthlyPoints(data);
+      const monthlyPointsTotal = safeInt(pts.total);
+
+      const tripPointsYtd = (_yearTripEntries || []).reduce((sum, e) => sum + safeInt(e.points), 0);
+      const lastTripDate = (_yearTripEntries || []).length ? String(_yearTripEntries[0].date || "") : "";
+
+      return {
+        // identifiers (admin can show context)
+        month_key: monthKey() || "",
+        year_key: yearKey() || "",
+        site_key: SITEKEY || "",
+        site_title: SITETITLE || "",
+        // admin panel fields
+        trip_points_running: tripPointsYtd,
+        current_pay_mtd: grandTotal,
+        // useful extras
+        total_tours: totalTours,
+        rate: (rate === null ? null : rate),
+        hourly_pay: hourlyPay,
+        tours_pay: toursPay,
+        monthly_points_total: monthlyPointsTotal,
+        last_trip_entry_date: lastTripDate,
+        // last touch
+        touched_at: new Date().toISOString()
+      };
+    }
+
+    async function cloudWriteLatestNow(snapshot){
+      if(!sb || !AUTHUSERID) return false;
+      if(!SITEKEY) return false;
+
+      const k = cloudLatestRowKey();
+      const payload = { ...k, state: snapshot };
+
+      const { error } = await sb
+        .from("tp_calc_state")
+        .upsert(payload, { onConflict: "user_id,calc_key,site_key,month_key" });
+
+      if(error){
+        console.warn("cloudWriteLatest error:", error);
+        return false;
+      }
+      return true;
+    }
+
+    function scheduleCloudWriteLatestSnapshot(data){
+      if(!sb || !AUTHUSERID || !SITEKEY || !monthKey()) return;
+      const snap = computeLatestSnapshot(data);
+
+      window.clearTimeout(_cloudLatestTimer);
+      _cloudLatestTimer = window.setTimeout(async () => {
+        await cloudWriteLatestNow(snap);
+      }, 550);
     }
 
     // ====== CLOUD read/write (YEARLY Trip Log — Supabase ONLY, no local storage) ======
@@ -1126,11 +1226,6 @@
     });
 
     // ====== Live Calculations ======
-    function findRateForTours(matrix, totalTours){
-      const match = (matrix || []).find(r => safeInt(r.tours) === safeInt(totalTours));
-      return match ? safeInt(match.rate) : null;
-    }
-
     function formatDatePretty(iso){
       const d = new Date(iso + "T00:00:00");
       if(Number.isNaN(d.getTime())) return iso;
@@ -1149,17 +1244,6 @@
         `;
         body.appendChild(tr);
       });
-    }
-
-    function currentMonthlyPoints(data){
-      const ownersTours = safeInt(data.monthTours.owners);
-      const goosTours = safeInt(data.monthTours.goos);
-      const rentersTours = safeInt(data.monthTours.renters);
-
-      const ownersPts = ownersTours * safeInt(data.pointsPerTour.owner);
-      const goosPts = goosTours * safeInt(data.pointsPerTour.goo);
-      const rentersPts = rentersTours * safeInt(data.pointsPerTour.renter);
-      return { ownersPts, goosPts, rentersPts, total: ownersPts + goosPts + rentersPts };
     }
 
     function refreshAllUI(data){
@@ -1208,6 +1292,9 @@
 
       $("pillTripPointsModal").textContent = num(tripPointsTotal);
       renderTripLog(_yearTripEntries);
+
+      // ✅ keep admin snapshot fresh (debounced)
+      scheduleCloudWriteLatestSnapshot(data);
     }
 
     // ====== In-memory current state (prevents double reads) ======
@@ -1387,7 +1474,6 @@
         refreshAllUI(data);
         showToast("Points added.");
       } finally{
-        // small delay keeps it feeling intentional on mobile
         window.setTimeout(() => {
           _addTripBusy = false;
           setAddBtnBusy(false);
