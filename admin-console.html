@@ -442,13 +442,13 @@
             <div class="snapBox">
               <h4>Marketer Pay / Trip Points</h4>
               <p class="muted" style="margin:0;">
-                Template block. Once we wire pay-calc + points into storage,
-                we’ll populate this panel with those fields.
+                Live from <span class="mono">tp_calc_state</span> where
+                <span class="mono">calc_key = pay-calc-latest</span>.
               </p>
               <div style="height:8px;"></div>
-              <div class="kv"><div class="k">Trip Points (running)</div><div class="v mono">—</div></div>
-              <div class="kv"><div class="k">Current Pay (MTD)</div><div class="v mono">—</div></div>
-              <div class="kv"><div class="k">Last Pay Entry</div><div class="v mono">—</div></div>
+              <div class="kv"><div class="k">Trip Points (running)</div><div class="v mono" id="mpTrip">—</div></div>
+              <div class="kv"><div class="k">Current Pay (MTD)</div><div class="v mono" id="mpPay">—</div></div>
+              <div class="kv"><div class="k">Last Pay Entry</div><div class="v mono" id="mpLast">—</div></div>
             </div>
           </div>
 
@@ -656,20 +656,18 @@
     $("btnRefresh").id = "btnRefresh"; // keep label stable
 
     /***********************
-     * SNAPSHOT MODAL (template + real site-calc read)
+     * SNAPSHOT MODAL
      ***********************/
-    function openSnap(){
-      $("snapOverlay").classList.add("show");
-    }
-    function closeSnap(){
-      $("snapOverlay").classList.remove("show");
-    }
+    function openSnap(){ $("snapOverlay").classList.add("show"); }
+    function closeSnap(){ $("snapOverlay").classList.remove("show"); }
     $("closeSnapX").addEventListener("click", closeSnap);
     $("snapOverlay").addEventListener("click", (e) => { if(e.target === $("snapOverlay")) closeSnap(); });
+    document.addEventListener("keydown", (e) => { if(e.key === "Escape") closeSnap(); });
 
-    document.addEventListener("keydown", (e) => {
-      if(e.key === "Escape") closeSnap();
-    });
+    function safeNum(x){
+      const n = Number(x);
+      return Number.isFinite(n) ? n : 0;
+    }
 
     async function openSnapshot(userRow){
       $("snapName").textContent = `${userRow.first_name || "Unnamed"} ${userRow.emp ? `(#${userRow.emp})` : ""}`.trim();
@@ -683,6 +681,11 @@
       $("scPct").textContent = "0%";
       $("scMgrRate").textContent = "$0.00";
       $("scUpdated").textContent = "—";
+
+      $("mpTrip").textContent = "—";
+      $("mpPay").textContent  = "—";
+      $("mpLast").textContent = "—";
+
       $("statesTbody").innerHTML = `<tr><td colspan="4" class="muted" style="font-weight:1000;">Loading…</td></tr>`;
 
       openSnap();
@@ -693,7 +696,7 @@
         .select("calc_key,site_key,month_key,state,updated_at")
         .eq("user_id", userRow.user_id)
         .order("updated_at", { ascending:false })
-        .limit(12);
+        .limit(30);
 
       if(error){
         console.warn("tp_calc_state read error:", error);
@@ -707,8 +710,9 @@
         return;
       }
 
-      // Table
-      $("statesTbody").innerHTML = rows.map(r => `
+      // Table (show latest 12)
+      const show = rows.slice(0, 12);
+      $("statesTbody").innerHTML = show.map(r => `
         <tr>
           <td>${escapeHtml(r.calc_key || "—")}</td>
           <td>${escapeHtml(r.site_key || "—")}</td>
@@ -717,7 +721,7 @@
         </tr>
       `).join("");
 
-      // Compute "Site Calculator (latest state)" if present
+      // Site Calc (latest)
       const sc = rows.find(r => String(r.calc_key || "") === "site-calc") || null;
       if(sc && sc.state && typeof sc.state === "object"){
         const byDate = (sc.state.byDate && typeof sc.state.byDate === "object") ? sc.state.byDate : {};
@@ -742,6 +746,26 @@
         $("scPct").textContent = budgetTotal > 0 ? pct(actualTotal / budgetTotal) : "0%";
         $("scMgrRate").textContent = money(mgrRate);
         $("scUpdated").textContent = prettyTs(sc.updated_at);
+      }
+
+      // ✅ Marketer Pay / Trip Points (latest snapshot)
+      // We read the *most recent* row where calc_key = "pay-calc-latest" (any site).
+      const mp = rows.find(r => String(r.calc_key || "") === "pay-calc-latest") || null;
+
+      if(mp && mp.state && typeof mp.state === "object"){
+        const trip = safeNum(mp.state.trip_points_running);
+        const pay  = safeNum(mp.state.current_pay_mtd);
+
+        // prefer the snapshot's touched_at if present, otherwise updated_at
+        const lastTs = mp.state.touched_at || mp.updated_at || null;
+
+        $("mpTrip").textContent = num(trip);
+        $("mpPay").textContent  = money(pay);
+        $("mpLast").textContent = prettyTs(lastTs);
+      }else{
+        $("mpTrip").textContent = "—";
+        $("mpPay").textContent  = "—";
+        $("mpLast").textContent = "—";
       }
     }
 
