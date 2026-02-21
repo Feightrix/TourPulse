@@ -696,6 +696,44 @@
       return { budgetToDate: b, actualToDate: a, daysCounted: to };
     }
 
+    // ====== Needed/Day rule:
+    // Only for SOUTH BEACH + MYRTLE BEACH OCEANFRONT AND only for Jan/Feb -> use Mon–Fri remaining days
+    function isSBorMBOF(){
+      return SITEKEY === "south-beach" || SITEKEY === "myrtle-beach-oceanfront";
+    }
+    function isJanOrFeb(ymKey){
+      const m = safeInt(String(ymKey || "").slice(5,7));
+      return m === 1 || m === 2;
+    }
+    function weekdayCountInRange(ymKey, startDay, endDay){
+      // counts Mon–Fri inclusive, based on real calendar
+      const y = safeInt(String(ymKey || "").slice(0,4));
+      const m = safeInt(String(ymKey || "").slice(5,7));
+      if(!y || !m) return 0;
+
+      let c = 0;
+      const s = Math.max(1, safeInt(startDay));
+      const e = Math.max(0, safeInt(endDay));
+      if(e < s) return 0;
+
+      for(let d = s; d <= e; d++){
+        const dt = new Date(y, m - 1, d);
+        const dow = dt.getDay(); // 0 Sun ... 6 Sat
+        if(dow !== 0 && dow !== 6) c++;
+      }
+      return c;
+    }
+    function remainingDayDenominator(ymKey, daysCounted, dim){
+      // default: calendar days remaining
+      const calRemaining = Math.max(0, safeInt(dim) - safeInt(daysCounted));
+
+      // override: only for SB/MBOF and only in Jan/Feb
+      if(!(isSBorMBOF() && isJanOrFeb(ymKey))) return calRemaining;
+
+      // Mon–Fri remaining days
+      return weekdayCountInRange(ymKey, safeInt(daysCounted) + 1, safeInt(dim));
+    }
+
     // ====== YEAR (YTD) percent calc (cloud-based) ======
     let _yearPctTimer = null;
     async function recomputeYearPct(){
@@ -705,7 +743,6 @@
       const year = yearKeyFromMonth(ym);
       const selectedMonthNum = safeInt(String(ym).slice(5,7));
 
-      // pull all months for this year in one query
       const { data, error } = await sb
         .from("tp_calc_state")
         .select("month_key,state")
@@ -719,7 +756,6 @@
         return;
       }
 
-      // map month_key -> normalized {byDate}
       const map = {};
       (data || []).forEach(row => {
         const mk = String(row?.month_key || "");
@@ -733,7 +769,6 @@
         map[mk] = { byDate };
       });
 
-      // always include current month's local edits immediately (even before cloud finishes)
       map[ym] = { byDate: (readLocalMonthData().byDate || {}) };
 
       let ytdBudget = 0;
@@ -748,8 +783,6 @@
 
         const rows = buildMonthRows(mk, month.byDate);
 
-        // past months: full month totals
-        // selected month: "to date" (matches 'running' behavior)
         if(m < selectedMonthNum){
           const t = totals(rows);
           ytdBudget += t.budgetTotal;
@@ -818,7 +851,9 @@
       const variance = actualToDate - budgetToDate;
       const pctToDate = budgetToDate > 0 ? (actualToDate / budgetToDate) : 0;
 
-      const remainingDays = Math.max(0, dim - td.daysCounted);
+      // ✅ ONLY change: Needed/Day denominator uses Mon–Fri remaining days ONLY for SB/MBOF in Jan/Feb
+      const remainingDays = remainingDayDenominator(monthKey(), td.daysCounted, dim);
+
       const remainingToHitBudget = Math.max(0, monthTotals.budgetTotal - monthTotals.actualTotal);
       const neededPerDay = remainingDays > 0 ? (remainingToHitBudget / remainingDays) : 0;
 
@@ -841,7 +876,9 @@
       $("tilePctToDate").textContent = pct(pctToDate);
 
       $("tileNeededPerDay").textContent = neededPerDay.toFixed(1);
-      $("tileNeededHint").textContent = remainingDays > 0 ? `For the remaining ${remainingDays} day(s)` : "Month complete";
+      $("tileNeededHint").textContent = remainingDays > 0
+        ? `For the remaining ${remainingDays} day(s)`
+        : "Month complete";
 
       $("tileTeamGoal").textContent = num(teamGoal);
 
@@ -856,7 +893,6 @@
 
       $("sumMgrPay").textContent = money(mgrPayToDate);
 
-      // keep year % in sync whenever the month UI repaints
       scheduleYearPctRecalc();
     }
 
@@ -1152,7 +1188,6 @@
         writeLocalMonthData(merged);
         updateAllUI(merged);
 
-        // also refresh year % (runs async, uses current month local data immediately)
         scheduleYearPctRecalc();
         return;
       }
