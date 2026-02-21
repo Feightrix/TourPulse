@@ -665,11 +665,11 @@
         user_id: AUTHUSERID || "",
         calc_key: "pay-calc-trip-ytd",
         site_key: SITEKEY || "nosite",
-        month_key: yearKey() || "noyear" // store year in month_key column
+        month_key: yearKey() || "noyear"
       };
     }
 
-    // ✅ NEW: "LATEST SNAPSHOT" row that Admin can read without knowing month/year keys
+    // ✅ Admin-friendly latest snapshot
     function cloudLatestRowKey(){
       return {
         user_id: AUTHUSERID || "",
@@ -715,9 +715,8 @@
 
     function defaultMonthData(){
       return {
-        pointsPerTour: { ...DEFAULT_PPTS },
+        pointsPerTour: { owner: 1260, goo: 1570, renter: 1570 },
         monthTours: { owners: 0, goos: 0, renters: 0 },
-        // NOTE: tripEntries are no longer used for totals; YTD trip log is stored in Supabase under calc_key "pay-calc-trip-ytd"
         tripEntries: [],
         matrix: defaultMatrix()
       };
@@ -732,9 +731,9 @@
 
         const ppt = x?.pointsPerTour || {};
         const pointsPerTour = {
-          owner: safeInt(ppt.owner ?? DEFAULT_PPTS.owner),
-          goo: safeInt(ppt.goo ?? DEFAULT_PPTS.goo),
-          renter: safeInt(ppt.renter ?? DEFAULT_PPTS.renter)
+          owner: safeInt(ppt.owner ?? 1260),
+          goo: safeInt(ppt.goo ?? 1570),
+          renter: safeInt(ppt.renter ?? 1570)
         };
 
         const mt = x?.monthTours || {};
@@ -796,7 +795,6 @@
       const k = cloudRowKey();
       if(!k.user_id || !k.site_key || !k.month_key) return false;
 
-      // ✅ include a timestamp inside the state for "Last Pay Entry" if you want it
       const payload = { ...k, state: { ...stateObj, _touched_at: new Date().toISOString() } };
 
       const { error } = await sb
@@ -817,20 +815,34 @@
       }, 450);
     }
 
-    function saveDataAndSync(data){
-      writeLocalMonthData(data);
-      scheduleCloudWrite(data);
+    // ====== Rate lookup (NO CAP) ======
+    // Rule:
+    // - Find the highest "tours" threshold <= totalTours, and use its rate.
+    // - If totalTours exceeds the highest row, keep using that top rate.
+    // - If totalTours is below the lowest threshold (or matrix empty), return null.
+    function rateRowForTours(matrix, totalTours){
+      const t = safeInt(totalTours);
+      const rows = Array.isArray(matrix) ? matrix : [];
+      if(!rows.length) return null;
 
-      // ✅ also push the admin-friendly latest snapshot
-      scheduleCloudWriteLatestSnapshot(data);
+      const sorted = rows
+        .map(r => ({ tours: safeInt(r?.tours), rate: safeInt(r?.rate) }))
+        .filter(r => r.tours > 0 && r.rate >= 0)
+        .sort((a,b) => a.tours - b.tours);
+
+      if(!sorted.length) return null;
+      if(t <= 0) return null;
+
+      let best = null;
+      for(const r of sorted){
+        if(r.tours <= t) best = r;
+        else break;
+      }
+      return best; // may be null if below first threshold
     }
-
-    // ====== CLOUD write (LATEST SNAPSHOT for Admin modal) ======
-    let _cloudLatestTimer = null;
-
     function findRateForTours(matrix, totalTours){
-      const match = (matrix || []).find(r => safeInt(r.tours) === safeInt(totalTours));
-      return match ? safeInt(match.rate) : null;
+      const row = rateRowForTours(matrix, totalTours);
+      return row ? safeInt(row.rate) : null;
     }
 
     function currentMonthlyPoints(data){
@@ -843,6 +855,9 @@
       const rentersPts = rentersTours * safeInt(data.pointsPerTour.renter);
       return { ownersPts, goosPts, rentersPts, total: ownersPts + goosPts + rentersPts };
     }
+
+    // ====== CLOUD write (LATEST SNAPSHOT for Admin modal) ======
+    let _cloudLatestTimer = null;
 
     function computeLatestSnapshot(data){
       const ownersTours = safeInt(data.monthTours.owners);
@@ -863,22 +878,19 @@
       const lastTripDate = (_yearTripEntries || []).length ? String(_yearTripEntries[0].date || "") : "";
 
       return {
-        // identifiers (admin can show context)
         month_key: monthKey() || "",
         year_key: yearKey() || "",
         site_key: SITEKEY || "",
         site_title: SITETITLE || "",
-        // admin panel fields
         trip_points_running: tripPointsYtd,
         current_pay_mtd: grandTotal,
-        // useful extras
+
         total_tours: totalTours,
         rate: (rate === null ? null : rate),
         hourly_pay: hourlyPay,
         tours_pay: toursPay,
         monthly_points_total: monthlyPointsTotal,
         last_trip_entry_date: lastTripDate,
-        // last touch
         touched_at: new Date().toISOString()
       };
     }
@@ -911,11 +923,16 @@
       }, 550);
     }
 
-    // ====== CLOUD read/write (YEARLY Trip Log — Supabase ONLY, no local storage) ======
+    function saveDataAndSync(data){
+      writeLocalMonthData(data);
+      scheduleCloudWrite(data);
+      scheduleCloudWriteLatestSnapshot(data);
+    }
+
+    // ====== CLOUD read/write (YEARLY Trip Log — Supabase ONLY) ======
     let _yearTripEntries = [];
     let _cloudTripYearTimer = null;
 
-    // Add-points double-tap guard + feedback
     let _addTripBusy = false;
     let _addBtnDefaultText = "Add Points";
     function setAddBtnBusy(on){
@@ -1146,15 +1163,20 @@
       if(!body) return;
       body.innerHTML = "";
 
-      const sorted = [...(matrix || [])].sort((a,b) => safeInt(a.tours) - safeInt(b.tours));
-      const activeTours = safeInt(totalTours);
+      const sorted = [...(Array.isArray(matrix) ? matrix : [])]
+        .map(r => ({ tours: safeInt(r?.tours), rate: safeInt(r?.rate) }))
+        .sort((a,b) => a.tours - b.tours);
+
+      const t = safeInt(totalTours);
+      const activeRow = rateRowForTours(sorted, t);         // ✅ highlight the threshold row (even when t is above max)
+      const activeToursKey = activeRow ? safeInt(activeRow.tours) : null;
 
       sorted.forEach(r => {
         const tours = safeInt(r.tours);
         const rate = safeInt(r.rate);
 
         const tr = document.createElement("tr");
-        const isActive = tours === activeTours;
+        const isActive = (activeToursKey !== null) && (tours === activeToursKey);
         if(isActive) tr.classList.add("active");
 
         tr.innerHTML = `
@@ -1259,10 +1281,10 @@
       const pts = currentMonthlyPoints(data);
       const monthlyPointsTotal = pts.total;
 
-      // YTD Trip Points come from Supabase (pay-calc-trip-ytd)
       const tripPointsTotal = (_yearTripEntries || []).reduce((sum, e) => sum + safeInt(e.points), 0);
       const lastAdded = (_yearTripEntries || []).length ? _yearTripEntries[0].date : null;
 
+      // ✅ NO CAP: totals above top-of-matrix keep top rate
       const rate = findRateForTours(data.matrix, totalTours);
       const toursPay = (rate === null) ? 0 : totalTours * rate;
 
@@ -1293,11 +1315,10 @@
       $("pillTripPointsModal").textContent = num(tripPointsTotal);
       renderTripLog(_yearTripEntries);
 
-      // ✅ keep admin snapshot fresh (debounced)
       scheduleCloudWriteLatestSnapshot(data);
     }
 
-    // ====== In-memory current state (prevents double reads) ======
+    // ====== In-memory current state ======
     let _currentData = null;
 
     function normalizeState(x){
@@ -1306,9 +1327,9 @@
 
       const ppt = x.pointsPerTour || {};
       const pointsPerTour = {
-        owner: safeInt(ppt.owner ?? DEFAULT_PPTS.owner),
-        goo: safeInt(ppt.goo ?? DEFAULT_PPTS.goo),
-        renter: safeInt(ppt.renter ?? DEFAULT_PPTS.renter)
+        owner: safeInt(ppt.owner ?? 1260),
+        goo: safeInt(ppt.goo ?? 1570),
+        renter: safeInt(ppt.renter ?? 1570)
       };
 
       const mt = x.monthTours || {};
@@ -1336,13 +1357,12 @@
     async function loadAllForCurrentMonth(){
       if(!AUTHEMP || !SITEKEY || !monthKey()) return;
 
-      // load YTD trip log for the selected year/site (Supabase ONLY)
       await loadTripYearForCurrentContext();
 
       const cloudState = await cloudRead();
       if(cloudState && typeof cloudState === "object"){
         const data = normalizeState(cloudState);
-        writeLocalMonthData(data);   // keep monthly backup
+        writeLocalMonthData(data);
         _currentData = data;
         renderMatrix(data.matrix);
         refreshAllUI(data);
@@ -1355,7 +1375,7 @@
       refreshAllUI(local);
     }
 
-    // ====== Event wiring that writes (MONTHLY local + cloud) ======
+    // ====== Event wiring ======
     function saveMonthToursFromInputs(){
       const data = _currentData || readLocalMonthData();
       data.monthTours.owners = safeInt($("monthOwners").value);
@@ -1445,7 +1465,7 @@
 
     // ====== Trip Points (YTD) — Supabase ONLY ======
     $("btnAddTripPoints").addEventListener("click", async () => {
-      if(_addTripBusy) return;                 // hard guard against double taps
+      if(_addTripBusy) return;
       _addTripBusy = true;
       setAddBtnBusy(true);
 
@@ -1461,10 +1481,8 @@
         _yearTripEntries = Array.isArray(_yearTripEntries) ? _yearTripEntries : [];
         _yearTripEntries.unshift({ id, date: todayISO(), points: safeInt(pts.total) });
 
-        // Write immediately (not debounced) so the lock is meaningful
         const ok = await cloudWriteTripYearNow(_yearTripEntries);
         if(!ok){
-          // rollback the optimistic entry if save fails
           _yearTripEntries = (_yearTripEntries || []).filter(e => e.id !== id);
           refreshAllUI(data);
           showToast("Couldn’t save. Check connection.");
@@ -1529,7 +1547,6 @@
       setBanner(selected);
       if(!selected) openSiteModal();
 
-      // default tab state
       setTab("matrix");
 
       if(selected){
