@@ -534,7 +534,6 @@
     }
     function num(n){ return Number(n || 0).toLocaleString(); }
 
-    // TRUE percentage (no cap at 100%)
     function pct(x){
       let v = Number(x);
       if(!Number.isFinite(v)) v = 0;
@@ -554,7 +553,6 @@
 
     function defaultMonthData(){ return { byDate: {}, mgrOverrideRate: 0 }; }
 
-    // ====== LOCAL read/write (backup only) ======
     function readLocalMonthData(){
       try{
         const raw = localStorage.getItem(storeKeyLocal());
@@ -568,7 +566,6 @@
           byDate[String(k)] = { budget: safeInt(v.budget), actual: safeInt(v.actual) };
         }
 
-        // mgr override kept in local too (for backward compatibility)
         let mgrOverrideRate = 0;
         if(typeof x?.mgrOverrideRate !== "undefined") mgrOverrideRate = safeMoney(x.mgrOverrideRate);
         else {
@@ -696,8 +693,7 @@
       return { budgetToDate: b, actualToDate: a, daysCounted: to };
     }
 
-    // ====== Needed/Day rule:
-    // Only for SOUTH BEACH + MYRTLE BEACH OCEANFRONT AND only for Jan/Feb -> use Mon–Fri remaining days
+    // ====== Needed/Day rule (SB + MBOF only, Jan/Feb only => Mon–Fri remaining days) ======
     function isSBorMBOF(){
       return SITEKEY === "south-beach" || SITEKEY === "myrtle-beach-oceanfront";
     }
@@ -706,7 +702,6 @@
       return m === 1 || m === 2;
     }
     function weekdayCountInRange(ymKey, startDay, endDay){
-      // counts Mon–Fri inclusive, based on real calendar
       const y = safeInt(String(ymKey || "").slice(0,4));
       const m = safeInt(String(ymKey || "").slice(5,7));
       if(!y || !m) return 0;
@@ -724,13 +719,8 @@
       return c;
     }
     function remainingDayDenominator(ymKey, daysCounted, dim){
-      // default: calendar days remaining
       const calRemaining = Math.max(0, safeInt(dim) - safeInt(daysCounted));
-
-      // override: only for SB/MBOF and only in Jan/Feb
       if(!(isSBorMBOF() && isJanOrFeb(ymKey))) return calRemaining;
-
-      // Mon–Fri remaining days
       return weekdayCountInRange(ymKey, safeInt(daysCounted) + 1, safeInt(dim));
     }
 
@@ -805,7 +795,6 @@
       _yearPctTimer = window.setTimeout(() => { recomputeYearPct(); }, 450);
     }
 
-    /* Modal table */
     function renderDailyModalTable(rows){
       const body = $("dailyBodyModal");
       body.innerHTML = "";
@@ -851,9 +840,7 @@
       const variance = actualToDate - budgetToDate;
       const pctToDate = budgetToDate > 0 ? (actualToDate / budgetToDate) : 0;
 
-      // ✅ ONLY change: Needed/Day denominator uses Mon–Fri remaining days ONLY for SB/MBOF in Jan/Feb
       const remainingDays = remainingDayDenominator(monthKey(), td.daysCounted, dim);
-
       const remainingToHitBudget = Math.max(0, monthTotals.budgetTotal - monthTotals.actualTotal);
       const neededPerDay = remainingDays > 0 ? (remainingToHitBudget / remainingDays) : 0;
 
@@ -882,14 +869,16 @@
 
       $("tileTeamGoal").textContent = num(teamGoal);
 
-      const monthActual = monthTotals.actualTotal;
-      const monthRemaining = Math.max(0, monthTotals.budgetTotal - monthActual);
-      const monthPct = monthTotals.budgetTotal > 0 ? (monthActual / monthTotals.budgetTotal) : 0;
+      // ✅ SUMMARY should be TO-DATE ONLY (ignore any tours entered on future days)
+      const monthBudget = monthTotals.budgetTotal;              // full monthly budget stays full-month
+      const monthActualToDate = actualToDate;                   // only through cutoff day
+      const monthRemainingToDate = Math.max(0, monthBudget - monthActualToDate);
+      const monthPctToDate = monthBudget > 0 ? (monthActualToDate / monthBudget) : 0;
 
-      $("sumBudget").textContent = num(monthTotals.budgetTotal);
-      $("sumActual").textContent = num(monthActual);
-      $("sumRemaining").textContent = num(monthRemaining);
-      $("sumPct").textContent = pct(monthPct);
+      $("sumBudget").textContent = num(monthBudget);
+      $("sumActual").textContent = num(monthActualToDate);
+      $("sumRemaining").textContent = num(monthRemainingToDate);
+      $("sumPct").textContent = pct(monthPctToDate);
 
       $("sumMgrPay").textContent = money(mgrPayToDate);
 
@@ -919,7 +908,6 @@
     $("closeSettingsX").addEventListener("click", closeDailyModal);
     $("settingsOverlay").addEventListener("click", (e) => { if(e.target === $("settingsOverlay")) closeDailyModal(); });
 
-    // ====== Wires: input updates (save local + cloud) ======
     function saveDataAndSync(data){
       writeLocalMonthData(data);
       scheduleCloudWrite({
@@ -1168,7 +1156,6 @@
       closeSiteModal();
     });
 
-    // ====== Load month data (cloud first, local fallback) ======
     async function loadAllForCurrentMonth(){
       if(!AUTHEMP || !SITEKEY || !monthKey()) return;
 
