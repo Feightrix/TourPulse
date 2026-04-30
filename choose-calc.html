@@ -7,10 +7,7 @@
   <link rel="icon" href="favicon.ico">
   <link rel="shortcut icon" href="favicon.ico">
 
-  <!-- Sitewide CSS -->
   <link rel="stylesheet" href="css/style.css">
-
-  <!-- Supabase JS v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
@@ -40,7 +37,7 @@
       <div class="hero">
         <div class="heroLeft">
           <h1 id="heroTitle">Choose a Calculator</h1>
-          <p id="heroSub">Only Marketer Pay is active right now. The rest will unlock as we build them.</p>
+          <p id="heroSub">Choose the calculator you need for today’s pacing, goals, and pay tracking.</p>
         </div>
 
         <div class="heroRight">
@@ -63,9 +60,6 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    /***********************
-     * SUPABASE CONFIG (yours)
-     ***********************/
     const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
     const SIGNIN_PAGE = "signin.html";
@@ -90,12 +84,6 @@
       return String(email || "").split("@")[0] || "";
     }
 
-    /***********************
-     * ADMIN GATE (wired to your existing RPC)
-     * We infer admin status by attempting tp_admin_list_users:
-     * - success => admin
-     * - failure => not admin (fallback to emp allowlist)
-     ***********************/
     const RPC_LIST_USERS = "tp_admin_list_users";
     const ADMIN_EMPS_FALLBACK = ["078195"];
 
@@ -111,30 +99,24 @@
     }
 
     async function checkIsAdmin(emp){
-      // no supabase? fallback
       if(!sb) return isAdminEmpFallback(emp);
 
-      // Try a few payload shapes safely (covers different function signatures)
       const attempts = [
-        {}, // if function takes no params
+        {},
         { p_search: null, p_limit: 1, p_offset: 0 },
-        { p_search: "",   p_limit: 1, p_offset: 0 },
-        { search: null,   limit: 1,   offset: 0 },
-        { search: "",     limit: 1,   offset: 0 }
+        { p_search: "", p_limit: 1, p_offset: 0 },
+        { search: null, limit: 1, offset: 0 },
+        { search: "", limit: 1, offset: 0 }
       ];
 
       for(const payload of attempts){
         try{
           const res = await tryRpcListUsers(payload);
-          if(res.ok){
-            // If we can list users at all, this account is admin.
-            return true;
-          }
-          // If we got a “not found” or signature mismatch, keep trying other payloads
+          if(res.ok) return true;
+
           const code = res.error?.code || "";
           if(code === "PGRST202" || code === "404") continue;
 
-          // Permission denied / RLS / other failures => treat as not admin
           console.warn("admin rpc error:", res.error);
           return isAdminEmpFallback(emp);
         }catch(err){
@@ -143,13 +125,9 @@
         }
       }
 
-      // None of the payload shapes matched the RPC signature
       return isAdminEmpFallback(emp);
     }
 
-    /***********************
-     * MENU
-     ***********************/
     const CALCS = [
       {
         key: "marketer-pay",
@@ -165,8 +143,13 @@
         path: "site-calc.html",
         locked: false
       },
-
-      // ✅ Admin gateway (hidden unless admin)
+      {
+        key: "team-goals",
+        title: "Team Goals Calculator",
+        desc: "Set daily team goals based on arrival percentages and pacing.",
+        path: "team-goals-calc.html",
+        locked: false
+      },
       {
         key: "admin",
         title: "Admin Console",
@@ -245,6 +228,7 @@
         c.desc.toLowerCase().includes(q) ||
         c.key.toLowerCase().includes(q)
       );
+
       renderCards(filtered);
     }
 
@@ -254,17 +238,16 @@
         if(!btn) return;
 
         const path = btn.getAttribute("data-path") || "";
+
         if(!path){
           showToast("Locked for now.");
           return;
         }
+
         window.location.href = path;
       });
     }
 
-    /***********************
-     * AUTH GATE + HEADER
-     ***********************/
     async function requireAuthOrRedirect(){
       if(!sb) return goSignin();
 
@@ -280,7 +263,6 @@
       $("userName").textContent = first || "Signed In";
       $("userEmp").textContent = emp ? `#${emp}` : "";
       $("welcomeLine").textContent = "Powered by F8";
-
       $("heroTitle").textContent = first ? `What are we running today, ${first}?` : "Choose a Calculator";
 
       if(_isAdmin){
@@ -290,11 +272,14 @@
 
     async function signOut(){
       if(!sb) return goSignin();
+
       const { error } = await sb.auth.signOut();
+
       if(error){
         showToast(error.message || "Sign out failed.");
         return;
       }
+
       showToast("Signed out.");
       goSignin();
     }
