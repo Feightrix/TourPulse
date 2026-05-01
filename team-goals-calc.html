@@ -13,7 +13,9 @@
     .banner{
       position:relative;
       overflow:hidden;
-      min-height:170px;
+      min-height:190px;
+      border-radius:28px;
+      margin-top:18px;
     }
 
     .bannerImg{
@@ -23,28 +25,43 @@
       height:100%;
       object-fit:cover;
       display:block;
-      opacity:.72;
+      opacity:.95;
       z-index:0;
     }
 
     .bannerBg{
-      position:absolute;
-      inset:0;
-      z-index:1;
+      display:none;
     }
 
     .bannerShade{
       position:absolute;
       inset:0;
-      z-index:2;
+      z-index:1;
       background:
-        linear-gradient(90deg, rgba(2,6,23,.72), rgba(2,6,23,.35), rgba(2,6,23,.12)),
-        linear-gradient(180deg, rgba(10,166,181,.24), rgba(17,125,140,.12));
+        linear-gradient(90deg, rgba(2,6,23,.72) 0%, rgba(2,6,23,.48) 34%, rgba(2,6,23,.20) 68%, rgba(2,6,23,.12) 100%);
     }
 
     .bannerInner{
       position:relative;
-      z-index:3;
+      z-index:2;
+      min-height:190px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      padding:30px 32px;
+    }
+
+    .bannerLeft .k{
+      color:rgba(255,255,255,.78);
+      font-weight:1100;
+      letter-spacing:.9px;
+      text-transform:uppercase;
+    }
+
+    .bannerLeft .site{
+      color:#fff;
+      font-weight:1200;
+      text-shadow:0 3px 18px rgba(0,0,0,.35);
     }
 
     .goalGrid{
