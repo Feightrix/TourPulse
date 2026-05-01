@@ -13,9 +13,11 @@
     .banner{
       position:relative;
       overflow:hidden;
-      min-height:190px;
+      min-height:170px;
       border-radius:28px;
       margin-top:18px;
+      border:1px solid rgba(15,23,42,.10);
+      box-shadow:0 18px 45px rgba(2,6,23,.10);
     }
 
     .bannerImg{
@@ -25,12 +27,8 @@
       height:100%;
       object-fit:cover;
       display:block;
-      opacity:.95;
+      opacity:.38;
       z-index:0;
-    }
-
-    .bannerBg{
-      display:none;
     }
 
     .bannerShade{
@@ -38,30 +36,36 @@
       inset:0;
       z-index:1;
       background:
-        linear-gradient(90deg, rgba(2,6,23,.72) 0%, rgba(2,6,23,.48) 34%, rgba(2,6,23,.20) 68%, rgba(2,6,23,.12) 100%);
+        linear-gradient(90deg, rgba(255,255,255,.78) 0%, rgba(255,255,255,.56) 38%, rgba(255,255,255,.32) 100%),
+        linear-gradient(180deg, rgba(255,255,255,.40), rgba(255,255,255,.18));
     }
 
     .bannerInner{
       position:relative;
       z-index:2;
-      min-height:190px;
+      min-height:170px;
       display:flex;
-      align-items:flex-start;
       justify-content:space-between;
+      align-items:flex-start;
       padding:30px 32px;
+      gap:18px;
     }
 
     .bannerLeft .k{
-      color:rgba(255,255,255,.78);
+      margin:0 0 8px;
+      color:rgba(15,23,42,.68);
+      font-size:13px;
       font-weight:1100;
-      letter-spacing:.9px;
+      letter-spacing:.8px;
       text-transform:uppercase;
     }
 
     .bannerLeft .site{
-      color:#fff;
+      margin:0;
+      color:rgba(15,23,42,.94);
+      font-size:28px;
       font-weight:1200;
-      text-shadow:0 3px 18px rgba(0,0,0,.35);
+      line-height:1.05;
     }
 
     .goalGrid{
@@ -179,9 +183,10 @@
     }
 
     @media(max-width:720px){
+      .bannerInner{ flex-direction:column; }
       .goalGrid{ grid-template-columns:1fr; }
-      .summaryMini{ grid-template-columns:1fr; }
       .goalInputs{ grid-template-columns:1fr; }
+      .summaryMini{ grid-template-columns:1fr; }
       .heroGoal{ font-size:52px; }
     }
   </style>
@@ -209,26 +214,21 @@
             <div class="emp" id="userEmp">—</div>
           </div>
 
+          <button class="btnGhost" type="button" id="btnChangeSite" style="display:none;">Change Site</button>
+          <button class="btnGhost" type="button" id="btnChooseSite">Choose Site</button>
           <button class="btnGhost" type="button" id="btnBack">← Back</button>
           <button class="btnGhost" type="button" id="btnSignOut">Sign Out</button>
         </div>
       </div>
 
-      <div class="banner" aria-label="Team goals banner">
-        <img
-          id="bannerImg"
-          class="bannerImg"
-          src="https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt3feb49ba4da8f26d/5e4590eb5e52d50d64528109/SBR_property_CheckIn_003.jpg"
-          alt="South Beach Resort"
-        />
-
-        <div class="bannerBg" aria-hidden="true"></div>
+      <div class="banner" aria-label="Selected site banner">
+        <img id="bannerImg" class="bannerImg" alt="" />
         <div class="bannerShade" aria-hidden="true"></div>
 
         <div class="bannerInner">
           <div class="bannerLeft">
-            <p class="k">South Beach Resort</p>
-            <p class="site">Team Goals Calculator</p>
+            <p class="k">Selected Site</p>
+            <p class="site" id="bannerSite">—</p>
           </div>
 
           <div class="bannerActions">
@@ -240,10 +240,7 @@
       <div class="grid">
         <div class="card">
           <h1>Daily Arrival Goals</h1>
-          <p class="muted">
-            Enter today’s arrivals and the required booking percentage for each segment.
-          </p>
-
+          <p class="muted">Enter today’s arrivals and the required booking percentage for each segment.</p>
           <div class="goalGrid" id="goalGrid"></div>
         </div>
 
@@ -269,7 +266,7 @@
             <div class="summaryMini">
               <div class="miniTile">
                 <div class="miniLabel">Weighted Goal %</div>
-                <div class="miniValue mono" id="weightedPct">0%</div>
+                <div class="miniValue mono" id="weightedPct">0.00%</div>
               </div>
 
               <div class="miniTile">
@@ -285,6 +282,32 @@
         </div>
       </div>
     </section>
+  </div>
+
+  <!-- SITE PICKER MODAL -->
+  <div class="modalOverlay" id="siteOverlay" role="dialog" aria-modal="true" aria-labelledby="siteTitle">
+    <div class="modal">
+      <div class="modalHeader">
+        <div>
+          <h2 id="siteTitle">Select Your Site</h2>
+          <p>Pick your location.</p>
+        </div>
+        <button class="x" type="button" id="closeSiteX" aria-label="Close">×</button>
+      </div>
+
+      <div class="modalBody">
+        <div class="search" role="search" aria-label="Search sites">
+          <span class="searchIcon" aria-hidden="true"></span>
+          <input id="siteSearch" type="text" placeholder="Search sites…" autocomplete="off" />
+        </div>
+
+        <div class="sitesGrid" id="sitesGrid"></div>
+
+        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:2px;">
+          <button class="btnGhost" type="button" id="siteCancel">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -310,8 +333,24 @@
       { key:"goos", title:"GOOS" }
     ];
 
+    const SITES = [
+      { key:"cape-canaveral", title:"Cape Canaveral", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltd5e047ac82ec503c/61a794c237c855238d66ec0c/cape-canaveral-resort-property-building-sunset-1440x1080.jpg" },
+      { key:"david-walleys", title:"David Walley's", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt08b954f4f80c7ee7/5e290fd1bad1555533de72e0/DWR_Amenities_HotSprings_Pool_001.jpg" },
+      { key:"desert-club", title:"Desert Club", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltba57961e1c76781e/5e54342d03d2600dc053dc8f/DCR_amenities_WateringHole_020.jpg" },
+      { key:"holiday-hills", title:"Holiday Hills", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltc9cc49c72b923b72/5e2f21fc8f7e217daef663fa/HHR_property_Resort_001.jpg" },
+      { key:"new-orleans", title:"New Orleans", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt0bde089d15479ba0/5fdba695b47cdf7fc7d68d16/20201202_NOR_0184AB_(1)-card.jpg" },
+      { key:"orange-lake", title:"Orange Lake", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltf04192786a7478ff/66c8bea691a856f9a470348a/orange-lake-resort-river-island-exchange-exterior-1440x1080.jpg" },
+      { key:"scottsdale", title:"Scottsdale", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blte2ff00e280785c31/5e2f6a8f507d2f74fb78c1cf/SDR_Amenities_Pool_025.JPG" },
+      { key:"seaside", title:"Seaside", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltc0d2242526c7465e/605cb0545d7a7e0ef01ab30f/SSR_Building-4320x2048.jpeg" },
+      { key:"smokey-mountain", title:"Smokey Mountain", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt25ba35c9bfe5e356/5e6115b88abca6651fc8c4b0/SMR_amenities_pool_010.jpg" },
+      { key:"south-beach", title:"South Beach", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt3feb49ba4da8f26d/5e4590eb5e52d50d64528109/SBR_property_CheckIn_003.jpg" },
+      { key:"myrtle-beach-oceanfront", title:"Myrtle Beach Oceanfront", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt716974a6bd1829af/6620213b061bb143094225ca/mbof-balcony-view-of-pool-1440x1080.jpg?format=pjpg&auto=webp&disable=upscale&quality=70&width=1024&height=716&fit=crop" },
+      { key:"williamsburg", title:"Williamsburg", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt0dd0b98197e30327/5daf1a6adf78486c826dc4b9/holiday-inn-club-vacations-williamsburg-5745140523-16x5.jpeg" }
+    ];
+
     let AUTHEMP = "";
     let AUTHNAME = "";
+    let SITEKEY = "";
 
     function showToast(msg, ms = 1600){
       const t = $("toast");
@@ -321,26 +360,16 @@
       showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
     }
 
-    function goSignin(){
-      window.location.replace(SIGNIN_PAGE);
-    }
-
-    function getEmpFromEmail(email){
-      return String(email || "").split("@")[0] || "";
-    }
+    function goSignin(){ window.location.replace(SIGNIN_PAGE); }
+    function getEmpFromEmail(email){ return String(email || "").split("@")[0] || ""; }
 
     function safeNum(v){
       const n = parseFloat(String(v ?? "0"));
       return Number.isFinite(n) && n >= 0 ? n : 0;
     }
 
-    function num(n){
-      return Number(n || 0).toLocaleString();
-    }
-
-    function pct(n){
-      return `${Number(n || 0).toFixed(0)}%`;
-    }
+    function num(n){ return Number(n || 0).toLocaleString(); }
+    function pct2(n){ return `${Number(n || 0).toFixed(2)}%`; }
 
     function todayKey(){
       const d = new Date();
@@ -350,12 +379,14 @@
       return `${y}-${m}-${day}`;
     }
 
+    function selectedSiteKey(){ return `f8_teamgoals_site_key:${AUTHEMP || "unknown"}`; }
+
     function percentStorageKey(){
-      return `tourpulse:teamgoals:percentages:v2:${AUTHEMP || "unknown"}`;
+      return `tourpulse:teamgoals:percentages:v3:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}`;
     }
 
     function dailyStorageKey(){
-      return `tourpulse:teamgoals:daily:v2:${AUTHEMP || "unknown"}:${todayKey()}`;
+      return `tourpulse:teamgoals:daily:v3:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}:${todayKey()}`;
     }
 
     function defaultPercentages(){
@@ -378,10 +409,7 @@
         const parsed = JSON.parse(raw);
         const data = defaultPercentages();
 
-        SEGMENTS.forEach(s => {
-          data[s.key] = safeNum(parsed?.[s.key]);
-        });
-
+        SEGMENTS.forEach(s => data[s.key] = safeNum(parsed?.[s.key]));
         return data;
       }catch(_){
         return defaultPercentages();
@@ -389,9 +417,7 @@
     }
 
     function writePercentages(data){
-      try{
-        localStorage.setItem(percentStorageKey(), JSON.stringify(data));
-      }catch(_){}
+      try{ localStorage.setItem(percentStorageKey(), JSON.stringify(data)); }catch(_){}
     }
 
     function readArrivals(){
@@ -402,10 +428,7 @@
         const parsed = JSON.parse(raw);
         const data = defaultArrivals();
 
-        SEGMENTS.forEach(s => {
-          data[s.key] = safeNum(parsed?.[s.key]);
-        });
-
+        SEGMENTS.forEach(s => data[s.key] = safeNum(parsed?.[s.key]));
         return data;
       }catch(_){
         return defaultArrivals();
@@ -413,9 +436,7 @@
     }
 
     function writeArrivals(data){
-      try{
-        localStorage.setItem(dailyStorageKey(), JSON.stringify(data));
-      }catch(_){}
+      try{ localStorage.setItem(dailyStorageKey(), JSON.stringify(data)); }catch(_){}
     }
 
     function renderGoalTiles(){
@@ -458,8 +479,8 @@
                 inputmode="decimal"
                 data-key="${segment.key}"
                 data-field="percent"
-                value="${percentages[segment.key] || ""}"
-                placeholder="0"
+                value="${percentages[segment.key] ? safeNum(percentages[segment.key]).toFixed(2) : ""}"
+                placeholder="0.00"
               />
             </div>
           </div>
@@ -504,14 +525,12 @@
         if(goalEl) goalEl.textContent = num(segmentGoal);
       });
 
-      const weightedPct = totalArrivals > 0
-        ? weightedNumerator / totalArrivals
-        : 0;
+      const weightedPct = totalArrivals > 0 ? weightedNumerator / totalArrivals : 0;
 
       $("sumArrivals").textContent = num(totalArrivals);
       $("sumGoal").textContent = num(totalGoal);
       $("heroGoal").textContent = num(totalGoal);
-      $("weightedPct").textContent = pct(weightedPct);
+      $("weightedPct").textContent = pct2(weightedPct);
       $("segmentsUsed").textContent = num(segmentsUsed);
     }
 
@@ -522,7 +541,6 @@
 
         const key = input.getAttribute("data-key");
         const field = input.getAttribute("data-field");
-
         if(!key || !field) return;
 
         if(field === "arrivals"){
@@ -545,17 +563,122 @@
         if(!(input instanceof HTMLInputElement)) return;
         input.select();
       });
+
+      $("goalGrid").addEventListener("focusout", (e) => {
+        const input = e.target;
+        if(!(input instanceof HTMLInputElement)) return;
+        if(input.getAttribute("data-field") !== "percent") return;
+
+        const v = safeNum(input.value);
+        input.value = v ? v.toFixed(2) : "";
+      });
+    }
+
+    function setBanner(site){
+      SITEKEY = site?.key || "";
+      $("bannerSite").textContent = site?.title || "—";
+
+      $("btnChooseSite").style.display = site?.title ? "none" : "inline-flex";
+      $("btnChangeSite").style.display = site?.title ? "inline-flex" : "none";
+
+      const img = $("bannerImg");
+      if(site?.img){
+        img.src = site.img;
+        img.alt = `${site.title} resort photo`;
+        img.style.display = "block";
+      }else{
+        img.removeAttribute("src");
+        img.alt = "";
+        img.style.display = "none";
+      }
+    }
+
+    function loadSelectedSite(){
+      try{
+        const key = localStorage.getItem(selectedSiteKey()) || "";
+        if(!key) return null;
+        return SITES.find(s => s.key === key) || null;
+      }catch(_){
+        return null;
+      }
+    }
+
+    function setSelectedSite(site){
+      try{ localStorage.setItem(selectedSiteKey(), site.key); }catch(_){}
+      setBanner(site);
+      renderGoalTiles();
+      showToast("Site selected.");
+    }
+
+    function openSiteModal(){
+      $("siteOverlay").classList.add("show");
+      $("siteSearch").value = "";
+      renderSites(SITES);
+      setTimeout(() => $("siteSearch")?.focus(), 0);
+    }
+
+    function closeSiteModal(){ $("siteOverlay").classList.remove("show"); }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function renderSites(list){
+      const grid = $("sitesGrid");
+      grid.innerHTML = "";
+
+      list.forEach(site => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "siteBtn";
+        btn.setAttribute("data-site", site.key);
+
+        btn.innerHTML = `
+          <div class="tileBg" aria-hidden="true"></div>
+          <img class="tileImg" alt="" loading="lazy" referrerpolicy="no-referrer" />
+          <div class="tileShade" aria-hidden="true"></div>
+          <div class="tileInner">
+            <p class="siteName">${escapeHtml(site.title)}</p>
+            <div class="pillSmall">Select</div>
+          </div>
+        `;
+
+        const img = btn.querySelector(".tileImg");
+        if(site.img){
+          img.src = site.img;
+          img.style.display = "block";
+        }
+
+        grid.appendChild(btn);
+      });
+    }
+
+    function applySiteSearch(){
+      const q = String($("siteSearch").value || "").trim().toLowerCase();
+
+      if(!q){
+        renderSites(SITES);
+        return;
+      }
+
+      renderSites(SITES.filter(s =>
+        s.title.toLowerCase().includes(q) ||
+        s.key.toLowerCase().includes(q)
+      ));
     }
 
     async function requireAuthOrRedirect(){
       if(!sb) return goSignin();
 
       const { data: { session } } = await sb.auth.getSession();
-
       if(!session?.user) return goSignin();
 
       const user = session.user;
-
       AUTHNAME = user.user_metadata?.first_name || "";
       AUTHEMP = getEmpFromEmail(user.email);
 
@@ -577,11 +700,30 @@
       goSignin();
     }
 
-    $("btnBack").addEventListener("click", () => {
-      window.location.href = BACK_PAGE;
+    $("btnBack").addEventListener("click", () => window.location.href = BACK_PAGE);
+    $("btnSignOut").addEventListener("click", signOut);
+
+    $("btnChooseSite").addEventListener("click", openSiteModal);
+    $("btnChangeSite").addEventListener("click", openSiteModal);
+    $("closeSiteX").addEventListener("click", closeSiteModal);
+    $("siteCancel").addEventListener("click", closeSiteModal);
+    $("siteSearch").addEventListener("input", applySiteSearch);
+
+    $("siteOverlay").addEventListener("click", (e) => {
+      if(e.target === $("siteOverlay")) closeSiteModal();
     });
 
-    $("btnSignOut").addEventListener("click", signOut);
+    $("sitesGrid").addEventListener("click", (e) => {
+      const btn = e.target?.closest?.("button[data-site]");
+      if(!btn) return;
+
+      const key = btn.getAttribute("data-site");
+      const site = SITES.find(s => s.key === key);
+      if(!site) return;
+
+      setSelectedSite(site);
+      closeSiteModal();
+    });
 
     $("btnReset").addEventListener("click", () => {
       writeArrivals(defaultArrivals());
@@ -589,16 +731,24 @@
       showToast("Today reset. Percentages kept.");
     });
 
+    document.addEventListener("keydown", (e) => {
+      if(e.key === "Escape") closeSiteModal();
+    });
+
     if(sb){
       sb.auth.onAuthStateChange((event, session) => {
-        if(event === "SIGNED_OUT" || !session?.user){
-          goSignin();
-        }
+        if(event === "SIGNED_OUT" || !session?.user) goSignin();
       });
     }
 
     (async function init(){
       await requireAuthOrRedirect();
+
+      const selected = loadSelectedSite();
+      setBanner(selected);
+
+      if(!selected) openSiteModal();
+
       wireGoalInputs();
       renderGoalTiles();
     })();
