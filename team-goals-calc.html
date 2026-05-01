@@ -10,6 +10,30 @@
   <link rel="stylesheet" href="css/style.css">
 
   <style>
+    /* ===== Banner Fix ===== */
+    .banner{
+      position:relative;
+      overflow:hidden;
+    }
+
+    .bannerImg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      opacity:.75;
+      z-index:0;
+    }
+
+    .bannerBg,
+    .bannerShade,
+    .bannerInner{
+      position:relative;
+      z-index:1;
+    }
+
+    /* ===== Existing Layout ===== */
     .goalGrid{
       display:grid;
       grid-template-columns:repeat(2,minmax(0,1fr));
@@ -28,7 +52,6 @@
     .goalLabel{
       font-size:12px;
       font-weight:1100;
-      letter-spacing:.22px;
       text-transform:uppercase;
       color:rgba(15,23,42,.62);
       margin-bottom:10px;
@@ -40,94 +63,27 @@
       gap:10px;
     }
 
-    .goalInputWrap .label{
-      font-size:11px;
-      font-weight:1000;
-      color:rgba(15,23,42,.55);
-      margin-bottom:5px;
-    }
-
     .goalInput{
       width:100%;
       border:1px solid rgba(15,23,42,.12);
-      background:#fff;
       border-radius:12px;
-      padding:11px 12px;
+      padding:11px;
       font-size:18px;
       font-weight:1000;
-      color:rgba(15,23,42,.92);
-      outline:none;
-      box-sizing:border-box;
-    }
-
-    .goalInput:focus{
-      border-color:rgba(10,166,181,.55);
-      box-shadow:0 0 0 4px rgba(10,166,181,.18);
     }
 
     .goalResult{
       margin-top:12px;
       display:flex;
       justify-content:space-between;
-      align-items:center;
-      border-top:1px solid rgba(15,23,42,.09);
       padding-top:12px;
-    }
-
-    .goalResult span:first-child{
-      font-size:12px;
-      font-weight:1000;
-      color:rgba(15,23,42,.58);
-      text-transform:uppercase;
-    }
-
-    .goalResult span:last-child{
-      font-size:24px;
-      font-weight:1200;
-      color:rgba(10,166,181,.95);
+      border-top:1px solid rgba(15,23,42,.09);
     }
 
     .heroGoal{
       font-size:58px;
       font-weight:1200;
-      line-height:1;
-      letter-spacing:-1.5px;
-      color:rgba(15,23,42,.94);
-      margin:8px 0 4px;
-    }
-
-    .summaryMini{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-      margin-top:12px;
-    }
-
-    .miniTile{
-      border:1px solid rgba(15,23,42,.1);
-      background:rgba(255,255,255,.72);
-      border-radius:16px;
-      padding:12px;
-    }
-
-    .miniLabel{
-      font-size:11px;
-      font-weight:1000;
-      text-transform:uppercase;
-      color:rgba(15,23,42,.55);
-    }
-
-    .miniValue{
-      font-size:22px;
-      font-weight:1200;
-      margin-top:5px;
-      color:rgba(15,23,42,.9);
-    }
-
-    @media(max-width:720px){
-      .goalGrid{ grid-template-columns:1fr; }
-      .summaryMini{ grid-template-columns:1fr; }
-      .goalInputs{ grid-template-columns:1fr; }
+      margin-top:10px;
     }
   </style>
 
@@ -135,420 +91,171 @@
 </head>
 
 <body>
-  <div class="wrap">
-    <section class="panel" aria-label="Team Goals Calculator">
-      <div class="topbar">
-        <div class="brand">
-          <div class="logoBox" aria-hidden="true">
-            <img src="images/MTK-logo.png" alt="TourPulse Logo" />
-          </div>
-          <div class="brandText">
-            <p class="title">TourPulse</p>
-            <p class="sub">Powered by F8</p>
-          </div>
-        </div>
+<div class="wrap">
+<section class="panel">
 
-        <div class="rightStack">
-          <div class="userPill" title="Signed-in account">
-            <div class="name" id="userName">—</div>
-            <div class="emp" id="userEmp">—</div>
-          </div>
-
-          <button class="btnGhost" type="button" id="btnBack">← Back</button>
-          <button class="btnGhost" type="button" id="btnSignOut">Sign Out</button>
-        </div>
-      </div>
-
-      <div class="banner" aria-label="Team goals banner">
-        <div class="bannerBg" aria-hidden="true"></div>
-        <img
-          class="bannerImg"
-          src="https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt3feb49ba4da8f26d/5e4590eb5e52d50d64528109/SBR_property_CheckIn_003.jpg"
-          alt="South Beach Resort"
-        />
-        <div class="bannerShade" aria-hidden="true"></div>
-
-        <div class="bannerInner">
-          <div class="bannerLeft">
-            <p class="k">South Beach Resort</p>
-            <p class="site">Team Goals Calculator</p>
-          </div>
-
-          <div class="bannerActions">
-            <button class="btn" type="button" id="btnReset">Reset Today</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid">
-        <div class="card">
-          <h1>Daily Arrival Goals</h1>
-          <p class="muted">
-            Enter today’s arrivals and the required booking percentage for each segment.
-          </p>
-
-          <div class="goalGrid" id="goalGrid"></div>
-        </div>
-
-        <div class="card summaryCard">
-          <div class="summaryTop">
-            <p class="summaryTitle"><span>Daily Team Goal</span></p>
-          </div>
-
-          <div class="summaryBody">
-            <div class="sumRow">
-              <div class="sumLabel strong">Total Arrivals</div>
-              <div class="sumValue big mono" id="sumArrivals">0</div>
-            </div>
-
-            <div class="sumRow">
-              <div class="sumLabel strong">Bookings Needed</div>
-              <div class="sumValue big mono" id="sumGoal">0</div>
-            </div>
-
-            <div class="heroGoal mono" id="heroGoal">0</div>
-            <p class="muted">Rounded-up daily team goal.</p>
-
-            <div class="summaryMini">
-              <div class="miniTile">
-                <div class="miniLabel">Weighted Goal %</div>
-                <div class="miniValue mono" id="weightedPct">0%</div>
-              </div>
-
-              <div class="miniTile">
-                <div class="miniLabel">Segments Used</div>
-                <div class="miniValue mono" id="segmentsUsed">0</div>
-              </div>
-            </div>
-
-            <p class="muted" style="margin-top:14px;">
-              Formula: <b>Arrivals × Booking %</b>. Each segment goal rounds up.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
+<!-- Topbar -->
+<div class="topbar">
+  <div class="brand">
+    <div class="logoBox">
+      <img src="images/MTK-logo.png" />
+    </div>
+    <div class="brandText">
+      <p class="title">TourPulse</p>
+      <p class="sub">Powered by F8</p>
+    </div>
   </div>
 
-  <div class="toast" id="toast"></div>
-
-  <script>
-    const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
-
-    const SIGNIN_PAGE = "signin.html";
-    const BACK_PAGE = "choose-calc.html";
-
-    const sb = (window.supabase && window.supabase.createClient)
-      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-      : null;
-
-    const $ = (id) => document.getElementById(id);
-
-    const SEGMENTS = [
-      { key:"owners", title:"OWNERS" },
-      { key:"vips", title:"VIPS" },
-      { key:"rci", title:"RCI" },
-      { key:"renters", title:"RENTERS" },
-      { key:"goos", title:"GOOS" }
-    ];
-
-    let AUTHEMP = "";
-    let AUTHNAME = "";
-
-    function showToast(msg, ms = 1600){
-      const t = $("toast");
-      t.textContent = msg;
-      t.classList.add("show");
-      window.clearTimeout(showToast._timer);
-      showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
-    }
-
-    function goSignin(){
-      window.location.replace(SIGNIN_PAGE);
-    }
-
-    function getEmpFromEmail(email){
-      return String(email || "").split("@")[0] || "";
-    }
-
-    function safeNum(v){
-      const n = parseFloat(String(v ?? "0"));
-      return Number.isFinite(n) && n >= 0 ? n : 0;
-    }
-
-    function num(n){
-      return Number(n || 0).toLocaleString();
-    }
-
-    function pct(n){
-      return `${Number(n || 0).toFixed(0)}%`;
-    }
-
-    function todayKey(){
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${y}-${m}-${day}`;
-    }
-
-    function percentStorageKey(){
-      return `tourpulse:teamgoals:percentages:v1:${AUTHEMP || "unknown"}`;
-    }
-
-    function dailyStorageKey(){
-      return `tourpulse:teamgoals:daily:v1:${AUTHEMP || "unknown"}:${todayKey()}`;
-    }
-
-    function defaultPercentages(){
-      const data = {};
-      SEGMENTS.forEach(s => {
-        data[s.key] = 0;
-      });
-      return data;
-    }
-
-    function defaultArrivals(){
-      const data = {};
-      SEGMENTS.forEach(s => {
-        data[s.key] = 0;
-      });
-      return data;
-    }
-
-    function readPercentages(){
-      try{
-        const raw = localStorage.getItem(percentStorageKey());
-        if(!raw) return defaultPercentages();
-
-        const parsed = JSON.parse(raw);
-        const data = defaultPercentages();
-
-        SEGMENTS.forEach(s => {
-          data[s.key] = safeNum(parsed?.[s.key]);
-        });
-
-        return data;
-      }catch(_){
-        return defaultPercentages();
-      }
-    }
-
-    function writePercentages(data){
-      try{
-        localStorage.setItem(percentStorageKey(), JSON.stringify(data));
-      }catch(_){}
-    }
-
-    function readArrivals(){
-      try{
-        const raw = localStorage.getItem(dailyStorageKey());
-        if(!raw) return defaultArrivals();
-
-        const parsed = JSON.parse(raw);
-        const data = defaultArrivals();
-
-        SEGMENTS.forEach(s => {
-          data[s.key] = safeNum(parsed?.[s.key]);
-        });
-
-        return data;
-      }catch(_){
-        return defaultArrivals();
-      }
-    }
-
-    function writeArrivals(data){
-      try{
-        localStorage.setItem(dailyStorageKey(), JSON.stringify(data));
-      }catch(_){}
-    }
-
-    function renderGoalTiles(){
-      const grid = $("goalGrid");
-      const arrivals = readArrivals();
-      const percentages = readPercentages();
-
-      grid.innerHTML = "";
-
-      SEGMENTS.forEach(segment => {
-        const tile = document.createElement("div");
-        tile.className = "goalTile";
-
-        tile.innerHTML = `
-          <div class="goalLabel">${segment.title}</div>
-
-          <div class="goalInputs">
-            <div class="goalInputWrap">
-              <div class="label">Arrivals</div>
-              <input
-                class="goalInput mono"
-                type="number"
-                min="0"
-                step="1"
-                inputmode="numeric"
-                data-key="${segment.key}"
-                data-field="arrivals"
-                value="${arrivals[segment.key] || ""}"
-                placeholder="0"
-              />
-            </div>
-
-            <div class="goalInputWrap">
-              <div class="label">Booking %</div>
-              <input
-                class="goalInput mono"
-                type="number"
-                min="0"
-                step="0.01"
-                inputmode="decimal"
-                data-key="${segment.key}"
-                data-field="percent"
-                value="${percentages[segment.key] || ""}"
-                placeholder="0"
-              />
-            </div>
-          </div>
-
-          <div class="goalResult">
-            <span>Goal</span>
-            <span class="mono" id="goal_${segment.key}">0</span>
-          </div>
-        `;
-
-        grid.appendChild(tile);
-      });
-
-      calculate();
-    }
-
-    function calculate(){
-      const arrivals = readArrivals();
-      const percentages = readPercentages();
-
-      let totalArrivals = 0;
-      let totalGoal = 0;
-      let weightedNumerator = 0;
-      let segmentsUsed = 0;
-
-      SEGMENTS.forEach(segment => {
-        const arrivalCount = safeNum(arrivals[segment.key]);
-        const percent = safeNum(percentages[segment.key]);
-
-        const rawGoal = arrivalCount * (percent / 100);
-        const segmentGoal = rawGoal > 0 ? Math.ceil(rawGoal) : 0;
-
-        totalArrivals += arrivalCount;
-        totalGoal += segmentGoal;
-
-        if(arrivalCount > 0){
-          weightedNumerator += arrivalCount * percent;
-          segmentsUsed++;
-        }
-
-        const goalEl = $(`goal_${segment.key}`);
-        if(goalEl) goalEl.textContent = num(segmentGoal);
-      });
-
-      const weightedPct = totalArrivals > 0
-        ? weightedNumerator / totalArrivals
-        : 0;
-
-      $("sumArrivals").textContent = num(totalArrivals);
-      $("sumGoal").textContent = num(totalGoal);
-      $("heroGoal").textContent = num(totalGoal);
-      $("weightedPct").textContent = pct(weightedPct);
-      $("segmentsUsed").textContent = num(segmentsUsed);
-    }
-
-    function wireGoalInputs(){
-      $("goalGrid").addEventListener("input", (e) => {
-        const input = e.target;
-        if(!(input instanceof HTMLInputElement)) return;
-
-        const key = input.getAttribute("data-key");
-        const field = input.getAttribute("data-field");
-
-        if(!key || !field) return;
-
-        if(field === "arrivals"){
-          const arrivals = readArrivals();
-          arrivals[key] = safeNum(input.value);
-          writeArrivals(arrivals);
-        }
-
-        if(field === "percent"){
-          const percentages = readPercentages();
-          percentages[key] = safeNum(input.value);
-          writePercentages(percentages);
-        }
-
-        calculate();
-      });
-
-      $("goalGrid").addEventListener("focusin", (e) => {
-        const input = e.target;
-        if(!(input instanceof HTMLInputElement)) return;
-        if(String(input.value || "") === "0") input.select();
-      });
-    }
-
-    async function requireAuthOrRedirect(){
-      if(!sb) return goSignin();
-
-      const { data: { session } } = await sb.auth.getSession();
-
-      if(!session?.user) return goSignin();
-
-      const user = session.user;
-
-      AUTHNAME = user.user_metadata?.first_name || "";
-      AUTHEMP = getEmpFromEmail(user.email);
-
-      $("userName").textContent = AUTHNAME || "Signed In";
-      $("userEmp").textContent = AUTHEMP ? `#${AUTHEMP}` : "";
-    }
-
-    async function signOut(){
-      if(!sb) return goSignin();
-
-      const { error } = await sb.auth.signOut();
-
-      if(error){
-        showToast(error.message || "Sign out failed.");
-        return;
-      }
-
-      showToast("Signed out.");
-      goSignin();
-    }
-
-    $("btnBack").addEventListener("click", () => {
-      window.location.href = BACK_PAGE;
-    });
-
-    $("btnSignOut").addEventListener("click", signOut);
-
-    $("btnReset").addEventListener("click", () => {
-      writeArrivals(defaultArrivals());
-      renderGoalTiles();
-      showToast("Today reset. Percentages kept.");
-    });
-
-    if(sb){
-      sb.auth.onAuthStateChange((event, session) => {
-        if(event === "SIGNED_OUT" || !session?.user){
-          goSignin();
-        }
-      });
-    }
-
-    (async function init(){
-      await requireAuthOrRedirect();
-      wireGoalInputs();
-      renderGoalTiles();
-    })();
-  </script>
+  <div class="rightStack">
+    <div class="userPill">
+      <div id="userName">—</div>
+      <div id="userEmp">—</div>
+    </div>
+
+    <button class="btnGhost" id="btnBack">← Back</button>
+    <button class="btnGhost" id="btnSignOut">Sign Out</button>
+  </div>
+</div>
+
+<!-- Banner -->
+<div class="banner">
+  <div class="bannerBg"></div>
+
+  <img
+    id="bannerImg"
+    class="bannerImg"
+    src="https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt3feb49ba4da8f26d/5e4590eb5e52d50d64528109/SBR_property_CheckIn_003.jpg"
+    alt="South Beach Resort"
+  />
+
+  <div class="bannerShade"></div>
+
+  <div class="bannerInner">
+    <div>
+      <p class="k">South Beach Resort</p>
+      <p class="site">Team Goals Calculator</p>
+    </div>
+
+    <button class="btn" id="btnReset">Reset Today</button>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="grid">
+
+<div class="card">
+  <h1>Daily Arrival Goals</h1>
+  <div id="goalGrid" class="goalGrid"></div>
+</div>
+
+<div class="card summaryCard">
+  <div>Total Arrivals: <span id="sumArrivals">0</span></div>
+  <div>Bookings Needed: <span id="sumGoal">0</span></div>
+  <div id="heroGoal" class="heroGoal">0</div>
+</div>
+
+</div>
+</section>
+</div>
+
+<script>
+const SEGMENTS=["owners","vips","rci","renters","goos"];
+const $=id=>document.getElementById(id);
+
+function todayKey(){
+  const d=new Date();
+  return d.toISOString().split("T")[0];
+}
+
+function pKey(){return "tg_pct";}
+function aKey(){return "tg_arr_"+todayKey();}
+
+function read(k,def){
+  try{return JSON.parse(localStorage.getItem(k))||def}catch{return def}
+}
+
+function write(k,v){localStorage.setItem(k,JSON.stringify(v));}
+
+function render(){
+  const g=$("goalGrid");
+  const p=read(pKey(),{});
+  const a=read(aKey(),{});
+  g.innerHTML="";
+
+  SEGMENTS.forEach(s=>{
+    g.innerHTML+=`
+    <div class="goalTile">
+      <div class="goalLabel">${s.toUpperCase()}</div>
+
+      <div class="goalInputs">
+        <input class="goalInput" data-s="${s}" data-f="a" value="${a[s]||""}" placeholder="Arrivals">
+        <input class="goalInput" data-s="${s}" data-f="p" value="${p[s]||""}" placeholder="%">
+      </div>
+
+      <div class="goalResult">
+        <span>Goal</span>
+        <span id="g_${s}">0</span>
+      </div>
+    </div>`;
+  });
+
+  calc();
+}
+
+function calc(){
+  const p=read(pKey(),{});
+  const a=read(aKey(),{});
+
+  let totalA=0,totalG=0;
+
+  SEGMENTS.forEach(s=>{
+    const arr=Number(a[s]||0);
+    const pct=Number(p[s]||0);
+
+    const goal=Math.ceil(arr*(pct/100)||0);
+
+    totalA+=arr;
+    totalG+=goal;
+
+    $("g_"+s).innerText=goal;
+  });
+
+  $("sumArrivals").innerText=totalA;
+  $("sumGoal").innerText=totalG;
+  $("heroGoal").innerText=totalG;
+}
+
+document.addEventListener("input",e=>{
+  const el=e.target;
+  if(!el.dataset.s)return;
+
+  const s=el.dataset.s;
+  const f=el.dataset.f;
+
+  if(f==="a"){
+    const a=read(aKey(),{});
+    a[s]=Number(el.value||0);
+    write(aKey(),a);
+  }
+
+  if(f==="p"){
+    const p=read(pKey(),{});
+    p[s]=Number(el.value||0);
+    write(pKey(),p);
+  }
+
+  calc();
+});
+
+$("btnReset").onclick=()=>{
+  localStorage.removeItem(aKey());
+  render();
+};
+
+$("btnBack").onclick=()=>location.href="choose-calc.html";
+
+render();
+</script>
+
 </body>
 </html>
