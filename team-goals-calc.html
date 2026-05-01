@@ -161,11 +161,16 @@
 
       <div class="banner" aria-label="Team goals banner">
         <div class="bannerBg" aria-hidden="true"></div>
+        <img
+          class="bannerImg"
+          src="https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt3feb49ba4da8f26d/5e4590eb5e52d50d64528109/SBR_property_CheckIn_003.jpg"
+          alt="South Beach Resort"
+        />
         <div class="bannerShade" aria-hidden="true"></div>
 
         <div class="bannerInner">
           <div class="bannerLeft">
-            <p class="k">Daily Planning</p>
+            <p class="k">South Beach Resort</p>
             <p class="site">Team Goals Calculator</p>
           </div>
 
@@ -280,57 +285,94 @@
       return `${Number(n || 0).toFixed(0)}%`;
     }
 
-    function storageKey(){
-      return `tourpulse:teamgoals:v1:${AUTHEMP || "unknown"}`;
+    function todayKey(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
     }
 
-    function defaultData(){
+    function percentStorageKey(){
+      return `tourpulse:teamgoals:percentages:v1:${AUTHEMP || "unknown"}`;
+    }
+
+    function dailyStorageKey(){
+      return `tourpulse:teamgoals:daily:v1:${AUTHEMP || "unknown"}:${todayKey()}`;
+    }
+
+    function defaultPercentages(){
       const data = {};
       SEGMENTS.forEach(s => {
-        data[s.key] = {
-          arrivals:0,
-          percent:0
-        };
+        data[s.key] = 0;
       });
       return data;
     }
 
-    function readData(){
+    function defaultArrivals(){
+      const data = {};
+      SEGMENTS.forEach(s => {
+        data[s.key] = 0;
+      });
+      return data;
+    }
+
+    function readPercentages(){
       try{
-        const raw = localStorage.getItem(storageKey());
-        if(!raw) return defaultData();
+        const raw = localStorage.getItem(percentStorageKey());
+        if(!raw) return defaultPercentages();
 
         const parsed = JSON.parse(raw);
-        const data = defaultData();
+        const data = defaultPercentages();
 
         SEGMENTS.forEach(s => {
-          data[s.key] = {
-            arrivals:safeNum(parsed?.[s.key]?.arrivals),
-            percent:safeNum(parsed?.[s.key]?.percent)
-          };
+          data[s.key] = safeNum(parsed?.[s.key]);
         });
 
         return data;
       }catch(_){
-        return defaultData();
+        return defaultPercentages();
       }
     }
 
-    function writeData(data){
+    function writePercentages(data){
       try{
-        localStorage.setItem(storageKey(), JSON.stringify(data));
+        localStorage.setItem(percentStorageKey(), JSON.stringify(data));
+      }catch(_){}
+    }
+
+    function readArrivals(){
+      try{
+        const raw = localStorage.getItem(dailyStorageKey());
+        if(!raw) return defaultArrivals();
+
+        const parsed = JSON.parse(raw);
+        const data = defaultArrivals();
+
+        SEGMENTS.forEach(s => {
+          data[s.key] = safeNum(parsed?.[s.key]);
+        });
+
+        return data;
+      }catch(_){
+        return defaultArrivals();
+      }
+    }
+
+    function writeArrivals(data){
+      try{
+        localStorage.setItem(dailyStorageKey(), JSON.stringify(data));
       }catch(_){}
     }
 
     function renderGoalTiles(){
       const grid = $("goalGrid");
-      const data = readData();
+      const arrivals = readArrivals();
+      const percentages = readPercentages();
 
       grid.innerHTML = "";
 
       SEGMENTS.forEach(segment => {
-        const row = data[segment.key] || { arrivals:0, percent:0 };
-
         const tile = document.createElement("div");
         tile.className = "goalTile";
 
@@ -348,7 +390,7 @@
                 inputmode="numeric"
                 data-key="${segment.key}"
                 data-field="arrivals"
-                value="${row.arrivals || ""}"
+                value="${arrivals[segment.key] || ""}"
                 placeholder="0"
               />
             </div>
@@ -363,7 +405,7 @@
                 inputmode="decimal"
                 data-key="${segment.key}"
                 data-field="percent"
-                value="${row.percent || ""}"
+                value="${percentages[segment.key] || ""}"
                 placeholder="0"
               />
             </div>
@@ -382,7 +424,8 @@
     }
 
     function calculate(){
-      const data = readData();
+      const arrivals = readArrivals();
+      const percentages = readPercentages();
 
       let totalArrivals = 0;
       let totalGoal = 0;
@@ -390,17 +433,17 @@
       let segmentsUsed = 0;
 
       SEGMENTS.forEach(segment => {
-        const arrivals = safeNum(data?.[segment.key]?.arrivals);
-        const percent = safeNum(data?.[segment.key]?.percent);
+        const arrivalCount = safeNum(arrivals[segment.key]);
+        const percent = safeNum(percentages[segment.key]);
 
-        const rawGoal = arrivals * (percent / 100);
+        const rawGoal = arrivalCount * (percent / 100);
         const segmentGoal = rawGoal > 0 ? Math.ceil(rawGoal) : 0;
 
-        totalArrivals += arrivals;
+        totalArrivals += arrivalCount;
         totalGoal += segmentGoal;
 
-        if(arrivals > 0){
-          weightedNumerator += arrivals * percent;
+        if(arrivalCount > 0){
+          weightedNumerator += arrivalCount * percent;
           segmentsUsed++;
         }
 
@@ -429,18 +472,18 @@
 
         if(!key || !field) return;
 
-        const data = readData();
-
-        if(!data[key]){
-          data[key] = {
-            arrivals:0,
-            percent:0
-          };
+        if(field === "arrivals"){
+          const arrivals = readArrivals();
+          arrivals[key] = safeNum(input.value);
+          writeArrivals(arrivals);
         }
 
-        data[key][field] = safeNum(input.value);
+        if(field === "percent"){
+          const percentages = readPercentages();
+          percentages[key] = safeNum(input.value);
+          writePercentages(percentages);
+        }
 
-        writeData(data);
         calculate();
       });
 
@@ -488,9 +531,9 @@
     $("btnSignOut").addEventListener("click", signOut);
 
     $("btnReset").addEventListener("click", () => {
-      writeData(defaultData());
+      writeArrivals(defaultArrivals());
       renderGoalTiles();
-      showToast("Reset complete.");
+      showToast("Today reset. Percentages kept.");
     });
 
     if(sb){
