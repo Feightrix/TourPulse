@@ -284,7 +284,6 @@
     </section>
   </div>
 
-  <!-- SITE PICKER MODAL -->
   <div class="modalOverlay" id="siteOverlay" role="dialog" aria-modal="true" aria-labelledby="siteTitle">
     <div class="modal">
       <div class="modalHeader">
@@ -379,20 +378,26 @@
       return `${y}-${m}-${day}`;
     }
 
-    function selectedSiteKey(){ return `f8_teamgoals_site_key:${AUTHEMP || "unknown"}`; }
+    function selectedSiteKey(){
+      return `f8_teamgoals_site_key:${AUTHEMP || "unknown"}`;
+    }
 
     function percentStorageKey(){
-      return `tourpulse:teamgoals:percentages:v3:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}`;
+      return `tourpulse:teamgoals:percentages:v4:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}`;
     }
 
     function dailyStorageKey(){
-      return `tourpulse:teamgoals:daily:v3:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}:${todayKey()}`;
+      return `tourpulse:teamgoals:daily:v4:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}:${todayKey()}`;
     }
 
     function defaultPercentages(){
-      const data = {};
-      SEGMENTS.forEach(s => data[s.key] = 0);
-      return data;
+      return {
+        owners: 33.5,
+        vips: 56.5,
+        rci: 0,
+        renters: 22.9,
+        goos: 3
+      };
     }
 
     function defaultArrivals(){
@@ -479,7 +484,7 @@
                 inputmode="decimal"
                 data-key="${segment.key}"
                 data-field="percent"
-                value="${percentages[segment.key] ? safeNum(percentages[segment.key]).toFixed(2) : ""}"
+                value="${safeNum(percentages[segment.key]).toFixed(2)}"
                 placeholder="0.00"
               />
             </div>
@@ -570,7 +575,13 @@
         if(input.getAttribute("data-field") !== "percent") return;
 
         const v = safeNum(input.value);
-        input.value = v ? v.toFixed(2) : "";
+        input.value = v.toFixed(2);
+
+        const key = input.getAttribute("data-key");
+        const percentages = readPercentages();
+        percentages[key] = v;
+        writePercentages(percentages);
+        calculate();
       });
     }
 
@@ -582,6 +593,7 @@
       $("btnChangeSite").style.display = site?.title ? "inline-flex" : "none";
 
       const img = $("bannerImg");
+
       if(site?.img){
         img.src = site.img;
         img.alt = `${site.title} resort photo`;
@@ -617,7 +629,9 @@
       setTimeout(() => $("siteSearch")?.focus(), 0);
     }
 
-    function closeSiteModal(){ $("siteOverlay").classList.remove("show"); }
+    function closeSiteModal(){
+      $("siteOverlay").classList.remove("show");
+    }
 
     function escapeHtml(s){
       return String(s)
@@ -649,6 +663,7 @@
         `;
 
         const img = btn.querySelector(".tileImg");
+
         if(site.img){
           img.src = site.img;
           img.style.display = "block";
@@ -676,9 +691,11 @@
       if(!sb) return goSignin();
 
       const { data: { session } } = await sb.auth.getSession();
+
       if(!session?.user) return goSignin();
 
       const user = session.user;
+
       AUTHNAME = user.user_metadata?.first_name || "";
       AUTHEMP = getEmpFromEmail(user.email);
 
@@ -719,6 +736,7 @@
 
       const key = btn.getAttribute("data-site");
       const site = SITES.find(s => s.key === key);
+
       if(!site) return;
 
       setSelectedSite(site);
