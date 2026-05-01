@@ -12,7 +12,7 @@
   <style>
     .goalGrid{
       display:grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns:repeat(2,minmax(0,1fr));
       gap:12px;
       margin-top:12px;
     }
@@ -88,7 +88,7 @@
     }
 
     .heroGoal{
-      font-size:54px;
+      font-size:58px;
       font-weight:1200;
       line-height:1;
       letter-spacing:-1.5px;
@@ -127,6 +127,7 @@
     @media(max-width:720px){
       .goalGrid{ grid-template-columns:1fr; }
       .summaryMini{ grid-template-columns:1fr; }
+      .goalInputs{ grid-template-columns:1fr; }
     }
   </style>
 
@@ -153,22 +154,19 @@
             <div class="emp" id="userEmp">—</div>
           </div>
 
-          <button class="btnGhost" type="button" id="btnChangeSite" style="display:none;">Change Site</button>
-          <button class="btnGhost" type="button" id="btnChooseSite">Choose Site</button>
           <button class="btnGhost" type="button" id="btnBack">← Back</button>
           <button class="btnGhost" type="button" id="btnSignOut">Sign Out</button>
         </div>
       </div>
 
-      <div class="banner" aria-label="Selected site banner">
+      <div class="banner" aria-label="Team goals banner">
         <div class="bannerBg" aria-hidden="true"></div>
-        <img id="bannerImg" class="bannerImg" alt="" />
         <div class="bannerShade" aria-hidden="true"></div>
 
         <div class="bannerInner">
           <div class="bannerLeft">
-            <p class="k">Selected Site</p>
-            <p class="site" id="bannerSite">—</p>
+            <p class="k">Daily Planning</p>
+            <p class="site">Team Goals Calculator</p>
           </div>
 
           <div class="bannerActions">
@@ -179,8 +177,10 @@
 
       <div class="grid">
         <div class="card">
-          <h1>Team Goals Calculator</h1>
-          <p class="muted">Enter today’s arrivals and the booking percentage for each segment.</p>
+          <h1>Daily Arrival Goals</h1>
+          <p class="muted">
+            Enter today’s arrivals and the required booking percentage for each segment.
+          </p>
 
           <div class="goalGrid" id="goalGrid"></div>
         </div>
@@ -197,12 +197,12 @@
             </div>
 
             <div class="sumRow">
-              <div class="sumLabel strong">Calculated Bookings Needed</div>
+              <div class="sumLabel strong">Bookings Needed</div>
               <div class="sumValue big mono" id="sumGoal">0</div>
             </div>
 
             <div class="heroGoal mono" id="heroGoal">0</div>
-            <p class="muted">This is the rounded-up team goal for the day.</p>
+            <p class="muted">Rounded-up daily team goal.</p>
 
             <div class="summaryMini">
               <div class="miniTile">
@@ -217,7 +217,7 @@
             </div>
 
             <p class="muted" style="margin-top:14px;">
-              Formula: <b>Arrivals × Booking %</b>, then each segment goal is rounded up.
+              Formula: <b>Arrivals × Booking %</b>. Each segment goal rounds up.
             </p>
           </div>
         </div>
@@ -225,67 +225,14 @@
     </section>
   </div>
 
-  <!-- PASSWORD GATE -->
-  <div class="settingsOverlay" id="pwOverlay" role="dialog" aria-modal="true" aria-labelledby="pwTitle">
-    <div class="settingsModal" style="max-width:620px;">
-      <div class="settingsHeader">
-        <h2 id="pwTitle">Restricted Calculator</h2>
-        <button class="x" type="button" id="closePwX" aria-label="Close">×</button>
-      </div>
-      <div class="settingsBody">
-        <div class="sectionCard">
-          <p class="muted" style="margin:0 0 12px;">
-            This calculator requires the universal password.
-          </p>
-
-          <div class="row" style="align-items:flex-end;">
-            <div class="field" style="min-width:260px; flex:1 1 260px;">
-              <div class="label">Password</div>
-              <input class="input" id="pwInput" type="password" placeholder="Enter password" />
-            </div>
-            <button class="btn" type="button" id="btnPwUnlock">Unlock</button>
-          </div>
-
-          <p class="muted" style="margin-top:10px;" id="pwHint"></p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SITE PICKER MODAL -->
-  <div class="modalOverlay" id="siteOverlay" role="dialog" aria-modal="true" aria-labelledby="siteTitle">
-    <div class="modal">
-      <div class="modalHeader">
-        <div>
-          <h2 id="siteTitle">Select Your Site</h2>
-          <p>Pick your location.</p>
-        </div>
-        <button class="x" type="button" id="closeSiteX" aria-label="Close">×</button>
-      </div>
-
-      <div class="modalBody">
-        <div class="search" role="search" aria-label="Search sites">
-          <span class="searchIcon" aria-hidden="true"></span>
-          <input id="siteSearch" type="text" placeholder="Search sites…" autocomplete="off" />
-        </div>
-
-        <div class="sitesGrid" id="sitesGrid"></div>
-
-        <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:2px;">
-          <button class="btnGhost" type="button" id="siteCancel">Cancel</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="toast" id="toast"></div>
 
   <script>
     const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
+
     const SIGNIN_PAGE = "signin.html";
     const BACK_PAGE = "choose-calc.html";
-    const UNIVERSAL_PASSWORD = "BookEmAll";
 
     const sb = (window.supabase && window.supabase.createClient)
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -294,31 +241,15 @@
     const $ = (id) => document.getElementById(id);
 
     const SEGMENTS = [
-      { key:"owners", title:"OWNERS", pct:0 },
-      { key:"vips", title:"VIPS", pct:0 },
-      { key:"rci", title:"RCI", pct:0 },
-      { key:"renters", title:"RENTERS", pct:0 },
-      { key:"goos", title:"GOOS", pct:0 }
-    ];
-
-    const SITES = [
-      { key:"cape-canaveral", title:"Cape Canaveral", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltd5e047ac82ec503c/61a794c237c855238d66ec0c/cape-canaveral-resort-property-building-sunset-1440x1080.jpg" },
-      { key:"david-walleys", title:"David Walley's", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt08b954f4f80c7ee7/5e290fd1bad1555533de72e0/DWR_Amenities_HotSprings_Pool_001.jpg" },
-      { key:"desert-club", title:"Desert Club", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltba57961e1c76781e/5e54342d03d2600dc053dc8f/DCR_amenities_WateringHole_020.jpg" },
-      { key:"holiday-hills", title:"Holiday Hills", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltc9cc49c72b923b72/5e2f21fc8f7e217daef663fa/HHR_property_Resort_001.jpg" },
-      { key:"new-orleans", title:"New Orleans", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt0bde089d15479ba0/5fdba695b47cdf7fc7d68d16/20201202_NOR_0184AB_(1)-card.jpg" },
-      { key:"orange-lake", title:"Orange Lake", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltf04192786a7478ff/66c8bea691a856f9a470348a/orange-lake-resort-river-island-exchange-exterior-1440x1080.jpg" },
-      { key:"scottsdale", title:"Scottsdale", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blte2ff00e280785c31/5e2f6a8f507d2f74fb78c1cf/SDR_Amenities_Pool_025.JPG" },
-      { key:"seaside", title:"Seaside", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltc0d2242526c7465e/605cb0545d7a7e0ef01ab30f/SSR_Building-4320x2048.jpeg" },
-      { key:"smokey-mountain", title:"Smokey Mountain", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt25ba35c9bfe5e356/5e6115b88abca6651fc8c4b0/SMR_amenities_pool_010.jpg" },
-      { key:"south-beach", title:"South Beach", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt3feb49ba4da8f26d/5e4590eb5e52d50d64528109/SBR_property_CheckIn_003.jpg" },
-      { key:"myrtle-beach-oceanfront", title:"Myrtle Beach Oceanfront", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt716974a6bd1829af/6620213b061bb143094225ca/mbof-balcony-view-of-pool-1440x1080.jpg?format=pjpg&auto=webp&disable=upscale&quality=70&width=1024&height=716&fit=crop" },
-      { key:"williamsburg", title:"Williamsburg", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt0dd0b98197e30327/5daf1a6adf78486c826dc4b9/holiday-inn-club-vacations-williamsburg-5745140523-16x5.jpeg" }
+      { key:"owners", title:"OWNERS" },
+      { key:"vips", title:"VIPS" },
+      { key:"rci", title:"RCI" },
+      { key:"renters", title:"RENTERS" },
+      { key:"goos", title:"GOOS" }
     ];
 
     let AUTHEMP = "";
     let AUTHNAME = "";
-    let SITEKEY = "";
 
     function showToast(msg, ms = 1600){
       const t = $("toast");
@@ -328,7 +259,9 @@
       showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
     }
 
-    function goSignin(){ window.location.replace(SIGNIN_PAGE); }
+    function goSignin(){
+      window.location.replace(SIGNIN_PAGE);
+    }
 
     function getEmpFromEmail(email){
       return String(email || "").split("@")[0] || "";
@@ -347,35 +280,17 @@
       return `${Number(n || 0).toFixed(0)}%`;
     }
 
-    function escapeHtml(s){
-      return String(s)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
     function storageKey(){
-      return `tourpulse:teamgoals:v1:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}`;
-    }
-
-    function pwKey(){
-      return `tourpulse:teamgoals:pwok:${AUTHEMP || "unknown"}`;
-    }
-
-    function isUnlocked(){
-      try{ return localStorage.getItem(pwKey()) === "1"; }catch(_){ return false; }
-    }
-
-    function setUnlocked(){
-      try{ localStorage.setItem(pwKey(), "1"); }catch(_){}
+      return `tourpulse:teamgoals:v1:${AUTHEMP || "unknown"}`;
     }
 
     function defaultData(){
       const data = {};
       SEGMENTS.forEach(s => {
-        data[s.key] = { arrivals:0, percent:s.pct };
+        data[s.key] = {
+          arrivals:0,
+          percent:0
+        };
       });
       return data;
     }
@@ -390,8 +305,8 @@
 
         SEGMENTS.forEach(s => {
           data[s.key] = {
-            arrivals: safeNum(parsed?.[s.key]?.arrivals),
-            percent: safeNum(parsed?.[s.key]?.percent)
+            arrivals:safeNum(parsed?.[s.key]?.arrivals),
+            percent:safeNum(parsed?.[s.key]?.percent)
           };
         });
 
@@ -402,14 +317,16 @@
     }
 
     function writeData(data){
-      try{ localStorage.setItem(storageKey(), JSON.stringify(data)); }catch(_){}
+      try{
+        localStorage.setItem(storageKey(), JSON.stringify(data));
+      }catch(_){}
     }
 
     function renderGoalTiles(){
       const grid = $("goalGrid");
-      grid.innerHTML = "";
-
       const data = readData();
+
+      grid.innerHTML = "";
 
       SEGMENTS.forEach(segment => {
         const row = data[segment.key] || { arrivals:0, percent:0 };
@@ -423,14 +340,32 @@
           <div class="goalInputs">
             <div class="goalInputWrap">
               <div class="label">Arrivals</div>
-              <input class="goalInput mono" type="number" min="0" step="1"
-                data-key="${segment.key}" data-field="arrivals" value="${row.arrivals || ""}" placeholder="0" />
+              <input
+                class="goalInput mono"
+                type="number"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                data-key="${segment.key}"
+                data-field="arrivals"
+                value="${row.arrivals || ""}"
+                placeholder="0"
+              />
             </div>
 
             <div class="goalInputWrap">
               <div class="label">Booking %</div>
-              <input class="goalInput mono" type="number" min="0" step="0.01"
-                data-key="${segment.key}" data-field="percent" value="${row.percent || ""}" placeholder="0" />
+              <input
+                class="goalInput mono"
+                type="number"
+                min="0"
+                step="0.01"
+                inputmode="decimal"
+                data-key="${segment.key}"
+                data-field="percent"
+                value="${row.percent || ""}"
+                placeholder="0"
+              />
             </div>
           </div>
 
@@ -469,21 +404,23 @@
           segmentsUsed++;
         }
 
-        const el = $(`goal_${segment.key}`);
-        if(el) el.textContent = num(segmentGoal);
+        const goalEl = $(`goal_${segment.key}`);
+        if(goalEl) goalEl.textContent = num(segmentGoal);
       });
 
-      const weighted = totalArrivals > 0 ? weightedNumerator / totalArrivals : 0;
+      const weightedPct = totalArrivals > 0
+        ? weightedNumerator / totalArrivals
+        : 0;
 
       $("sumArrivals").textContent = num(totalArrivals);
       $("sumGoal").textContent = num(totalGoal);
       $("heroGoal").textContent = num(totalGoal);
-      $("weightedPct").textContent = pct(weighted);
+      $("weightedPct").textContent = pct(weightedPct);
       $("segmentsUsed").textContent = num(segmentsUsed);
     }
 
     function wireGoalInputs(){
-      $("goalGrid").addEventListener("input", e => {
+      $("goalGrid").addEventListener("input", (e) => {
         const input = e.target;
         if(!(input instanceof HTMLInputElement)) return;
 
@@ -493,11 +430,24 @@
         if(!key || !field) return;
 
         const data = readData();
-        if(!data[key]) data[key] = { arrivals:0, percent:0 };
+
+        if(!data[key]){
+          data[key] = {
+            arrivals:0,
+            percent:0
+          };
+        }
 
         data[key][field] = safeNum(input.value);
+
         writeData(data);
         calculate();
+      });
+
+      $("goalGrid").addEventListener("focusin", (e) => {
+        const input = e.target;
+        if(!(input instanceof HTMLInputElement)) return;
+        if(String(input.value || "") === "0") input.select();
       });
     }
 
@@ -505,9 +455,11 @@
       if(!sb) return goSignin();
 
       const { data: { session } } = await sb.auth.getSession();
+
       if(!session?.user) return goSignin();
 
       const user = session.user;
+
       AUTHNAME = user.user_metadata?.first_name || "";
       AUTHEMP = getEmpFromEmail(user.email);
 
@@ -529,154 +481,11 @@
       goSignin();
     }
 
-    function openPwGate(){
-      $("pwOverlay").classList.add("show");
-      $("pwInput").value = "";
-      $("pwHint").textContent = "";
-      setTimeout(() => $("pwInput")?.focus(), 0);
-    }
-
-    $("btnPwUnlock").addEventListener("click", () => {
-      const v = String($("pwInput").value || "");
-
-      if(v !== UNIVERSAL_PASSWORD){
-        $("pwHint").textContent = "Incorrect password.";
-        return;
-      }
-
-      setUnlocked();
-      $("pwOverlay").classList.remove("show");
-      showToast("Unlocked.");
-      renderGoalTiles();
-    });
-
-    $("closePwX").addEventListener("click", () => {
+    $("btnBack").addEventListener("click", () => {
       window.location.href = BACK_PAGE;
     });
 
-    function setBanner(site){
-      SITEKEY = site?.key || "";
-
-      $("bannerSite").textContent = site?.title || "—";
-
-      $("btnChooseSite").style.display = site?.title ? "none" : "inline-flex";
-      $("btnChangeSite").style.display = site?.title ? "inline-flex" : "none";
-
-      const img = $("bannerImg");
-
-      if(site?.img){
-        img.src = site.img;
-        img.alt = `${site.title} resort photo`;
-        img.style.display = "block";
-      }else{
-        img.removeAttribute("src");
-        img.alt = "";
-        img.style.display = "none";
-      }
-    }
-
-    function loadSelectedSite(){
-      try{
-        const key = localStorage.getItem("f8_teamgoals_site_key") || "";
-        if(!key) return null;
-        return SITES.find(s => s.key === key) || null;
-      }catch(_){
-        return null;
-      }
-    }
-
-    function setSelectedSite(site){
-      try{
-        localStorage.setItem("f8_teamgoals_site_key", site.key);
-        localStorage.setItem("f8_teamgoals_site_title", site.title);
-      }catch(_){}
-
-      setBanner(site);
-      renderGoalTiles();
-      showToast("Site selected.");
-    }
-
-    function openSiteModal(){
-      $("siteOverlay").classList.add("show");
-      $("siteSearch").value = "";
-      renderSites(SITES);
-      setTimeout(() => $("siteSearch")?.focus(), 0);
-    }
-
-    function closeSiteModal(){
-      $("siteOverlay").classList.remove("show");
-    }
-
-    function renderSites(list){
-      const grid = $("sitesGrid");
-      grid.innerHTML = "";
-
-      list.forEach(site => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "siteBtn";
-        btn.setAttribute("data-site", site.key);
-
-        btn.innerHTML = `
-          <div class="tileBg" aria-hidden="true"></div>
-          <img class="tileImg" alt="" loading="lazy" referrerpolicy="no-referrer" />
-          <div class="tileShade" aria-hidden="true"></div>
-          <div class="tileInner">
-            <p class="siteName">${escapeHtml(site.title)}</p>
-            <div class="pillSmall">Select</div>
-          </div>
-        `;
-
-        const img = btn.querySelector(".tileImg");
-
-        if(site.img){
-          img.src = site.img;
-          img.style.display = "block";
-        }
-
-        grid.appendChild(btn);
-      });
-    }
-
-    function applySiteSearch(){
-      const q = String($("siteSearch").value || "").trim().toLowerCase();
-
-      if(!q){
-        renderSites(SITES);
-        return;
-      }
-
-      renderSites(SITES.filter(s =>
-        s.title.toLowerCase().includes(q) ||
-        s.key.toLowerCase().includes(q)
-      ));
-    }
-
     $("btnSignOut").addEventListener("click", signOut);
-    $("btnBack").addEventListener("click", () => window.location.href = BACK_PAGE);
-
-    $("btnChooseSite").addEventListener("click", openSiteModal);
-    $("btnChangeSite").addEventListener("click", openSiteModal);
-    $("closeSiteX").addEventListener("click", closeSiteModal);
-    $("siteCancel").addEventListener("click", closeSiteModal);
-    $("siteSearch").addEventListener("input", applySiteSearch);
-
-    $("siteOverlay").addEventListener("click", e => {
-      if(e.target === $("siteOverlay")) closeSiteModal();
-    });
-
-    $("sitesGrid").addEventListener("click", e => {
-      const btn = e.target?.closest?.("button[data-site]");
-      if(!btn) return;
-
-      const key = btn.getAttribute("data-site");
-      const site = SITES.find(s => s.key === key);
-
-      if(!site) return;
-
-      setSelectedSite(site);
-      closeSiteModal();
-    });
 
     $("btnReset").addEventListener("click", () => {
       writeData(defaultData());
@@ -684,37 +493,17 @@
       showToast("Reset complete.");
     });
 
-    document.addEventListener("keydown", e => {
-      if(e.key === "Enter" && $("pwOverlay").classList.contains("show")){
-        $("btnPwUnlock").click();
-      }
-
-      if(e.key === "Escape"){
-        closeSiteModal();
-      }
-    });
-
     if(sb){
       sb.auth.onAuthStateChange((event, session) => {
-        if(event === "SIGNED_OUT" || !session?.user) goSignin();
+        if(event === "SIGNED_OUT" || !session?.user){
+          goSignin();
+        }
       });
     }
 
     (async function init(){
       await requireAuthOrRedirect();
-
-      const selected = loadSelectedSite();
-      setBanner(selected);
-
-      if(!selected) openSiteModal();
-
       wireGoalInputs();
-
-      if(!isUnlocked()){
-        openPwGate();
-        return;
-      }
-
       renderGoalTiles();
     })();
   </script>
