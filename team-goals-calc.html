@@ -68,6 +68,14 @@
       line-height:1.05;
     }
 
+    .bannerActions{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      align-items:center;
+      gap:10px;
+    }
+
     .goalGrid{
       display:grid;
       grid-template-columns:repeat(2,minmax(0,1fr));
@@ -182,8 +190,41 @@
       color:rgba(15,23,42,.9);
     }
 
+    .logTools{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:12px;
+    }
+
+    .logSiteLine{
+      font-size:13px;
+      font-weight:900;
+      color:rgba(15,23,42,.62);
+    }
+
+    .tableWrap{
+      max-height:460px;
+      overflow:auto;
+    }
+
+    .tableWrap table{
+      min-width:1080px;
+    }
+
     @media(max-width:720px){
-      .bannerInner{ flex-direction:column; }
+      .bannerInner{
+        flex-direction:column;
+        padding:24px;
+      }
+
+      .bannerActions{
+        justify-content:flex-start;
+        width:100%;
+      }
+
       .goalGrid{ grid-template-columns:1fr; }
       .goalInputs{ grid-template-columns:1fr; }
       .summaryMini{ grid-template-columns:1fr; }
@@ -232,6 +273,8 @@
           </div>
 
           <div class="bannerActions">
+            <select class="monthSelect" id="monthSelect" aria-label="Select month"></select>
+            <button class="btn" type="button" id="btnViewLog">View Log</button>
             <button class="btn" type="button" id="btnReset">Reset Today</button>
           </div>
         </div>
@@ -284,6 +327,7 @@
     </section>
   </div>
 
+  <!-- SITE PICKER MODAL -->
   <div class="modalOverlay" id="siteOverlay" role="dialog" aria-modal="true" aria-labelledby="siteTitle">
     <div class="modal">
       <div class="modalHeader">
@@ -304,6 +348,55 @@
 
         <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:2px;">
           <button class="btnGhost" type="button" id="siteCancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG MODAL -->
+  <div class="settingsOverlay" id="logOverlay" role="dialog" aria-modal="true" aria-labelledby="logTitle">
+    <div class="settingsModal">
+      <div class="settingsHeader">
+        <h2 id="logTitle">Team Goals Log</h2>
+        <button class="x" type="button" id="closeLogX" aria-label="Close">×</button>
+      </div>
+
+      <div class="settingsBody">
+        <div class="sectionCard">
+          <div class="logTools">
+            <div>
+              <div class="logSiteLine" id="logSiteLine">—</div>
+              <p class="muted" style="margin:4px 0 0;">Logged automatically from the current daily inputs.</p>
+            </div>
+
+            <div class="row" style="gap:10px;">
+              <button class="iconBtn" type="button" id="btnExportCsv">Export CSV</button>
+              <button class="iconBtn" type="button" id="btnClearMonthLog">Clear Month Log</button>
+            </div>
+          </div>
+
+          <div class="tableWrap" aria-label="Team goals log table">
+            <table>
+              <thead>
+                <tr>
+                  <th>DATE</th>
+                  <th>OWNERS IN</th>
+                  <th>OWNERS GOAL</th>
+                  <th>VIPS IN</th>
+                  <th>VIPS GOAL</th>
+                  <th>RCI IN</th>
+                  <th>RCI GOAL</th>
+                  <th>RENTERS IN</th>
+                  <th>RENTERS GOAL</th>
+                  <th>GOOS IN</th>
+                  <th>GOOS GOAL</th>
+                  <th>TOTAL IN</th>
+                  <th>TEAM GOAL</th>
+                </tr>
+              </thead>
+              <tbody id="logBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -350,6 +443,7 @@
     let AUTHEMP = "";
     let AUTHNAME = "";
     let SITEKEY = "";
+    let SITETITLE = "";
 
     function showToast(msg, ms = 1600){
       const t = $("toast");
@@ -378,16 +472,43 @@
       return `${y}-${m}-${day}`;
     }
 
+    function monthKey(){
+      return $("monthSelect").value || "";
+    }
+
+    function buildMonthOptions(){
+      const sel = $("monthSelect");
+      sel.innerHTML = "";
+
+      const now = new Date();
+      const year = now.getFullYear();
+
+      for(let m = 0; m < 12; m++){
+        const d = new Date(year, m, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,"0")}`;
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = d.toLocaleDateString(undefined, { month:"long", year:"numeric" });
+        sel.appendChild(opt);
+      }
+
+      sel.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2,"0")}`;
+    }
+
     function selectedSiteKey(){
       return `f8_teamgoals_site_key:${AUTHEMP || "unknown"}`;
     }
 
     function percentStorageKey(){
-      return `tourpulse:teamgoals:percentages:v4:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}`;
+      return `tourpulse:teamgoals:percentages:v5:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}`;
     }
 
     function dailyStorageKey(){
-      return `tourpulse:teamgoals:daily:v4:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}:${todayKey()}`;
+      return `tourpulse:teamgoals:daily:v5:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}:${todayKey()}`;
+    }
+
+    function logStorageKey(){
+      return `tourpulse:teamgoals:log:v5:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}:${monthKey() || "nomonth"}`;
     }
 
     function defaultPercentages(){
@@ -442,6 +563,72 @@
 
     function writeArrivals(data){
       try{ localStorage.setItem(dailyStorageKey(), JSON.stringify(data)); }catch(_){}
+    }
+
+    function readLog(){
+      try{
+        const raw = localStorage.getItem(logStorageKey());
+        if(!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" ? parsed : {};
+      }catch(_){
+        return {};
+      }
+    }
+
+    function writeLog(log){
+      try{ localStorage.setItem(logStorageKey(), JSON.stringify(log)); }catch(_){}
+    }
+
+    function calculateSnapshot(){
+      const arrivals = readArrivals();
+      const percentages = readPercentages();
+
+      const row = {
+        date: todayKey(),
+        siteKey: SITEKEY || "",
+        siteTitle: SITETITLE || "",
+        values: {},
+        totalEntered: 0,
+        teamGoal: 0
+      };
+
+      let weightedNumerator = 0;
+      let segmentsUsed = 0;
+
+      SEGMENTS.forEach(segment => {
+        const entered = safeNum(arrivals[segment.key]);
+        const percent = safeNum(percentages[segment.key]);
+        const goal = entered > 0 ? Math.ceil(entered * (percent / 100)) : 0;
+
+        row.values[segment.key] = {
+          entered,
+          goal
+        };
+
+        row.totalEntered += entered;
+        row.teamGoal += goal;
+
+        if(entered > 0){
+          weightedNumerator += entered * percent;
+          segmentsUsed++;
+        }
+      });
+
+      row.weightedPct = row.totalEntered > 0 ? weightedNumerator / row.totalEntered : 0;
+      row.segmentsUsed = segmentsUsed;
+
+      return row;
+    }
+
+    function saveCurrentDayToLog(){
+      if(!SITEKEY || !monthKey()) return;
+
+      const row = calculateSnapshot();
+      const log = readLog();
+
+      log[row.date] = row;
+      writeLog(log);
     }
 
     function renderGoalTiles(){
@@ -503,40 +690,24 @@
     }
 
     function calculate(){
-      const arrivals = readArrivals();
-      const percentages = readPercentages();
-
-      let totalArrivals = 0;
-      let totalGoal = 0;
-      let weightedNumerator = 0;
-      let segmentsUsed = 0;
+      const row = calculateSnapshot();
 
       SEGMENTS.forEach(segment => {
-        const arrivalCount = safeNum(arrivals[segment.key]);
-        const percent = safeNum(percentages[segment.key]);
-
-        const rawGoal = arrivalCount * (percent / 100);
-        const segmentGoal = rawGoal > 0 ? Math.ceil(rawGoal) : 0;
-
-        totalArrivals += arrivalCount;
-        totalGoal += segmentGoal;
-
-        if(arrivalCount > 0){
-          weightedNumerator += arrivalCount * percent;
-          segmentsUsed++;
-        }
-
         const goalEl = $(`goal_${segment.key}`);
-        if(goalEl) goalEl.textContent = num(segmentGoal);
+        if(goalEl) goalEl.textContent = num(row.values[segment.key].goal);
       });
 
-      const weightedPct = totalArrivals > 0 ? weightedNumerator / totalArrivals : 0;
+      $("sumArrivals").textContent = num(row.totalEntered);
+      $("sumGoal").textContent = num(row.teamGoal);
+      $("heroGoal").textContent = num(row.teamGoal);
+      $("weightedPct").textContent = pct2(row.weightedPct);
+      $("segmentsUsed").textContent = num(row.segmentsUsed);
 
-      $("sumArrivals").textContent = num(totalArrivals);
-      $("sumGoal").textContent = num(totalGoal);
-      $("heroGoal").textContent = num(totalGoal);
-      $("weightedPct").textContent = pct2(weightedPct);
-      $("segmentsUsed").textContent = num(segmentsUsed);
+      saveCurrentDayToLog();
+
+      if($("logOverlay").classList.contains("show")){
+        renderLog();
+      }
     }
 
     function wireGoalInputs(){
@@ -587,8 +758,9 @@
 
     function setBanner(site){
       SITEKEY = site?.key || "";
-      $("bannerSite").textContent = site?.title || "—";
+      SITETITLE = site?.title || "";
 
+      $("bannerSite").textContent = site?.title || "—";
       $("btnChooseSite").style.display = site?.title ? "none" : "inline-flex";
       $("btnChangeSite").style.display = site?.title ? "inline-flex" : "none";
 
@@ -619,6 +791,7 @@
       try{ localStorage.setItem(selectedSiteKey(), site.key); }catch(_){}
       setBanner(site);
       renderGoalTiles();
+      renderLog();
       showToast("Site selected.");
     }
 
@@ -631,6 +804,125 @@
 
     function closeSiteModal(){
       $("siteOverlay").classList.remove("show");
+    }
+
+    function openLog(){
+      if(!SITEKEY){
+        showToast("Choose a site first.");
+        return;
+      }
+
+      $("logSiteLine").textContent = `${SITETITLE} • ${$("monthSelect").selectedOptions[0]?.textContent || monthKey()}`;
+      $("logOverlay").classList.add("show");
+      renderLog();
+    }
+
+    function closeLog(){
+      $("logOverlay").classList.remove("show");
+    }
+
+    function renderLog(){
+      const body = $("logBody");
+      body.innerHTML = "";
+
+      const log = readLog();
+      const rows = Object.values(log).sort((a,b) => String(a.date).localeCompare(String(b.date)));
+
+      if(rows.length === 0){
+        body.innerHTML = `
+          <tr>
+            <td colspan="13" style="font-weight:900; color:rgba(15,23,42,.55);">
+              No logged entries for this site and month yet.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      rows.forEach(row => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td style="font-weight:950;">${escapeHtml(row.date)}</td>
+          <td class="mono">${num(row.values?.owners?.entered || 0)}</td>
+          <td class="mono">${num(row.values?.owners?.goal || 0)}</td>
+          <td class="mono">${num(row.values?.vips?.entered || 0)}</td>
+          <td class="mono">${num(row.values?.vips?.goal || 0)}</td>
+          <td class="mono">${num(row.values?.rci?.entered || 0)}</td>
+          <td class="mono">${num(row.values?.rci?.goal || 0)}</td>
+          <td class="mono">${num(row.values?.renters?.entered || 0)}</td>
+          <td class="mono">${num(row.values?.renters?.goal || 0)}</td>
+          <td class="mono">${num(row.values?.goos?.entered || 0)}</td>
+          <td class="mono">${num(row.values?.goos?.goal || 0)}</td>
+          <td class="mono" style="font-weight:1100;">${num(row.totalEntered || 0)}</td>
+          <td class="mono" style="font-weight:1100;">${num(row.teamGoal || 0)}</td>
+        `;
+
+        body.appendChild(tr);
+      });
+    }
+
+    function exportCsv(){
+      const log = readLog();
+      const rows = Object.values(log).sort((a,b) => String(a.date).localeCompare(String(b.date)));
+
+      const header = [
+        "Date",
+        "Owners Entered",
+        "Owners Goal",
+        "VIPs Entered",
+        "VIPs Goal",
+        "RCI Entered",
+        "RCI Goal",
+        "Renters Entered",
+        "Renters Goal",
+        "GOOs Entered",
+        "GOOs Goal",
+        "Total Entered",
+        "Daily Team Goal"
+      ];
+
+      const lines = [header.join(",")];
+
+      rows.forEach(row => {
+        lines.push([
+          row.date,
+          row.values?.owners?.entered || 0,
+          row.values?.owners?.goal || 0,
+          row.values?.vips?.entered || 0,
+          row.values?.vips?.goal || 0,
+          row.values?.rci?.entered || 0,
+          row.values?.rci?.goal || 0,
+          row.values?.renters?.entered || 0,
+          row.values?.renters?.goal || 0,
+          row.values?.goos?.entered || 0,
+          row.values?.goos?.goal || 0,
+          row.totalEntered || 0,
+          row.teamGoal || 0
+        ].join(","));
+      });
+
+      const safeSite = String(SITEKEY || "site").replace(/[^a-z0-9\-]/gi, "_");
+      const filename = `team_goals_${safeSite}_${monthKey() || "month"}.csv`;
+
+      const blob = new Blob([lines.join("\n")], { type:"text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+      showToast("CSV exported.");
+    }
+
+    function clearMonthLog(){
+      writeLog({});
+      renderLog();
+      showToast("Month log cleared.");
     }
 
     function escapeHtml(s){
@@ -743,6 +1035,20 @@
       closeSiteModal();
     });
 
+    $("monthSelect").addEventListener("change", () => {
+      renderLog();
+      showToast("Month loaded.");
+    });
+
+    $("btnViewLog").addEventListener("click", openLog);
+    $("closeLogX").addEventListener("click", closeLog);
+    $("logOverlay").addEventListener("click", (e) => {
+      if(e.target === $("logOverlay")) closeLog();
+    });
+
+    $("btnExportCsv").addEventListener("click", exportCsv);
+    $("btnClearMonthLog").addEventListener("click", clearMonthLog);
+
     $("btnReset").addEventListener("click", () => {
       writeArrivals(defaultArrivals());
       renderGoalTiles();
@@ -750,7 +1056,10 @@
     });
 
     document.addEventListener("keydown", (e) => {
-      if(e.key === "Escape") closeSiteModal();
+      if(e.key === "Escape"){
+        closeSiteModal();
+        closeLog();
+      }
     });
 
     if(sb){
@@ -761,6 +1070,8 @@
 
     (async function init(){
       await requireAuthOrRedirect();
+
+      buildMonthOptions();
 
       const selected = loadSelectedSite();
       setBanner(selected);
