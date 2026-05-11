@@ -379,7 +379,7 @@
             <table>
               <thead>
                 <tr>
-                  <th>DATE</th>
+                  <th>DAY</th>
                   <th>OWNERS IN</th>
                   <th>OWNERS GOAL</th>
                   <th>VIPS IN</th>
@@ -470,6 +470,13 @@
       const m = String(d.getMonth() + 1).padStart(2, "0");
       const day = String(d.getDate()).padStart(2, "0");
       return `${y}-${m}-${day}`;
+    }
+
+    function dayOfMonthFromIso(iso){
+      const s = String(iso || "");
+      const parts = s.split("-");
+      if(parts.length !== 3) return s;
+      return String(parseInt(parts[2], 10) || "");
     }
 
     function monthKey(){
@@ -843,7 +850,7 @@
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
-          <td style="font-weight:950;">${escapeHtml(row.date)}</td>
+          <td style="font-weight:950;">${escapeHtml(dayOfMonthFromIso(row.date))}</td>
           <td class="mono">${num(row.values?.owners?.entered || 0)}</td>
           <td class="mono">${num(row.values?.owners?.goal || 0)}</td>
           <td class="mono">${num(row.values?.vips?.entered || 0)}</td>
@@ -867,7 +874,7 @@
       const rows = Object.values(log).sort((a,b) => String(a.date).localeCompare(String(b.date)));
 
       const header = [
-        "Date",
+        "Day",
         "Owners Entered",
         "Owners Goal",
         "VIPs Entered",
@@ -886,7 +893,7 @@
 
       rows.forEach(row => {
         lines.push([
-          row.date,
+          dayOfMonthFromIso(row.date),
           row.values?.owners?.entered || 0,
           row.values?.owners?.goal || 0,
           row.values?.vips?.entered || 0,
