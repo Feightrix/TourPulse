@@ -274,6 +274,7 @@
 
           <div class="bannerActions">
             <select class="monthSelect" id="monthSelect" aria-label="Select month"></select>
+            <button class="btn" type="button" id="btnSaveDay">Save Day</button>
             <button class="btn" type="button" id="btnViewLog">View Log</button>
             <button class="btn" type="button" id="btnReset">Reset Today</button>
           </div>
@@ -366,7 +367,7 @@
           <div class="logTools">
             <div>
               <div class="logSiteLine" id="logSiteLine">—</div>
-              <p class="muted" style="margin:4px 0 0;">Logged automatically from the current daily inputs.</p>
+              <p class="muted" style="margin:4px 0 0;">Saved days appear here after clicking <b>Save Day</b>.</p>
             </div>
 
             <div class="row" style="gap:10px;">
@@ -507,15 +508,15 @@
     }
 
     function percentStorageKey(){
-      return `tourpulse:teamgoals:percentages:v5:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}`;
+      return `tourpulse:teamgoals:percentages:v6:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}`;
     }
 
     function dailyStorageKey(){
-      return `tourpulse:teamgoals:daily:v5:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}:${todayKey()}`;
+      return `tourpulse:teamgoals:daily:v6:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}:${todayKey()}`;
     }
 
     function logStorageKey(){
-      return `tourpulse:teamgoals:log:v5:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}:${monthKey() || "nomonth"}`;
+      return `tourpulse:teamgoals:log:v6:${AUTHEMP || "unknown"}:${SITEKEY || "nosite"}:${monthKey() || "nomonth"}`;
     }
 
     function defaultPercentages(){
@@ -608,11 +609,7 @@
         const percent = safeNum(percentages[segment.key]);
         const goal = entered > 0 ? Math.ceil(entered * (percent / 100)) : 0;
 
-        row.values[segment.key] = {
-          entered,
-          goal
-        };
-
+        row.values[segment.key] = { entered, goal };
         row.totalEntered += entered;
         row.teamGoal += goal;
 
@@ -709,8 +706,6 @@
       $("heroGoal").textContent = num(row.teamGoal);
       $("weightedPct").textContent = pct2(row.weightedPct);
       $("segmentsUsed").textContent = num(row.segmentsUsed);
-
-      saveCurrentDayToLog();
 
       if($("logOverlay").classList.contains("show")){
         renderLog();
@@ -839,7 +834,7 @@
         body.innerHTML = `
           <tr>
             <td colspan="13" style="font-weight:900; color:rgba(15,23,42,.55);">
-              No logged entries for this site and month yet.
+              No saved entries for this site and month yet.
             </td>
           </tr>
         `;
@@ -1045,6 +1040,17 @@
     $("monthSelect").addEventListener("change", () => {
       renderLog();
       showToast("Month loaded.");
+    });
+
+    $("btnSaveDay").addEventListener("click", () => {
+      if(!SITEKEY){
+        showToast("Choose a site first.");
+        return;
+      }
+
+      saveCurrentDayToLog();
+      renderLog();
+      showToast("Day saved to log.");
     });
 
     $("btnViewLog").addEventListener("click", openLog);
