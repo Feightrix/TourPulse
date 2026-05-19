@@ -141,7 +141,6 @@
 
       <!-- Main area -->
       <div class="grid">
-        <!-- LEFT: KPI tiles -->
         <div class="card">
           <h1>Month-to-Date Tracker</h1>
           <p class="muted" id="mtdLine">Up to: —</p>
@@ -222,7 +221,6 @@
           </div>
         </div>
 
-        <!-- RIGHT: summary -->
         <div class="card summaryCard">
           <div class="summaryTop">
             <p class="summaryTitle"><span>Summary</span></p>
@@ -372,7 +370,7 @@
 
   <script>
     const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
     const SIGNIN_PAGE = "signin.html";
     const BACK_PAGE = "choose-calc.html";
     const UNIVERSAL_PASSWORD = "BookEmAll";
@@ -422,7 +420,6 @@
       if(!session?.user) return goSignin();
 
       const user = session.user;
-
       AUTHUSERID = user.id;
       AUTHNAME = user.user_metadata?.first_name || "";
       AUTHEMP = getEmpFromEmail(user.email);
@@ -471,9 +468,7 @@
       try{ localStorage.setItem(pwKey(), "1"); }catch(_){}
     }
 
-    $("closePwX").addEventListener("click", () => {
-      window.location.href = BACK_PAGE;
-    });
+    $("closePwX").addEventListener("click", () => { window.location.href = BACK_PAGE; });
 
     $("btnPwUnlock").addEventListener("click", async () => {
       const v = String($("pwInput").value || "");
@@ -523,6 +518,29 @@
       }
     }
 
+    function ensureMonthOption(ym){
+      if(!ym) return;
+
+      const sel = $("monthSelect");
+      const exists = [...sel.options].some(opt => opt.value === ym);
+
+      if(exists) return;
+
+      const [yStr, mStr] = ym.split("-");
+      const y = safeInt(yStr);
+      const m = safeInt(mStr);
+
+      if(!y || !m) return;
+
+      const d = new Date(y, m - 1, 1);
+
+      const opt = document.createElement("option");
+      opt.value = ym;
+      opt.textContent = d.toLocaleDateString(undefined, { month:"long", year:"numeric" });
+
+      sel.appendChild(opt);
+    }
+
     function setDefaultMonth(){
       buildMonthOptions();
 
@@ -565,9 +583,7 @@
       return Number.isFinite(n) && n >= 0 ? n : 0;
     }
 
-    function num(n){
-      return Number(n || 0).toLocaleString();
-    }
+    function num(n){ return Number(n || 0).toLocaleString(); }
 
     function pct(x){
       let v = Number(x);
@@ -587,12 +603,7 @@
       return d.toLocaleDateString(undefined, { month:"short", day:"numeric", year:"numeric" });
     }
 
-    function defaultMonthData(){
-      return {
-        byDate: {},
-        mgrOverrideRate: 0
-      };
-    }
+    function defaultMonthData(){ return { byDate: {}, mgrOverrideRate: 0 }; }
 
     function readLocalMonthData(){
       try{
@@ -617,15 +628,10 @@
         if(typeof x?.mgrOverrideRate !== "undefined"){
           mgrOverrideRate = safeMoney(x.mgrOverrideRate);
         }else{
-          try{
-            mgrOverrideRate = safeMoney(localStorage.getItem(mgrOverrideRateKeyLocal()));
-          }catch(_){}
+          try{ mgrOverrideRate = safeMoney(localStorage.getItem(mgrOverrideRateKeyLocal())); }catch(_){}
         }
 
-        return {
-          byDate,
-          mgrOverrideRate
-        };
+        return { byDate, mgrOverrideRate };
       }catch(_){
         return defaultMonthData();
       }
@@ -673,10 +679,7 @@
 
       if(!k.user_id || !k.site_key || !k.month_key) return false;
 
-      const payload = {
-        ...k,
-        state: stateObj
-      };
+      const payload = { ...k, state: stateObj };
 
       const { error } = await sb
         .from("tp_calc_state")
@@ -759,10 +762,7 @@
       const budgetTotal = rows.reduce((s,r) => s + safeInt(r.budget), 0);
       const actualTotal = rows.reduce((s,r) => s + safeInt(r.actual), 0);
 
-      return {
-        budgetTotal,
-        actualTotal
-      };
+      return { budgetTotal, actualTotal };
     }
 
     function totalsToDate(rows, cutoffDay){
@@ -775,11 +775,7 @@
         a += safeInt(rows[i].actual);
       }
 
-      return {
-        budgetToDate: b,
-        actualToDate: a,
-        daysCounted: to
-      };
+      return { budgetToDate: b, actualToDate: a, daysCounted: to };
     }
 
     function isSBorMBOF(){
@@ -859,14 +855,10 @@
           };
         }
 
-        map[mk] = {
-          byDate
-        };
+        map[mk] = { byDate };
       });
 
-      map[ym] = {
-        byDate: (readLocalMonthData().byDate || {})
-      };
+      map[ym] = { byDate: (readLocalMonthData().byDate || {}) };
 
       let ytdBudget = 0;
       let ytdActual = 0;
@@ -901,6 +893,7 @@
 
     function scheduleYearPctRecalc(){
       window.clearTimeout(_yearPctTimer);
+
       _yearPctTimer = window.setTimeout(() => {
         recomputeYearPct();
       }, 450);
@@ -1187,7 +1180,6 @@
       const n = Number(serial);
 
       if(!Number.isFinite(n)) return "";
-
       if(n < 20000 || n > 80000) return "";
 
       if(window.XLSX?.SSF?.parse_date_code){
@@ -1297,15 +1289,20 @@
     }
 
     function importRowsIntoMonth(rows){
-      const cols = findReportColumns(rows);
+      let cols = findReportColumns(rows);
 
+      // Fallback for the report layout:
+      // A Area | B Location | C Month | D TheDate | E Tours | F Budget
       if(!cols){
-        showToast("Could not find TheDate and Budget columns.");
-        return 0;
+        cols = {
+          headerRow: 0,
+          dateCol: 3,
+          budgetCol: 5
+        };
       }
 
-      const data = readLocalMonthData();
-      let imported = 0;
+      const foundRows = [];
+      const monthCounts = {};
 
       for(let r = cols.headerRow + 1; r < rows.length; r++){
         const row = rows[r] || [];
@@ -1316,25 +1313,52 @@
         const dateText = String(dateValue ?? "").trim().toLowerCase();
         const budgetText = String(budgetValue ?? "").trim().toLowerCase();
 
+        if(!dateValue && !budgetValue) continue;
         if(dateText.includes("total") || budgetText.includes("total")) continue;
 
         const iso = anyDateToIso(dateValue);
-
         if(!iso) continue;
-        if(!iso.startsWith(monthKey() + "-")) continue;
 
         const budget = safeInt(budgetValue);
+        const ym = iso.slice(0, 7);
 
-        if(!data.byDate[iso]){
-          data.byDate[iso] = {
+        foundRows.push({
+          iso,
+          budget
+        });
+
+        monthCounts[ym] = (monthCounts[ym] || 0) + 1;
+      }
+
+      if(!foundRows.length){
+        showToast("No valid date/budget rows found.");
+        return 0;
+      }
+
+      const detectedMonth = Object.entries(monthCounts)
+        .sort((a, b) => b[1] - a[1])[0]?.[0];
+
+      if(detectedMonth && detectedMonth !== monthKey()){
+        ensureMonthOption(detectedMonth);
+        $("monthSelect").value = detectedMonth;
+      }
+
+      const data = readLocalMonthData();
+      let imported = 0;
+
+      foundRows.forEach(item => {
+        if(!item.iso.startsWith(monthKey() + "-")) return;
+
+        if(!data.byDate[item.iso]){
+          data.byDate[item.iso] = {
             budget: 0,
             actual: 0
           };
         }
 
-        data.byDate[iso].budget = budget;
+        data.byDate[item.iso].budget = item.budget;
         imported++;
-      }
+      });
 
       if(imported){
         saveDataAndSync(data);
@@ -1406,7 +1430,7 @@
 
         showToast(imported
           ? `Imported ${imported} budget day(s).`
-          : "No matching budget rows for this month."
+          : "No matching rows found. Check the report month."
         );
       }catch(err){
         console.error("Import failed:", err);
