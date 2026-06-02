@@ -578,6 +578,15 @@
       return Number.isFinite(n) && n >= 0 ? n : 0;
     }
 
+    function safeRoundedInt(v){
+      const cleaned = String(v ?? "")
+        .replace(/[$,]/g, "")
+        .trim();
+
+      const n = parseFloat(cleaned);
+      return Number.isFinite(n) && n >= 0 ? Math.round(n) : 0;
+    }
+
     function safeMoney(v){
       const n = parseFloat(String(v ?? "0"));
       return Number.isFinite(n) && n >= 0 ? n : 0;
@@ -1319,7 +1328,7 @@
         const iso = anyDateToIso(dateValue);
         if(!iso) continue;
 
-        const budget = safeInt(budgetValue);
+        const budget = safeRoundedInt(budgetValue);
         const ym = iso.slice(0, 7);
 
         foundRows.push({
