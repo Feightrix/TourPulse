@@ -1328,6 +1328,7 @@
         const iso = anyDateToIso(dateValue);
         if(!iso) continue;
 
+        // Uses visible/formatted Excel value when available.
         const budget = safeRoundedInt(budgetValue);
         const ym = iso.slice(0, 7);
 
@@ -1398,17 +1399,45 @@
       const workbook = XLSX.read(buffer, {
         type: "array",
         cellDates: true,
-        raw: true
+        raw: false
       });
 
       const firstSheetName = workbook.SheetNames[0];
       const sheet = workbook.Sheets[firstSheetName];
 
-      return XLSX.utils.sheet_to_json(sheet, {
-        header: 1,
-        defval: "",
-        raw: true
-      });
+      if(!sheet || !sheet["!ref"]){
+        return [];
+      }
+
+      const range = XLSX.utils.decode_range(sheet["!ref"]);
+      const rows = [];
+
+      for(let r = range.s.r; r <= range.e.r; r++){
+        const row = [];
+
+        for(let c = range.s.c; c <= range.e.c; c++){
+          const cellAddress = XLSX.utils.encode_cell({ r, c });
+          const cell = sheet[cellAddress];
+
+          if(!cell){
+            row.push("");
+            continue;
+          }
+
+          // cell.w = visible formatted Excel value
+          // cell.v = raw stored value
+          // Budget imports should use cell.w so rounded/displayed values are used.
+          row.push(
+            typeof cell.w !== "undefined"
+              ? String(cell.w).trim()
+              : String(cell.v ?? "").trim()
+          );
+        }
+
+        rows.push(row);
+      }
+
+      return rows;
     }
 
     $("csvFile").addEventListener("change", async (e) => {
