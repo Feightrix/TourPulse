@@ -7,7 +7,10 @@
   <link rel="icon" href="favicon.ico">
   <link rel="shortcut icon" href="favicon.ico">
 
+  <!-- Sitewide CSS -->
   <link rel="stylesheet" href="css/style.css">
+
+  <!-- Supabase JS v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
@@ -37,7 +40,7 @@
       <div class="hero">
         <div class="heroLeft">
           <h1 id="heroTitle">Choose a Calculator</h1>
-          <p id="heroSub">Choose the calculator you need for today’s pacing, goals, and pay tracking.</p>
+          <p id="heroSub">Only Marketer Pay is active right now. The rest will unlock as we build them.</p>
         </div>
 
         <div class="heroRight">
@@ -60,8 +63,12 @@
   <div class="toast" id="toast"></div>
 
   <script>
+    /***********************
+     * SUPABASE CONFIG
+     ***********************/
     const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
+
     const SIGNIN_PAGE = "signin.html";
 
     const sb = (window.supabase && window.supabase.createClient)
@@ -78,56 +85,30 @@
       showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
     }
 
-    function goSignin(){ window.location.replace(SIGNIN_PAGE); }
+    function goSignin(){
+      window.location.replace(SIGNIN_PAGE);
+    }
 
     function getEmpFromEmail(email){
       return String(email || "").split("@")[0] || "";
     }
 
-    const RPC_LIST_USERS = "tp_admin_list_users";
-    const ADMIN_EMPS_FALLBACK = ["078195"];
+    /***********************
+     * ADMIN GATE
+     * Only employee numbers listed here will see Admin Console.
+     ***********************/
+    const ADMIN_EMPS = [
+      "078195"
+    ];
 
-    function isAdminEmpFallback(emp){
+    function isAdminEmp(emp){
       const e = String(emp || "").trim();
-      return !!e && ADMIN_EMPS_FALLBACK.includes(e);
+      return !!e && ADMIN_EMPS.includes(e);
     }
 
-    async function tryRpcListUsers(payload){
-      const { data, error } = await sb.rpc(RPC_LIST_USERS, payload);
-      if(error) return { ok:false, error };
-      return { ok:true, data };
-    }
-
-    async function checkIsAdmin(emp){
-      if(!sb) return isAdminEmpFallback(emp);
-
-      const attempts = [
-        {},
-        { p_search: null, p_limit: 1, p_offset: 0 },
-        { p_search: "", p_limit: 1, p_offset: 0 },
-        { search: null, limit: 1, offset: 0 },
-        { search: "", limit: 1, offset: 0 }
-      ];
-
-      for(const payload of attempts){
-        try{
-          const res = await tryRpcListUsers(payload);
-          if(res.ok) return true;
-
-          const code = res.error?.code || "";
-          if(code === "PGRST202" || code === "404") continue;
-
-          console.warn("admin rpc error:", res.error);
-          return isAdminEmpFallback(emp);
-        }catch(err){
-          console.warn("admin rpc exception:", err);
-          return isAdminEmpFallback(emp);
-        }
-      }
-
-      return isAdminEmpFallback(emp);
-    }
-
+    /***********************
+     * MENU
+     ***********************/
     const CALCS = [
       {
         key: "marketer-pay",
@@ -144,24 +125,24 @@
         locked: false
       },
       {
-        key: "team-goals",
-        title: "Team Goals Calculator",
-        desc: "Set daily team goals based on arrival percentages and pacing.",
-        path: "team-goals-calc.html",
-        locked: false
-      },
-      {
         key: "admin",
         title: "Admin Console",
-        desc: "View logins, usage, and captured tour inputs across calculators.",
+        desc: "View logins, usage, roles, manager assignments, and captured tour inputs across calculators.",
         path: "admin-console.html",
         locked: false,
         adminOnly: true
       },
       {
+        key: "monthly-tour-budget",
+        title: "Monthly Tour Budget",
+        desc: "Set goals, track tours, and validate pacing for the month.",
+        path: "",
+        locked: true
+      },
+      {
         key: "sales-volume",
         title: "Sales Volume",
-        desc: "Handy helpers (conversions, pacing, daily checks).",
+        desc: "Handy helpers for conversions, pacing, and daily checks.",
         path: "",
         locked: true
       }
@@ -182,11 +163,7 @@
         card.className = "calcCard";
 
         const locked = !!item.locked;
-        const isAdminCard = !!item.adminOnly;
-
-        const badge = locked
-          ? `<span class="badge">LOCKED</span>`
-          : (isAdminCard ? `<span class="badge">ADMIN</span>` : ``);
+        const badge = locked ? `<span class="badge">LOCKED</span>` : ``;
 
         const btnClass = locked ? "goBtn locked" : "goBtn open";
         const btnText  = locked ? "Locked" : "Open";
@@ -199,11 +176,11 @@
           </div>
 
           <div>
-            <div class="calcTitle">${item.title}</div>
-            <p class="calcDesc">${item.desc}</p>
+            <div class="calcTitle">${escapeHtml(item.title)}</div>
+            <p class="calcDesc">${escapeHtml(item.desc)}</p>
           </div>
 
-          <button class="${btnClass}" type="button" data-path="${dataPath}">
+          <button class="${btnClass}" type="button" data-path="${escapeAttr(dataPath)}">
             ${btnText}
           </button>
         `;
@@ -248,26 +225,33 @@
       });
     }
 
+    /***********************
+     * AUTH GATE + HEADER
+     ***********************/
     async function requireAuthOrRedirect(){
       if(!sb) return goSignin();
 
       const { data: { session } } = await sb.auth.getSession();
+
       if(!session?.user) return goSignin();
 
       const user = session.user;
       const first = user.user_metadata?.first_name || "";
       const emp = getEmpFromEmail(user.email);
 
-      _isAdmin = await checkIsAdmin(emp);
+      _isAdmin = isAdminEmp(emp);
 
       $("userName").textContent = first || "Signed In";
       $("userEmp").textContent = emp ? `#${emp}` : "";
       $("welcomeLine").textContent = "Powered by F8";
-      $("heroTitle").textContent = first ? `What are we running today, ${first}?` : "Choose a Calculator";
 
-      if(_isAdmin){
-        $("heroSub").textContent = "Admin Console is enabled for your account.";
-      }
+      $("heroTitle").textContent = first
+        ? `What are we running today, ${first}?`
+        : "Choose a Calculator";
+
+      $("heroSub").textContent = _isAdmin
+        ? "Admin Console is enabled for your account."
+        : "Choose the calculator you need below.";
     }
 
     async function signOut(){
@@ -292,10 +276,28 @@
       });
     }
 
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function escapeAttr(v){
+      return String(v ?? "").replaceAll('"',"&quot;");
+    }
+
+    /***********************
+     * INIT
+     ***********************/
     (async function init(){
       await requireAuthOrRedirect();
+
       renderCards(getVisibleCalcs());
       wireCardClicks();
+
       $("searchInput").addEventListener("input", applySearch);
     })();
   </script>
