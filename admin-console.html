@@ -3,470 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>TourPulse — Admin Console</title>
+  <title>TourPulse — Choose Calculator</title>
   <link rel="icon" href="favicon.ico">
   <link rel="shortcut icon" href="favicon.ico">
 
+  <!-- Sitewide CSS -->
   <link rel="stylesheet" href="css/style.css">
 
+  <!-- Supabase JS v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
-    body.tp-admin .grid2{
-      display:grid;
-      grid-template-columns:1.15fr .85fr;
-      gap:18px;
-      align-items:start;
-      margin-top:16px;
-    }
-
-    body.tp-admin .adminHero{
-      margin-top:14px;
-      border:1px solid rgba(15,23,42,.10);
-      background:rgba(255,255,255,.72);
-      border-radius:22px;
-      padding:18px;
-      box-shadow:0 22px 60px rgba(2,6,23,.08);
-      position:relative;
-      overflow:hidden;
-    }
-
-    body.tp-admin .adminHero:before{
-      content:"";
-      position:absolute;
-      inset:-60px -40px auto -40px;
-      height:220px;
-      background:radial-gradient(closest-side, rgba(10,166,181,.14), transparent 65%);
-      pointer-events:none;
-    }
-
-    body.tp-admin .heroRow{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-      position:relative;
-      z-index:1;
-    }
-
-    body.tp-admin .heroTitleSmall{
-      font-size:14px;
-      font-weight:1100;
-      letter-spacing:.18em;
-      text-transform:uppercase;
-      color:rgba(15,23,42,.62);
-      margin:0 0 4px;
-    }
-
-    body.tp-admin .heroTitleBig{
-      font-size:34px;
-      line-height:1.05;
-      margin:0;
-      font-weight:1300;
-      letter-spacing:.2px;
-      color:rgba(15,23,42,.92);
-    }
-
-    body.tp-admin .pillStatus{
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      padding:10px 14px;
-      border-radius:999px;
-      border:1px solid rgba(15,23,42,.12);
-      background:rgba(255,255,255,.78);
-      font-weight:1100;
-      color:rgba(15,23,42,.78);
-      white-space:nowrap;
-    }
-
-    body.tp-admin .dot{
-      width:10px;
-      height:10px;
-      border-radius:50%;
-      background:rgba(10,166,181,.95);
-      box-shadow:0 0 0 6px rgba(10,166,181,.16);
-      flex:0 0 auto;
-    }
-
-    body.tp-admin .rowBar{
-      display:flex;
-      gap:12px;
-      align-items:center;
-      justify-content:space-between;
-      margin-top:10px;
-      flex-wrap:wrap;
-    }
-
-    body.tp-admin .searchWrap{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex:1 1 320px;
-      min-width:240px;
-      border:1px solid rgba(15,23,42,.12);
-      background:rgba(255,255,255,.78);
-      border-radius:16px;
-      padding:10px 12px;
-      box-shadow:0 10px 24px rgba(2,6,23,.06);
-    }
-
-    body.tp-admin .searchDot{
-      width:16px;
-      height:16px;
-      border-radius:50%;
-      background:rgba(15,23,42,.10);
-      box-shadow:inset 0 0 0 3px rgba(15,23,42,.10);
-      flex:0 0 auto;
-    }
-
-    body.tp-admin .searchWrap input{
-      border:0;
-      outline:none;
-      background:transparent;
-      width:100%;
-      font-size:16px;
-      font-weight:900;
-      color:rgba(15,23,42,.88);
-    }
-
-    body.tp-admin .userList{
-      margin-top:12px;
-      border:1px dashed rgba(15,23,42,.20);
-      border-radius:18px;
-      padding:10px;
-      background:rgba(255,255,255,.60);
-      min-height:118px;
-    }
-
-    body.tp-admin .uRow{
-      width:100%;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding:12px;
-      border-radius:14px;
-      border:1px solid rgba(15,23,42,.10);
-      background:rgba(255,255,255,.78);
-      box-shadow:0 12px 26px rgba(2,6,23,.06);
-      cursor:pointer;
-      user-select:none;
-    }
-
-    body.tp-admin .uRow + .uRow{ margin-top:10px; }
-
-    body.tp-admin .uLeft{
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      min-width:0;
-    }
-
-    body.tp-admin .uName{
-      font-weight:1200;
-      color:rgba(15,23,42,.92);
-      font-size:16px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      max-width:560px;
-    }
-
-    body.tp-admin .uMeta{
-      font-weight:900;
-      color:rgba(15,23,42,.58);
-      font-size:13px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      max-width:560px;
-    }
-
-    body.tp-admin .uTags{
-      display:flex;
-      gap:6px;
-      flex-wrap:wrap;
-      margin-top:2px;
-    }
-
-    body.tp-admin .uRight{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex:0 0 auto;
-    }
-
-    body.tp-admin .pillMini{
-      border-radius:999px;
-      padding:8px 10px;
-      border:1px solid rgba(15,23,42,.10);
-      background:rgba(10,166,181,.10);
-      color:rgba(10,166,181,.98);
-      font-weight:1200;
-      font-size:12px;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      white-space:nowrap;
-    }
-
-    body.tp-admin .pillManager{
-      background:rgba(10,166,181,.12);
-      color:rgba(10,166,181,.98);
-    }
-
-    body.tp-admin .pillAssigned{
-      background:rgba(15,23,42,.06);
-      color:rgba(15,23,42,.68);
-    }
-
-    body.tp-admin .openMini{
-      border-radius:999px;
-      padding:8px 10px;
-      border:1px solid rgba(15,23,42,.12);
-      background:rgba(255,255,255,.86);
-      color:rgba(15,23,42,.78);
-      font-weight:1100;
-      font-size:12px;
-      white-space:nowrap;
-    }
-
-    body.tp-admin .miniCard{
-      border:1px solid rgba(15,23,42,.12);
-      background:rgba(255,255,255,.78);
-      border-radius:18px;
-      padding:14px;
-      box-shadow:0 16px 40px rgba(2,6,23,.08);
-    }
-
-    body.tp-admin .miniLabel{
-      font-size:12px;
-      font-weight:1100;
-      letter-spacing:.22px;
-      text-transform:uppercase;
-      color:rgba(15,23,42,.62);
-    }
-
-    body.tp-admin .miniValue{
-      font-size:30px;
-      font-weight:1300;
-      letter-spacing:.2px;
-      color:rgba(15,23,42,.92);
-      line-height:1.1;
-      margin-top:8px;
-    }
-
-    body.tp-admin .miniHint{
-      margin-top:10px;
-      font-size:13px;
-      font-weight:900;
-      color:rgba(15,23,42,.58);
-    }
-
-    body.tp-admin .adminModal{
-      max-width:920px;
-    }
-
-    body.tp-admin .snapTop{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:12px;
-    }
-
-    body.tp-admin .snapTitle{
-      margin:0;
-      font-size:22px;
-      font-weight:1300;
-      color:rgba(15,23,42,.92);
-      line-height:1.15;
-    }
-
-    body.tp-admin .snapSub{
-      margin:6px 0 0;
-      font-size:13px;
-      font-weight:900;
-      color:rgba(15,23,42,.60);
-    }
-
-    body.tp-admin .snapGrid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      margin-top:14px;
-    }
-
-    body.tp-admin .snapBox{
-      border:1px solid rgba(15,23,42,.10);
-      background:rgba(255,255,255,.84);
-      border-radius:16px;
-      padding:12px;
-    }
-
-    body.tp-admin .snapBox h4{
-      margin:0 0 8px;
-      font-size:12px;
-      font-weight:1100;
-      letter-spacing:.22em;
-      text-transform:uppercase;
-      color:rgba(15,23,42,.62);
-    }
-
-    body.tp-admin .kv{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      padding:7px 0;
-      border-top:1px dashed rgba(15,23,42,.14);
-      font-weight:1000;
-      color:rgba(15,23,42,.84);
-    }
-
-    body.tp-admin .kv:first-of-type{ border-top:0; }
-
-    body.tp-admin .kv .k{
-      color:rgba(15,23,42,.58);
-      font-weight:1000;
-    }
-
-    body.tp-admin .kv .v{
-      font-weight:1200;
-      color:rgba(15,23,42,.92);
-      text-align:right;
-    }
-
-    body.tp-admin .roleBox{
-      margin-top:14px;
-      border:1px solid rgba(10,166,181,.18);
-      background:rgba(10,166,181,.06);
-      border-radius:16px;
-      padding:14px;
-    }
-
-    body.tp-admin .roleRow{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      padding:10px 0;
-      border-top:1px dashed rgba(15,23,42,.12);
-    }
-
-    body.tp-admin .roleRow:first-of-type{ border-top:0; padding-top:0; }
-
-    body.tp-admin .roleLabel{
-      font-weight:1200;
-      color:rgba(15,23,42,.86);
-    }
-
-    body.tp-admin .roleHint{
-      font-size:13px;
-      font-weight:850;
-      color:rgba(15,23,42,.56);
-      margin-top:2px;
-    }
-
-    body.tp-admin .switch{
-      position:relative;
-      width:58px;
-      height:32px;
-      flex:0 0 auto;
-    }
-
-    body.tp-admin .switch input{
-      opacity:0;
-      width:0;
-      height:0;
-    }
-
-    body.tp-admin .slider{
-      position:absolute;
-      cursor:pointer;
-      inset:0;
-      background:rgba(15,23,42,.18);
-      transition:.18s;
-      border-radius:999px;
-      border:1px solid rgba(15,23,42,.10);
-    }
-
-    body.tp-admin .slider:before{
-      position:absolute;
-      content:"";
-      height:24px;
-      width:24px;
-      left:4px;
-      top:3px;
-      background:white;
-      transition:.18s;
-      border-radius:50%;
-      box-shadow:0 6px 14px rgba(2,6,23,.16);
-    }
-
-    body.tp-admin .switch input:checked + .slider{
-      background:rgba(10,166,181,.95);
-    }
-
-    body.tp-admin .switch input:checked + .slider:before{
-      transform:translateX(26px);
-    }
-
-    body.tp-admin .selectRole{
-      width:100%;
-      border:1px solid rgba(15,23,42,.14);
-      background:rgba(255,255,255,.86);
-      border-radius:14px;
-      padding:12px;
-      font-size:15px;
-      font-weight:1000;
-      color:rgba(15,23,42,.84);
-      outline:none;
-    }
-
-    body.tp-admin .tableMini{
-      width:100%;
-      border-collapse:separate;
-      border-spacing:0;
-      margin-top:10px;
-      border:1px solid rgba(15,23,42,.12);
-      border-radius:14px;
-      overflow:hidden;
-      background:rgba(255,255,255,.86);
-    }
-
-    body.tp-admin .tableMini th,
-    body.tp-admin .tableMini td{
-      padding:10px;
-      text-align:left;
-      font-size:13px;
-      font-weight:950;
-      color:rgba(15,23,42,.82);
-      border-top:1px solid rgba(15,23,42,.08);
-    }
-
-    body.tp-admin .tableMini th{
-      border-top:0;
-      font-size:12px;
-      font-weight:1100;
-      letter-spacing:.16em;
-      text-transform:uppercase;
-      color:rgba(15,23,42,.58);
-      background:rgba(10,166,181,.08);
-    }
-
-    body.tp-admin .tableMini tr:first-child td{ border-top:0; }
-
-    @media (max-width:980px){
-      body.tp-admin .grid2{ grid-template-columns:1fr; }
-      body.tp-admin .snapGrid{ grid-template-columns:1fr; }
-      body.tp-admin .uName,
-      body.tp-admin .uMeta{ max-width:70vw; }
-    }
-  </style>
 </head>
 
-<body class="tp-admin">
+<body>
   <div class="wrap choose-calc">
-    <section class="panel" aria-label="Admin Console">
+    <section class="panel" aria-label="Choose Calculator">
       <div class="topbar">
         <div class="brand">
           <div class="logoBox" aria-hidden="true">
@@ -483,183 +33,43 @@
             <div class="name" id="userName">—</div>
             <div class="emp" id="userEmp">—</div>
           </div>
-          <button class="btnGhost" type="button" id="btnBack">← Back</button>
           <button class="btnGhost" type="button" id="btnSignOut">Sign Out</button>
         </div>
       </div>
 
-      <div class="adminHero" aria-label="Admin Console hero">
-        <div class="heroRow">
-          <div>
-            <p class="heroTitleSmall">Admin Console</p>
-            <h1 class="heroTitleBig">Usage &amp; Roles</h1>
-          </div>
-          <div class="pillStatus" title="Admin tools">
-            <span class="dot" aria-hidden="true"></span>
-            Admin Tools
+      <div class="hero">
+        <div class="heroLeft">
+          <h1 id="heroTitle">Choose a Calculator</h1>
+          <p id="heroSub">Only Marketer Pay is active right now. The rest will unlock as we build them.</p>
+        </div>
+
+        <div class="heroRight">
+          <div class="search" role="search" aria-label="Search calculators">
+            <span class="searchIcon" aria-hidden="true"></span>
+            <input id="searchInput" type="text" placeholder="Search calculators…" autocomplete="off" />
           </div>
         </div>
       </div>
 
-      <div class="grid2">
-        <div class="card">
-          <h1 style="margin-bottom:6px;">Accounts</h1>
-          <p class="muted" style="margin-top:0;">
-            Select a user to view stats, assign manager access, or assign them to a manager.
-          </p>
-
-          <div class="rowBar">
-            <div class="searchWrap" role="search" aria-label="Search users">
-              <span class="searchDot" aria-hidden="true"></span>
-              <input id="searchUsers" type="text" placeholder="Search users…" autocomplete="off" />
-            </div>
-            <button class="btn" type="button" id="btnRefresh">Refresh</button>
-          </div>
-
-          <div class="userList" id="userList" aria-label="Users list">
-            <div class="muted" style="padding:10px 8px; font-weight:1000;">Loading…</div>
-          </div>
-        </div>
-
-        <div class="card summaryCard">
-          <div class="summaryTop">
-            <p class="summaryTitle"><span>Overview</span></p>
-          </div>
-
-          <div class="summaryBody">
-            <p class="muted" style="margin-top:0;">Live from Supabase user list.</p>
-
-            <div class="miniCard" style="margin-top:10px;">
-              <div class="miniLabel">Total Users</div>
-              <div class="miniValue mono" id="totalUsers">0</div>
-              <div class="miniHint">From tp_admin_list_users()</div>
-            </div>
-
-            <div style="height:12px;"></div>
-
-            <div class="miniCard">
-              <div class="miniLabel">Managers</div>
-              <div class="miniValue mono" id="totalManagers">0</div>
-              <div class="miniHint">Accounts marked as manager</div>
-            </div>
-
-            <div style="height:12px;"></div>
-
-            <div class="miniCard">
-              <div class="miniLabel">Most Recent Activity</div>
-              <div class="miniValue mono" id="recentActivity">—</div>
-              <div class="miniHint" id="recentHint">No recent activity found</div>
-            </div>
-          </div>
-        </div>
+      <div class="sectionTitle">
+        <h2>Calculators</h2>
+        <p class="hint" id="countHint">—</p>
       </div>
+
+      <div class="grid" id="cardsGrid"></div>
     </section>
-  </div>
-
-  <div class="settingsOverlay" id="snapOverlay" role="dialog" aria-modal="true" aria-labelledby="snapTitle">
-    <div class="settingsModal adminModal">
-      <div class="settingsHeader">
-        <h2 id="snapTitle">Account Snapshot</h2>
-        <button class="x" type="button" id="closeSnapX" aria-label="Close">×</button>
-      </div>
-
-      <div class="settingsBody">
-        <div class="sectionCard">
-          <div class="snapTop">
-            <div>
-              <p class="snapTitle" id="snapName">—</p>
-              <p class="snapSub" id="snapMeta">—</p>
-            </div>
-            <div class="pillStatus" style="padding:8px 12px;">
-              <span class="dot" aria-hidden="true"></span>
-              Editable Role
-            </div>
-          </div>
-
-          <div class="roleBox">
-            <h3 style="margin:0 0 10px; font-weight:1300; color:rgba(15,23,42,.92);">Role Management</h3>
-
-            <div class="roleRow">
-              <div>
-                <div class="roleLabel">Manager Access</div>
-                <div class="roleHint">Turn this on to make this account selectable as a manager.</div>
-              </div>
-
-              <label class="switch" aria-label="Manager access">
-                <input type="checkbox" id="roleIsManager">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="roleRow" style="align-items:flex-start;">
-              <div style="flex:1;">
-                <div class="roleLabel">Assigned Manager</div>
-                <div class="roleHint">Choose who this account reports to.</div>
-                <div style="height:8px;"></div>
-                <select class="selectRole" id="roleManagerSelect">
-                  <option value="">No manager assigned</option>
-                </select>
-              </div>
-            </div>
-
-            <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-              <button class="btn" type="button" id="btnSaveRole">Save Role</button>
-            </div>
-          </div>
-
-          <div class="snapGrid">
-            <div class="snapBox">
-              <h4>Site Calculator</h4>
-              <div class="kv"><div class="k">Month Key</div><div class="v mono" id="scMonth">—</div></div>
-              <div class="kv"><div class="k">Site Key</div><div class="v" id="scSite">—</div></div>
-              <div class="kv"><div class="k">Monthly Budget</div><div class="v mono" id="scBudget">0</div></div>
-              <div class="kv"><div class="k">Tours In</div><div class="v mono" id="scActual">0</div></div>
-              <div class="kv"><div class="k">% Complete</div><div class="v mono" id="scPct">0%</div></div>
-              <div class="kv"><div class="k">Mgr Override</div><div class="v mono" id="scMgrRate">$0.00</div></div>
-              <div class="kv"><div class="k">Updated</div><div class="v" id="scUpdated">—</div></div>
-            </div>
-
-            <div class="snapBox">
-              <h4>Marketer Pay / Trip Points</h4>
-              <div class="kv"><div class="k">Trip Points</div><div class="v mono" id="pcTripTotal">—</div></div>
-              <div class="kv"><div class="k">Current Pay</div><div class="v mono" id="pcPayMtd">—</div></div>
-              <div class="kv"><div class="k">Last Pay Entry</div><div class="v mono" id="pcLastPay">—</div></div>
-              <p class="muted" style="margin:10px 0 0;">
-                From <span class="mono">pay-calc</span> and <span class="mono">pay-calc-trip-ytd</span>.
-              </p>
-            </div>
-          </div>
-
-          <div style="height:14px;"></div>
-
-          <h3 style="margin:0 0 8px; font-weight:1300; color:rgba(15,23,42,.9);">Recent Calculator States</h3>
-
-          <table class="tableMini" aria-label="Recent calc states">
-            <thead>
-              <tr>
-                <th>Calc</th>
-                <th>Site</th>
-                <th>Month</th>
-                <th>Updated</th>
-              </tr>
-            </thead>
-            <tbody id="statesTbody">
-              <tr><td colspan="4" class="muted" style="font-weight:1000;">—</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
   <script>
+    /***********************
+     * SUPABASE CONFIG
+     ***********************/
     const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
 
     const SIGNIN_PAGE = "signin.html";
-    const BACK_PAGE = "choose-calc.html";
 
     const sb = (window.supabase && window.supabase.createClient)
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -667,13 +77,7 @@
 
     const $ = (id) => document.getElementById(id);
 
-    let AUTHUSERID = "";
-    let AUTHEMP = "";
-    let AUTHNAME = "";
-    let ALL_USERS = [];
-    let CURRENT_USER_ROW = null;
-
-    function showToast(msg, ms = 2000){
+    function showToast(msg, ms = 2200){
       const t = $("toast");
       t.textContent = msg;
       t.classList.add("show");
@@ -681,74 +85,173 @@
       showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
     }
 
-    function goSignin(){ window.location.replace(SIGNIN_PAGE); }
+    function goSignin(){
+      window.location.replace(SIGNIN_PAGE);
+    }
 
     function getEmpFromEmail(email){
       return String(email || "").split("@")[0] || "";
     }
 
-    function escapeHtml(s){
-      return String(s)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
+    /***********************
+     * ADMIN GATE
+     * Only employee numbers listed here will see Admin Console.
+     ***********************/
+    const ADMIN_EMPS = [
+      "078195"
+    ];
+
+    function isAdminEmp(emp){
+      const e = String(emp || "").trim();
+      return !!e && ADMIN_EMPS.includes(e);
     }
 
-    function money(n){
-      const x = Number(n || 0);
-      return x.toLocaleString(undefined, { style:"currency", currency:"USD" });
+    /***********************
+     * MENU
+     ***********************/
+    const CALCS = [
+      {
+        key: "marketer-pay",
+        title: "Marketer Pay Calculator",
+        desc: "Estimate comp fast based on site rules and tour outcomes.",
+        path: "pay-calc.html",
+        locked: false
+      },
+      {
+        key: "site-calculator",
+        title: "Site Calculator",
+        desc: "Site-based math tools you’ll use all day — clean and fast.",
+        path: "site-calc.html",
+        locked: false
+      },
+      {
+        key: "admin",
+        title: "Admin Console",
+        desc: "View logins, usage, roles, manager assignments, and captured tour inputs across calculators.",
+        path: "admin-console.html",
+        locked: false,
+        adminOnly: true
+      },
+      {
+        key: "monthly-tour-budget",
+        title: "Monthly Tour Budget",
+        desc: "Set goals, track tours, and validate pacing for the month.",
+        path: "",
+        locked: true
+      },
+      {
+        key: "sales-volume",
+        title: "Sales Volume",
+        desc: "Handy helpers for conversions, pacing, and daily checks.",
+        path: "",
+        locked: true
+      }
+    ];
+
+    let _isAdmin = false;
+
+    function getVisibleCalcs(){
+      return CALCS.filter(c => !c.adminOnly || _isAdmin);
     }
 
-    function num(n){
-      return Number(n || 0).toLocaleString();
+    function renderCards(list){
+      const grid = $("cardsGrid");
+      grid.innerHTML = "";
+
+      list.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "calcCard";
+
+        const locked = !!item.locked;
+        const badge = locked ? `<span class="badge">LOCKED</span>` : ``;
+
+        const btnClass = locked ? "goBtn locked" : "goBtn open";
+        const btnText  = locked ? "Locked" : "Open";
+        const dataPath = locked ? "" : (item.path || "");
+
+        card.innerHTML = `
+          <div class="calcTop">
+            <div class="calcIcon" aria-hidden="true"></div>
+            <div class="badgeRow">${badge}</div>
+          </div>
+
+          <div>
+            <div class="calcTitle">${escapeHtml(item.title)}</div>
+            <p class="calcDesc">${escapeHtml(item.desc)}</p>
+          </div>
+
+          <button class="${btnClass}" type="button" data-path="${escapeAttr(dataPath)}">
+            ${btnText}
+          </button>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      $("countHint").textContent = `${list.length} shown`;
     }
 
-    function pct(x){
-      let v = Number(x);
-      if(!Number.isFinite(v) || v < 0) v = 0;
-      return (v * 100).toFixed(0) + "%";
+    function applySearch(){
+      const q = String($("searchInput").value || "").trim().toLowerCase();
+      const base = getVisibleCalcs();
+
+      if(!q){
+        renderCards(base);
+        return;
+      }
+
+      const filtered = base.filter(c =>
+        c.title.toLowerCase().includes(q) ||
+        c.desc.toLowerCase().includes(q) ||
+        c.key.toLowerCase().includes(q)
+      );
+
+      renderCards(filtered);
     }
 
-    function prettyTs(ts){
-      if(!ts) return "—";
-      const d = new Date(ts);
-      if(Number.isNaN(d.getTime())) return String(ts);
-      return d.toLocaleString(undefined, {
-        month:"short",
-        day:"numeric",
-        year:"numeric",
-        hour:"numeric",
-        minute:"2-digit"
+    function wireCardClicks(){
+      $("cardsGrid").addEventListener("click", (e) => {
+        const btn = e.target?.closest?.("button[data-path]");
+        if(!btn) return;
+
+        const path = btn.getAttribute("data-path") || "";
+
+        if(!path){
+          showToast("Locked for now.");
+          return;
+        }
+
+        window.location.href = path;
       });
     }
 
-    function prettyDate(iso){
-      if(!iso) return "—";
-      const d = new Date(String(iso) + "T00:00:00");
-      if(Number.isNaN(d.getTime())) return String(iso);
-      return d.toLocaleString(undefined, {
-        month:"short",
-        day:"numeric",
-        year:"numeric"
-      });
-    }
-
+    /***********************
+     * AUTH GATE + HEADER
+     ***********************/
     async function requireAuthOrRedirect(){
       if(!sb) return goSignin();
 
       const { data: { session } } = await sb.auth.getSession();
+
       if(!session?.user) return goSignin();
 
       const user = session.user;
-      AUTHUSERID = user.id;
-      AUTHNAME = user.user_metadata?.first_name || "";
-      AUTHEMP = getEmpFromEmail(user.email);
+      const first = user.user_metadata?.first_name || "";
+      const emp = getEmpFromEmail(user.email);
 
-      $("userName").textContent = AUTHNAME || "Signed In";
-      $("userEmp").textContent = AUTHEMP ? `#${AUTHEMP}` : "";
+      _isAdmin = isAdminEmp(emp);
+
+      $("userName").textContent = first || "Signed In";
+      $("userEmp").textContent = emp ? `#${emp}` : "";
       $("welcomeLine").textContent = "Powered by F8";
+
+      $("heroTitle").textContent = first
+        ? `What are we running today, ${first}?`
+        : "Choose a Calculator";
+
+      $("heroSub").textContent = _isAdmin
+        ? "Admin Console is enabled for your account."
+        : "Choose the calculator you need below.";
     }
 
     async function signOut(){
@@ -766,7 +269,6 @@
     }
 
     $("btnSignOut").addEventListener("click", () => signOut());
-    $("btnBack").addEventListener("click", () => window.location.href = BACK_PAGE);
 
     if(sb){
       sb.auth.onAuthStateChange((event, session) => {
@@ -774,318 +276,29 @@
       });
     }
 
-    async function fetchUsers(){
-      $("userList").innerHTML = `<div class="muted" style="padding:10px 8px; font-weight:1000;">Loading…</div>`;
-
-      const { data, error } = await sb.rpc("tp_admin_list_users");
-
-      if(error){
-        console.warn("tp_admin_list_users error:", error);
-        showToast("Not authorized for admin console.");
-        window.location.href = BACK_PAGE;
-        return;
-      }
-
-      ALL_USERS = Array.isArray(data) ? data : [];
-      paintUsers();
-      paintOverview();
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
 
-    function paintOverview(){
-      $("totalUsers").textContent = num(ALL_USERS.length);
-
-      const managers = ALL_USERS.filter(u => !!u.is_manager);
-      $("totalManagers").textContent = num(managers.length);
-
-      const latest = ALL_USERS.find(u => !!u.last_seen_at) || null;
-      $("recentActivity").textContent = latest?.last_seen_at ? prettyTs(latest.last_seen_at) : "—";
-      $("recentHint").textContent = latest
-        ? `${latest.first_name || "User"} (#${latest.emp || "—"}) last sign-in`
-        : "No recent activity found";
+    function escapeAttr(v){
+      return String(v ?? "").replaceAll('"',"&quot;");
     }
 
-    function managerDisplay(emp){
-      const u = ALL_USERS.find(x => String(x.emp || "") === String(emp || ""));
-      if(!u) return emp ? `#${emp}` : "";
-      return `${u.first_name || "Manager"} (#${u.emp})`;
-    }
-
-    function paintUsers(){
-      const q = String($("searchUsers").value || "").trim().toLowerCase();
-
-      const list = !q ? ALL_USERS : ALL_USERS.filter(u => {
-        const name = String(u.first_name || "").toLowerCase();
-        const emp = String(u.emp || "").toLowerCase();
-        const email = String(u.email || "").toLowerCase();
-        const manager = String(u.manager_name || u.manager_emp || "").toLowerCase();
-        return name.includes(q) || emp.includes(q) || email.includes(q) || manager.includes(q);
-      });
-
-      const wrap = $("userList");
-      wrap.innerHTML = "";
-
-      if(list.length === 0){
-        wrap.innerHTML = `<div class="muted" style="padding:10px 8px; font-weight:1100;">No users found.</div>`;
-        return;
-      }
-
-      list.forEach(u => {
-        const btn = document.createElement("div");
-        btn.className = "uRow";
-        btn.setAttribute("role","button");
-        btn.setAttribute("tabindex","0");
-        btn.dataset.uid = u.user_id;
-
-        const displayName = u.first_name ? u.first_name : "Unnamed";
-        const emp = u.emp ? `#${u.emp}` : "#—";
-        const email = u.email || "";
-
-        const tags = [];
-        if(u.is_manager){
-          tags.push(`<span class="pillMini pillManager">Manager</span>`);
-        }
-        if(u.manager_emp){
-          tags.push(`<span class="pillMini pillAssigned">Reports to ${escapeHtml(managerDisplay(u.manager_emp))}</span>`);
-        }
-
-        btn.innerHTML = `
-          <div class="uLeft">
-            <div class="uName">${escapeHtml(displayName)} <span style="opacity:.55; font-weight:1100; margin-left:6px;">${escapeHtml(emp)}</span></div>
-            <div class="uMeta">${escapeHtml(email)}</div>
-            <div class="uTags">${tags.join("")}</div>
-          </div>
-          <div class="uRight">
-            <span class="pillMini">View</span>
-            <span class="openMini">${escapeHtml(u.last_seen_at ? prettyTs(u.last_seen_at) : "Never")}</span>
-          </div>
-        `;
-
-        btn.addEventListener("click", () => openSnapshot(u));
-        btn.addEventListener("keydown", (e) => {
-          if(e.key === "Enter" || e.key === " "){
-            e.preventDefault();
-            openSnapshot(u);
-          }
-        });
-
-        wrap.appendChild(btn);
-      });
-    }
-
-    $("searchUsers").addEventListener("input", paintUsers);
-    $("btnRefresh").addEventListener("click", () => fetchUsers());
-
-    function openSnap(){
-      $("snapOverlay").classList.add("show");
-    }
-
-    function closeSnap(){
-      $("snapOverlay").classList.remove("show");
-    }
-
-    $("closeSnapX").addEventListener("click", closeSnap);
-    $("snapOverlay").addEventListener("click", (e) => {
-      if(e.target === $("snapOverlay")) closeSnap();
-    });
-
-    document.addEventListener("keydown", (e) => {
-      if(e.key === "Escape") closeSnap();
-    });
-
-    function resetSnapshotFields(){
-      $("scMonth").textContent = "—";
-      $("scSite").textContent = "—";
-      $("scBudget").textContent = "0";
-      $("scActual").textContent = "0";
-      $("scPct").textContent = "0%";
-      $("scMgrRate").textContent = "$0.00";
-      $("scUpdated").textContent = "—";
-
-      $("pcTripTotal").textContent = "—";
-      $("pcPayMtd").textContent = "—";
-      $("pcLastPay").textContent = "—";
-
-      $("statesTbody").innerHTML = `<tr><td colspan="4" class="muted" style="font-weight:1000;">Loading…</td></tr>`;
-    }
-
-    function populateRoleControls(userRow){
-      $("roleIsManager").checked = !!userRow.is_manager;
-
-      const sel = $("roleManagerSelect");
-      sel.innerHTML = `<option value="">No manager assigned</option>`;
-
-      const managers = ALL_USERS
-        .filter(u => !!u.is_manager && String(u.emp || "") !== String(userRow.emp || ""))
-        .sort((a,b) => String(a.first_name || "").localeCompare(String(b.first_name || "")));
-
-      managers.forEach(m => {
-        const opt = document.createElement("option");
-        opt.value = m.emp || "";
-        opt.textContent = `${m.first_name || "Manager"} (#${m.emp || "—"})`;
-        sel.appendChild(opt);
-      });
-
-      sel.value = userRow.manager_emp || "";
-    }
-
-    async function openSnapshot(userRow){
-      CURRENT_USER_ROW = userRow;
-
-      $("snapName").textContent = `${userRow.first_name || "Unnamed"} ${userRow.emp ? `(#${userRow.emp})` : ""}`.trim();
-      $("snapMeta").textContent = userRow.email || "—";
-
-      resetSnapshotFields();
-      populateRoleControls(userRow);
-      openSnap();
-
-      const { data, error } = await sb
-        .from("tp_calc_state")
-        .select("calc_key,site_key,month_key,state,updated_at")
-        .eq("user_id", userRow.user_id)
-        .order("updated_at", { ascending:false })
-        .limit(12);
-
-      if(error){
-        console.warn("tp_calc_state read error:", error);
-        $("statesTbody").innerHTML = `<tr><td colspan="4" class="muted" style="font-weight:1100;">Unable to load states.</td></tr>`;
-        return;
-      }
-
-      const rows = Array.isArray(data) ? data : [];
-
-      if(rows.length === 0){
-        $("statesTbody").innerHTML = `<tr><td colspan="4" class="muted" style="font-weight:1100;">No calculator data yet.</td></tr>`;
-      }else{
-        $("statesTbody").innerHTML = rows.map(r => `
-          <tr>
-            <td>${escapeHtml(r.calc_key || "—")}</td>
-            <td>${escapeHtml(r.site_key || "—")}</td>
-            <td>${escapeHtml(r.month_key || "—")}</td>
-            <td>${escapeHtml(prettyTs(r.updated_at))}</td>
-          </tr>
-        `).join("");
-      }
-
-      const sc = rows.find(r => String(r.calc_key || "") === "site-calc") || null;
-
-      if(sc && sc.state && typeof sc.state === "object"){
-        const byDate = sc.state.byDate && typeof sc.state.byDate === "object" ? sc.state.byDate : {};
-        let budgetTotal = 0;
-        let actualTotal = 0;
-
-        for(const k in byDate){
-          const v = byDate[k] || {};
-          const b = parseInt(String(v.budget ?? "0"), 10);
-          const a = parseInt(String(v.actual ?? "0"), 10);
-          budgetTotal += Number.isFinite(b) && b > 0 ? b : 0;
-          actualTotal += Number.isFinite(a) && a > 0 ? a : 0;
-        }
-
-        const mgr = parseFloat(String(sc.state.mgrOverrideRate ?? "0"));
-        const mgrRate = Number.isFinite(mgr) && mgr > 0 ? mgr : 0;
-
-        $("scMonth").textContent = sc.month_key || "—";
-        $("scSite").textContent = sc.site_key || "—";
-        $("scBudget").textContent = num(budgetTotal);
-        $("scActual").textContent = num(actualTotal);
-        $("scPct").textContent = budgetTotal > 0 ? pct(actualTotal / budgetTotal) : "0%";
-        $("scMgrRate").textContent = money(mgrRate);
-        $("scUpdated").textContent = prettyTs(sc.updated_at);
-      }
-
-      const pay = rows.find(r => String(r.calc_key || "") === "pay-calc") || null;
-
-      let currentPayMTD = 0;
-
-      if(pay && pay.state && typeof pay.state === "object"){
-        const st = pay.state;
-
-        const tours = Number(st.monthTours?.owners || 0)
-          + Number(st.monthTours?.goos || 0)
-          + Number(st.monthTours?.renters || 0);
-
-        const matrix = Array.isArray(st.matrix) ? st.matrix : [];
-        const sorted = matrix
-          .map(m => ({ tours:Number(m.tours || 0), rate:Number(m.rate || 0) }))
-          .filter(m => Number.isFinite(m.tours) && Number.isFinite(m.rate))
-          .sort((a,b) => a.tours - b.tours);
-
-        let rate = 0;
-        for(const row of sorted){
-          if(tours >= row.tours) rate = row.rate;
-        }
-
-        const toursPay = tours * rate;
-        const hourly = 15 * 37.5;
-
-        currentPayMTD = hourly + toursPay;
-      }
-
-      const trip = rows.find(r => String(r.calc_key || "") === "pay-calc-trip-ytd") || null;
-
-      let tripTotal = 0;
-      let lastTripDate = null;
-
-      if(trip && trip.state && Array.isArray(trip.state.tripEntries)){
-        const entries = trip.state.tripEntries;
-        tripTotal = entries.reduce((sum, e) => sum + Number(e.points || 0), 0);
-
-        if(entries.length > 0){
-          lastTripDate = entries[0].date;
-        }
-      }
-
-      $("pcTripTotal").textContent = num(tripTotal);
-      $("pcPayMtd").textContent = money(currentPayMTD);
-      $("pcLastPay").textContent = lastTripDate ? prettyDate(lastTripDate) : "—";
-    }
-
-    $("btnSaveRole").addEventListener("click", async () => {
-      if(!CURRENT_USER_ROW){
-        showToast("No user selected.");
-        return;
-      }
-
-      const emp = CURRENT_USER_ROW.emp || "";
-      const isManager = $("roleIsManager").checked;
-      const managerEmp = $("roleManagerSelect").value || null;
-
-      const btn = $("btnSaveRole");
-      const oldText = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = "Saving…";
-
-      const { error } = await sb.rpc("tp_admin_set_user_role", {
-        p_emp: emp,
-        p_is_manager: isManager,
-        p_manager_emp: managerEmp
-      });
-
-      btn.disabled = false;
-      btn.textContent = oldText;
-
-      if(error){
-        console.warn("tp_admin_set_user_role error:", error);
-        showToast(error.message || "Could not save role.");
-        return;
-      }
-
-      showToast("Role saved.");
-
-      await fetchUsers();
-
-      const updated = ALL_USERS.find(u => String(u.emp || "") === String(emp || ""));
-      if(updated){
-        CURRENT_USER_ROW = updated;
-        populateRoleControls(updated);
-        $("snapName").textContent = `${updated.first_name || "Unnamed"} ${updated.emp ? `(#${updated.emp})` : ""}`.trim();
-        $("snapMeta").textContent = updated.email || "—";
-      }
-    });
-
+    /***********************
+     * INIT
+     ***********************/
     (async function init(){
       await requireAuthOrRedirect();
-      await fetchUsers();
+
+      renderCards(getVisibleCalcs());
+      wireCardClicks();
+
+      $("searchInput").addEventListener("input", applySearch);
     })();
   </script>
 </body>
