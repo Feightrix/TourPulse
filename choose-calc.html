@@ -78,12 +78,30 @@
       showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
     }
 
-    function goSignin(){ window.location.replace(SIGNIN_PAGE); }
+    function goSignin(){
+      window.location.replace(SIGNIN_PAGE);
+    }
 
     function getEmpFromEmail(email){
       return String(email || "").split("@")[0] || "";
     }
 
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function escapeAttr(v){
+      return String(v ?? "").replaceAll('"',"&quot;");
+    }
+
+    /***********************
+     * ADMIN ACCESS
+     ***********************/
     const RPC_LIST_USERS = "tp_admin_list_users";
     const ADMIN_EMPS_FALLBACK = ["078195"];
 
@@ -112,10 +130,14 @@
       for(const payload of attempts){
         try{
           const res = await tryRpcListUsers(payload);
+
           if(res.ok) return true;
 
           const code = res.error?.code || "";
-          if(code === "PGRST202" || code === "404") continue;
+
+          if(code === "PGRST202" || code === "404"){
+            continue;
+          }
 
           console.warn("admin rpc error:", res.error);
           return isAdminEmpFallback(emp);
@@ -128,6 +150,9 @@
       return isAdminEmpFallback(emp);
     }
 
+    /***********************
+     * MENU
+     ***********************/
     const CALCS = [
       {
         key: "marketer-pay",
@@ -153,7 +178,7 @@
       {
         key: "admin",
         title: "Admin Console",
-        desc: "View logins, usage, and captured tour inputs across calculators.",
+        desc: "View logins, usage, roles, manager assignments, and captured tour inputs across calculators.",
         path: "admin-console.html",
         locked: false,
         adminOnly: true
@@ -161,13 +186,14 @@
       {
         key: "sales-volume",
         title: "Sales Volume",
-        desc: "Handy helpers (conversions, pacing, daily checks).",
+        desc: "Handy helpers for conversions, pacing, and daily checks.",
         path: "",
         locked: true
       }
     ];
 
     let _isAdmin = false;
+    let _cardsWired = false;
 
     function getVisibleCalcs(){
       return CALCS.filter(c => !c.adminOnly || _isAdmin);
@@ -178,11 +204,15 @@
       grid.innerHTML = "";
 
       list.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "calcCard";
-
         const locked = !!item.locked;
         const isAdminCard = !!item.adminOnly;
+        const dataPath = locked ? "" : (item.path || "");
+
+        const card = document.createElement("div");
+        card.className = "calcCard";
+        card.setAttribute("data-card-path", dataPath);
+        card.setAttribute("data-card-key", item.key);
+        card.style.cursor = locked ? "default" : "pointer";
 
         const badge = locked
           ? `<span class="badge">LOCKED</span>`
@@ -190,7 +220,6 @@
 
         const btnClass = locked ? "goBtn locked" : "goBtn open";
         const btnText  = locked ? "Locked" : "Open";
-        const dataPath = locked ? "" : (item.path || "");
 
         card.innerHTML = `
           <div class="calcTop">
@@ -199,12 +228,12 @@
           </div>
 
           <div>
-            <div class="calcTitle">${item.title}</div>
-            <p class="calcDesc">${item.desc}</p>
+            <div class="calcTitle">${escapeHtml(item.title)}</div>
+            <p class="calcDesc">${escapeHtml(item.desc)}</p>
           </div>
 
-          <button class="${btnClass}" type="button" data-path="${dataPath}">
-            ${btnText}
+          <button class="${btnClass}" type="button" data-path="${escapeAttr(dataPath)}">
+            ${escapeHtml(btnText)}
           </button>
         `;
 
@@ -232,26 +261,46 @@
       renderCards(filtered);
     }
 
+    function goToPath(path){
+      const cleanPath = String(path || "").trim();
+
+      if(!cleanPath){
+        showToast("Locked for now.");
+        return;
+      }
+
+      const targetUrl = new URL(cleanPath, window.location.href).href;
+      window.location.assign(targetUrl);
+    }
+
     function wireCardClicks(){
+      if(_cardsWired) return;
+      _cardsWired = true;
+
       $("cardsGrid").addEventListener("click", (e) => {
         const btn = e.target?.closest?.("button[data-path]");
-        if(!btn) return;
-
-        const path = btn.getAttribute("data-path") || "";
-
-        if(!path){
-          showToast("Locked for now.");
+        if(btn){
+          e.preventDefault();
+          e.stopPropagation();
+          goToPath(btn.getAttribute("data-path") || "");
           return;
         }
 
-        window.location.href = path;
+        const card = e.target?.closest?.(".calcCard[data-card-path]");
+        if(card){
+          goToPath(card.getAttribute("data-card-path") || "");
+        }
       });
     }
 
+    /***********************
+     * AUTH GATE + HEADER
+     ***********************/
     async function requireAuthOrRedirect(){
       if(!sb) return goSignin();
 
       const { data: { session } } = await sb.auth.getSession();
+
       if(!session?.user) return goSignin();
 
       const user = session.user;
@@ -263,11 +312,14 @@
       $("userName").textContent = first || "Signed In";
       $("userEmp").textContent = emp ? `#${emp}` : "";
       $("welcomeLine").textContent = "Powered by F8";
-      $("heroTitle").textContent = first ? `What are we running today, ${first}?` : "Choose a Calculator";
 
-      if(_isAdmin){
-        $("heroSub").textContent = "Admin Console is enabled for your account.";
-      }
+      $("heroTitle").textContent = first
+        ? `What are we running today, ${first}?`
+        : "Choose a Calculator";
+
+      $("heroSub").textContent = _isAdmin
+        ? "Admin Console is enabled for your account."
+        : "Choose the calculator you need for today’s pacing, goals, and pay tracking.";
     }
 
     async function signOut(){
@@ -292,10 +344,15 @@
       });
     }
 
+    /***********************
+     * INIT
+     ***********************/
     (async function init(){
       await requireAuthOrRedirect();
+
       renderCards(getVisibleCalcs());
       wireCardClicks();
+
       $("searchInput").addEventListener("input", applySearch);
     })();
   </script>
