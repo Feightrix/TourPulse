@@ -14,7 +14,7 @@
   <style>
     body.tp-admin .grid2{
       display:grid;
-      grid-template-columns:1.15fr .85fr;
+      grid-template-columns: 1.15fr .85fr;
       gap:18px;
       align-items:start;
       margin-top:16px;
@@ -23,10 +23,10 @@
     body.tp-admin .adminHero{
       margin-top:14px;
       border:1px solid rgba(15,23,42,.10);
-      background:rgba(255,255,255,.72);
-      border-radius:22px;
-      padding:18px;
-      box-shadow:0 22px 60px rgba(2,6,23,.08);
+      background: rgba(255,255,255,.72);
+      border-radius: 22px;
+      padding:18px 18px;
+      box-shadow: 0 22px 60px rgba(2,6,23,.08);
       position:relative;
       overflow:hidden;
     }
@@ -36,7 +36,7 @@
       position:absolute;
       inset:-60px -40px auto -40px;
       height:220px;
-      background:radial-gradient(closest-side, rgba(10,166,181,.14), transparent 65%);
+      background: radial-gradient(closest-side, rgba(10,166,181,.14), transparent 65%);
       pointer-events:none;
     }
 
@@ -54,7 +54,7 @@
       font-weight:1100;
       letter-spacing:.18em;
       text-transform:uppercase;
-      color:rgba(15,23,42,.62);
+      color: rgba(15,23,42,.62);
       margin:0 0 4px;
     }
 
@@ -64,7 +64,7 @@
       margin:0;
       font-weight:1300;
       letter-spacing:.2px;
-      color:rgba(15,23,42,.92);
+      color: rgba(15,23,42,.92);
     }
 
     body.tp-admin .pillStatus{
@@ -72,11 +72,11 @@
       align-items:center;
       gap:10px;
       padding:10px 14px;
-      border-radius:999px;
+      border-radius: 999px;
       border:1px solid rgba(15,23,42,.12);
-      background:rgba(255,255,255,.78);
+      background: rgba(255,255,255,.78);
       font-weight:1100;
-      color:rgba(15,23,42,.78);
+      color: rgba(15,23,42,.78);
       white-space:nowrap;
     }
 
@@ -84,8 +84,8 @@
       width:10px;
       height:10px;
       border-radius:50%;
-      background:rgba(10,166,181,.95);
-      box-shadow:0 0 0 6px rgba(10,166,181,.16);
+      background: rgba(10,166,181,.95);
+      box-shadow: 0 0 0 6px rgba(10,166,181,.16);
       flex:0 0 auto;
     }
 
@@ -105,18 +105,18 @@
       flex:1 1 320px;
       min-width:240px;
       border:1px solid rgba(15,23,42,.12);
-      background:rgba(255,255,255,.78);
-      border-radius:16px;
+      background: rgba(255,255,255,.78);
+      border-radius: 16px;
       padding:10px 12px;
-      box-shadow:0 10px 24px rgba(2,6,23,.06);
+      box-shadow: 0 10px 24px rgba(2,6,23,.06);
     }
 
     body.tp-admin .searchDot{
       width:16px;
       height:16px;
       border-radius:50%;
-      background:rgba(15,23,42,.10);
-      box-shadow:inset 0 0 0 3px rgba(15,23,42,.10);
+      background: rgba(15,23,42,.10);
+      box-shadow: inset 0 0 0 3px rgba(15,23,42,.10);
       flex:0 0 auto;
     }
 
@@ -127,16 +127,16 @@
       width:100%;
       font-size:16px;
       font-weight:900;
-      color:rgba(15,23,42,.88);
+      color: rgba(15,23,42,.88);
     }
 
     body.tp-admin .userList{
       margin-top:12px;
       border:1px dashed rgba(15,23,42,.20);
-      border-radius:18px;
+      border-radius: 18px;
       padding:10px;
-      background:rgba(255,255,255,.60);
-      min-height:118px;
+      background: rgba(255,255,255,.60);
+      min-height: 118px;
     }
 
     body.tp-admin .uRow{
@@ -145,11 +145,11 @@
       align-items:center;
       justify-content:space-between;
       gap:12px;
-      padding:12px;
-      border-radius:14px;
+      padding:12px 12px;
+      border-radius: 14px;
       border:1px solid rgba(15,23,42,.10);
-      background:rgba(255,255,255,.78);
-      box-shadow:0 12px 26px rgba(2,6,23,.06);
+      background: rgba(255,255,255,.78);
+      box-shadow: 0 12px 26px rgba(2,6,23,.06);
       cursor:pointer;
       user-select:none;
     }
@@ -159,35 +159,28 @@
     body.tp-admin .uLeft{
       display:flex;
       flex-direction:column;
-      gap:4px;
+      gap:2px;
       min-width:0;
     }
 
     body.tp-admin .uName{
       font-weight:1200;
-      color:rgba(15,23,42,.92);
+      color: rgba(15,23,42,.92);
       font-size:16px;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
-      max-width:560px;
+      max-width: 560px;
     }
 
     body.tp-admin .uMeta{
       font-weight:900;
-      color:rgba(15,23,42,.58);
+      color: rgba(15,23,42,.58);
       font-size:13px;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
-      max-width:560px;
-    }
-
-    body.tp-admin .uTags{
-      display:flex;
-      gap:6px;
-      flex-wrap:wrap;
-      margin-top:2px;
+      max-width: 560px;
     }
 
     body.tp-admin .uRight{
@@ -195,14 +188,16 @@
       align-items:center;
       gap:10px;
       flex:0 0 auto;
+      flex-wrap:wrap;
+      justify-content:flex-end;
     }
 
     body.tp-admin .pillMini{
       border-radius:999px;
       padding:8px 10px;
       border:1px solid rgba(15,23,42,.10);
-      background:rgba(10,166,181,.10);
-      color:rgba(10,166,181,.98);
+      background: rgba(10,166,181,.10);
+      color: rgba(10,166,181,.98);
       font-weight:1200;
       font-size:12px;
       letter-spacing:.08em;
@@ -211,21 +206,24 @@
     }
 
     body.tp-admin .pillManager{
-      background:rgba(10,166,181,.12);
-      color:rgba(10,166,181,.98);
-    }
-
-    body.tp-admin .pillAssigned{
-      background:rgba(15,23,42,.06);
-      color:rgba(15,23,42,.68);
+      border-radius:999px;
+      padding:8px 10px;
+      border:1px solid rgba(15,23,42,.10);
+      background: rgba(15,23,42,.08);
+      color: rgba(15,23,42,.75);
+      font-weight:1200;
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      white-space:nowrap;
     }
 
     body.tp-admin .openMini{
       border-radius:999px;
       padding:8px 10px;
       border:1px solid rgba(15,23,42,.12);
-      background:rgba(255,255,255,.86);
-      color:rgba(15,23,42,.78);
+      background: rgba(255,255,255,.86);
+      color: rgba(15,23,42,.78);
       font-weight:1100;
       font-size:12px;
       white-space:nowrap;
@@ -233,10 +231,10 @@
 
     body.tp-admin .miniCard{
       border:1px solid rgba(15,23,42,.12);
-      background:rgba(255,255,255,.78);
-      border-radius:18px;
-      padding:14px;
-      box-shadow:0 16px 40px rgba(2,6,23,.08);
+      background: rgba(255,255,255,.78);
+      border-radius: 18px;
+      padding:14px 14px;
+      box-shadow: 0 16px 40px rgba(2,6,23,.08);
     }
 
     body.tp-admin .miniLabel{
@@ -244,14 +242,14 @@
       font-weight:1100;
       letter-spacing:.22px;
       text-transform:uppercase;
-      color:rgba(15,23,42,.62);
+      color: rgba(15,23,42,.62);
     }
 
     body.tp-admin .miniValue{
       font-size:30px;
       font-weight:1300;
       letter-spacing:.2px;
-      color:rgba(15,23,42,.92);
+      color: rgba(15,23,42,.92);
       line-height:1.1;
       margin-top:8px;
     }
@@ -260,11 +258,11 @@
       margin-top:10px;
       font-size:13px;
       font-weight:900;
-      color:rgba(15,23,42,.58);
+      color: rgba(15,23,42,.58);
     }
 
     body.tp-admin .adminModal{
-      max-width:920px;
+      max-width: 900px;
     }
 
     body.tp-admin .snapTop{
@@ -278,7 +276,7 @@
       margin:0;
       font-size:22px;
       font-weight:1300;
-      color:rgba(15,23,42,.92);
+      color: rgba(15,23,42,.92);
       line-height:1.15;
     }
 
@@ -286,21 +284,21 @@
       margin:6px 0 0;
       font-size:13px;
       font-weight:900;
-      color:rgba(15,23,42,.60);
+      color: rgba(15,23,42,.60);
     }
 
     body.tp-admin .snapGrid{
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap:12px;
       margin-top:14px;
     }
 
     body.tp-admin .snapBox{
       border:1px solid rgba(15,23,42,.10);
-      background:rgba(255,255,255,.84);
-      border-radius:16px;
-      padding:12px;
+      background: rgba(255,255,255,.84);
+      border-radius: 16px;
+      padding:12px 12px;
     }
 
     body.tp-admin .snapBox h4{
@@ -309,7 +307,7 @@
       font-weight:1100;
       letter-spacing:.22em;
       text-transform:uppercase;
-      color:rgba(15,23,42,.62);
+      color: rgba(15,23,42,.62);
     }
 
     body.tp-admin .kv{
@@ -319,107 +317,94 @@
       padding:7px 0;
       border-top:1px dashed rgba(15,23,42,.14);
       font-weight:1000;
-      color:rgba(15,23,42,.84);
+      color: rgba(15,23,42,.84);
     }
 
     body.tp-admin .kv:first-of-type{ border-top:0; }
 
     body.tp-admin .kv .k{
-      color:rgba(15,23,42,.58);
+      color: rgba(15,23,42,.58);
       font-weight:1000;
     }
 
     body.tp-admin .kv .v{
       font-weight:1200;
-      color:rgba(15,23,42,.92);
+      color: rgba(15,23,42,.92);
       text-align:right;
     }
 
-    body.tp-admin .roleBox{
+    body.tp-admin .rolePanel{
       margin-top:14px;
-      border:1px solid rgba(10,166,181,.18);
-      background:rgba(10,166,181,.06);
-      border-radius:16px;
-      padding:14px;
+      border:1px solid rgba(15,23,42,.10);
+      background: rgba(255,255,255,.74);
+      border-radius: 16px;
+      padding:12px;
     }
 
     body.tp-admin .roleRow{
       display:flex;
-      justify-content:space-between;
       align-items:center;
+      justify-content:space-between;
       gap:12px;
       padding:10px 0;
-      border-top:1px dashed rgba(15,23,42,.12);
+      border-top:1px dashed rgba(15,23,42,.14);
     }
 
-    body.tp-admin .roleRow:first-of-type{ border-top:0; padding-top:0; }
+    body.tp-admin .roleRow:first-child{
+      border-top:0;
+      padding-top:0;
+    }
 
     body.tp-admin .roleLabel{
       font-weight:1200;
-      color:rgba(15,23,42,.86);
+      color:rgba(15,23,42,.84);
     }
 
     body.tp-admin .roleHint{
-      font-size:13px;
+      font-size:12px;
       font-weight:850;
-      color:rgba(15,23,42,.56);
-      margin-top:2px;
+      color:rgba(15,23,42,.55);
+      margin-top:3px;
     }
 
-    body.tp-admin .switch{
-      position:relative;
-      width:58px;
-      height:32px;
-      flex:0 0 auto;
-    }
-
-    body.tp-admin .switch input{
-      opacity:0;
-      width:0;
-      height:0;
-    }
-
-    body.tp-admin .slider{
-      position:absolute;
-      cursor:pointer;
-      inset:0;
-      background:rgba(15,23,42,.18);
-      transition:.18s;
-      border-radius:999px;
-      border:1px solid rgba(15,23,42,.10);
-    }
-
-    body.tp-admin .slider:before{
-      position:absolute;
-      content:"";
-      height:24px;
-      width:24px;
-      left:4px;
-      top:3px;
-      background:white;
-      transition:.18s;
-      border-radius:50%;
-      box-shadow:0 6px 14px rgba(2,6,23,.16);
-    }
-
-    body.tp-admin .switch input:checked + .slider{
-      background:rgba(10,166,181,.95);
-    }
-
-    body.tp-admin .switch input:checked + .slider:before{
-      transform:translateX(26px);
-    }
-
-    body.tp-admin .selectRole{
-      width:100%;
+    body.tp-admin .roleSelect{
+      min-width:220px;
+      max-width:100%;
       border:1px solid rgba(15,23,42,.14);
-      background:rgba(255,255,255,.86);
-      border-radius:14px;
-      padding:12px;
-      font-size:15px;
+      border-radius:999px;
+      background:rgba(255,255,255,.9);
+      padding:10px 12px;
       font-weight:1000;
-      color:rgba(15,23,42,.84);
+      color:rgba(15,23,42,.82);
       outline:none;
+    }
+
+    body.tp-admin .toggleBtn{
+      border:1px solid rgba(15,23,42,.14);
+      border-radius:999px;
+      background:rgba(255,255,255,.9);
+      padding:10px 14px;
+      font-weight:1200;
+      cursor:pointer;
+      color:rgba(15,23,42,.75);
+      white-space:nowrap;
+    }
+
+    body.tp-admin .toggleBtn.on{
+      background:rgba(10,166,181,.14);
+      color:rgba(10,166,181,.98);
+      border-color:rgba(10,166,181,.28);
+    }
+
+    body.tp-admin .dangerBtn{
+      border:1px solid rgba(220,38,38,.22);
+      border-radius:999px;
+      background:rgba(220,38,38,.08);
+      padding:10px 14px;
+      font-weight:1200;
+      cursor:pointer;
+      color:rgba(185,28,28,.95);
+      white-space:nowrap;
     }
 
     body.tp-admin .tableMini{
@@ -428,18 +413,18 @@
       border-spacing:0;
       margin-top:10px;
       border:1px solid rgba(15,23,42,.12);
-      border-radius:14px;
+      border-radius: 14px;
       overflow:hidden;
-      background:rgba(255,255,255,.86);
+      background: rgba(255,255,255,.86);
     }
 
     body.tp-admin .tableMini th,
     body.tp-admin .tableMini td{
-      padding:10px;
+      padding:10px 10px;
       text-align:left;
       font-size:13px;
       font-weight:950;
-      color:rgba(15,23,42,.82);
+      color: rgba(15,23,42,.82);
       border-top:1px solid rgba(15,23,42,.08);
     }
 
@@ -449,17 +434,19 @@
       font-weight:1100;
       letter-spacing:.16em;
       text-transform:uppercase;
-      color:rgba(15,23,42,.58);
-      background:rgba(10,166,181,.08);
+      color: rgba(15,23,42,.58);
+      background: rgba(10,166,181,.08);
     }
 
     body.tp-admin .tableMini tr:first-child td{ border-top:0; }
 
-    @media (max-width:980px){
-      body.tp-admin .grid2{ grid-template-columns:1fr; }
-      body.tp-admin .snapGrid{ grid-template-columns:1fr; }
-      body.tp-admin .uName,
-      body.tp-admin .uMeta{ max-width:70vw; }
+    @media (max-width: 980px){
+      body.tp-admin .grid2{ grid-template-columns: 1fr; }
+      body.tp-admin .snapGrid{ grid-template-columns: 1fr; }
+      body.tp-admin .uName, body.tp-admin .uMeta{ max-width: 70vw; }
+      body.tp-admin .snapTop{ flex-direction:column; }
+      body.tp-admin .roleRow{ flex-direction:column; align-items:flex-start; }
+      body.tp-admin .roleSelect{ width:100%; }
     }
   </style>
 </head>
@@ -492,11 +479,11 @@
         <div class="heroRow">
           <div>
             <p class="heroTitleSmall">Admin Console</p>
-            <h1 class="heroTitleBig">Usage &amp; Roles</h1>
+            <h1 class="heroTitleBig">Usage, Roles &amp; Stats</h1>
           </div>
-          <div class="pillStatus" title="Admin tools">
+          <div class="pillStatus" title="Admin">
             <span class="dot" aria-hidden="true"></span>
-            Admin Tools
+            Admin Access
           </div>
         </div>
       </div>
@@ -505,7 +492,7 @@
         <div class="card">
           <h1 style="margin-bottom:6px;">Accounts</h1>
           <p class="muted" style="margin-top:0;">
-            Select a user to view stats, assign manager access, or assign them to a manager.
+            Select a user to view stats, assign a manager, toggle manager access, or remove the account from the admin list.
           </p>
 
           <div class="rowBar">
@@ -532,7 +519,7 @@
             <div class="miniCard" style="margin-top:10px;">
               <div class="miniLabel">Total Users</div>
               <div class="miniValue mono" id="totalUsers">0</div>
-              <div class="miniHint">From tp_admin_list_users()</div>
+              <div class="miniHint">Visible admin accounts</div>
             </div>
 
             <div style="height:12px;"></div>
@@ -572,38 +559,35 @@
             </div>
             <div class="pillStatus" style="padding:8px 12px;">
               <span class="dot" aria-hidden="true"></span>
-              Editable Role
+              Admin Tools
             </div>
           </div>
 
-          <div class="roleBox">
-            <h3 style="margin:0 0 10px; font-weight:1300; color:rgba(15,23,42,.92);">Role Management</h3>
+          <div class="rolePanel">
+            <div class="roleRow">
+              <div>
+                <div class="roleLabel">Manager Role</div>
+                <div class="roleHint">Turn this on to make this account selectable as a manager.</div>
+              </div>
+              <button class="toggleBtn" type="button" id="btnToggleManager">Manager: Off</button>
+            </div>
 
             <div class="roleRow">
               <div>
-                <div class="roleLabel">Manager Access</div>
-                <div class="roleHint">Turn this on to make this account selectable as a manager.</div>
-              </div>
-
-              <label class="switch" aria-label="Manager access">
-                <input type="checkbox" id="roleIsManager">
-                <span class="slider"></span>
-              </label>
-            </div>
-
-            <div class="roleRow" style="align-items:flex-start;">
-              <div style="flex:1;">
                 <div class="roleLabel">Assigned Manager</div>
-                <div class="roleHint">Choose who this account reports to.</div>
-                <div style="height:8px;"></div>
-                <select class="selectRole" id="roleManagerSelect">
-                  <option value="">No manager assigned</option>
-                </select>
+                <div class="roleHint">Assign this marketer to one manager account.</div>
               </div>
+              <select class="roleSelect" id="managerSelect">
+                <option value="">No manager assigned</option>
+              </select>
             </div>
 
-            <div style="display:flex; justify-content:flex-end; margin-top:12px;">
-              <button class="btn" type="button" id="btnSaveRole">Save Role</button>
+            <div class="roleRow">
+              <div>
+                <div class="roleLabel">Remove User</div>
+                <div class="roleHint">Removes this account from the admin list without affecting the calculator files.</div>
+              </div>
+              <button class="dangerBtn" type="button" id="btnRemoveUser">Remove User</button>
             </div>
           </div>
 
@@ -623,17 +607,15 @@
               <h4>Marketer Pay / Trip Points</h4>
               <div class="kv"><div class="k">Trip Points</div><div class="v mono" id="pcTripTotal">—</div></div>
               <div class="kv"><div class="k">Current Pay</div><div class="v mono" id="pcPayMtd">—</div></div>
-              <div class="kv"><div class="k">Last Pay Entry</div><div class="v mono" id="pcLastPay">—</div></div>
-              <p class="muted" style="margin:10px 0 0;">
-                From <span class="mono">pay-calc</span> and <span class="mono">pay-calc-trip-ytd</span>.
-              </p>
+              <div class="kv"><div class="k">Total Tours</div><div class="v mono" id="pcTotalTours">—</div></div>
+              <div class="kv"><div class="k">Rate</div><div class="v mono" id="pcRate">—</div></div>
+              <div class="kv"><div class="k">Last Entry</div><div class="v mono" id="pcLastPay">—</div></div>
             </div>
           </div>
 
           <div style="height:14px;"></div>
 
           <h3 style="margin:0 0 8px; font-weight:1300; color:rgba(15,23,42,.9);">Recent Calculator States</h3>
-
           <table class="tableMini" aria-label="Recent calc states">
             <thead>
               <tr>
@@ -647,6 +629,7 @@
               <tr><td colspan="4" class="muted" style="font-weight:1000;">—</td></tr>
             </tbody>
           </table>
+
         </div>
       </div>
     </div>
@@ -660,6 +643,7 @@
 
     const SIGNIN_PAGE = "signin.html";
     const BACK_PAGE = "choose-calc.html";
+    const ADMIN_EMPS_FALLBACK = ["078195"];
 
     const sb = (window.supabase && window.supabase.createClient)
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -671,7 +655,7 @@
     let AUTHEMP = "";
     let AUTHNAME = "";
     let ALL_USERS = [];
-    let CURRENT_USER_ROW = null;
+    let ACTIVE_USER = null;
 
     function showToast(msg, ms = 2000){
       const t = $("toast");
@@ -681,10 +665,17 @@
       showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
     }
 
-    function goSignin(){ window.location.replace(SIGNIN_PAGE); }
+    function goSignin(){
+      window.location.replace(SIGNIN_PAGE);
+    }
 
     function getEmpFromEmail(email){
       return String(email || "").split("@")[0] || "";
+    }
+
+    function isAdminEmpFallback(emp){
+      const e = String(emp || "").trim();
+      return !!e && ADMIN_EMPS_FALLBACK.includes(e);
     }
 
     function escapeHtml(s){
@@ -715,45 +706,42 @@
       if(!ts) return "—";
       const d = new Date(ts);
       if(Number.isNaN(d.getTime())) return String(ts);
-      return d.toLocaleString(undefined, {
-        month:"short",
-        day:"numeric",
-        year:"numeric",
-        hour:"numeric",
-        minute:"2-digit"
-      });
+      return d.toLocaleString(undefined, { month:"short", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit" });
     }
 
     function prettyDate(iso){
       if(!iso) return "—";
       const d = new Date(String(iso) + "T00:00:00");
       if(Number.isNaN(d.getTime())) return String(iso);
-      return d.toLocaleString(undefined, {
-        month:"short",
-        day:"numeric",
-        year:"numeric"
-      });
+      return d.toLocaleString(undefined, { month:"short", day:"numeric", year:"numeric" });
     }
 
-    async function requireAuthOrRedirect(){
-      if(!sb) return goSignin();
+    function userIdOf(u){
+      return String(u?.user_id || u?.id || u?.auth_user_id || "");
+    }
 
-      const { data: { session } } = await sb.auth.getSession();
-      if(!session?.user) return goSignin();
+    function isManagerUser(u){
+      return !!(u?.is_manager || u?.manager_role || u?.role === "manager");
+    }
 
-      const user = session.user;
-      AUTHUSERID = user.id;
-      AUTHNAME = user.user_metadata?.first_name || "";
-      AUTHEMP = getEmpFromEmail(user.email);
+    function managerIdOf(u){
+      return String(u?.manager_user_id || u?.manager_id || u?.assigned_manager_id || "");
+    }
 
-      $("userName").textContent = AUTHNAME || "Signed In";
-      $("userEmp").textContent = AUTHEMP ? `#${AUTHEMP}` : "";
-      $("welcomeLine").textContent = "Powered by F8";
+    function displayNameOf(u){
+      return String(u?.first_name || u?.name || u?.full_name || "Unnamed");
+    }
+
+    function emailOf(u){
+      return String(u?.email || "");
+    }
+
+    function empOf(u){
+      return String(u?.emp || u?.employee_number || getEmpFromEmail(emailOf(u)) || "");
     }
 
     async function signOut(){
       if(!sb) return goSignin();
-
       const { error } = await sb.auth.signOut();
 
       if(error){
@@ -774,51 +762,109 @@
       });
     }
 
+    async function requireAuthOrRedirect(){
+      if(!sb) return goSignin();
+
+      const { data: { session } } = await sb.auth.getSession();
+      if(!session?.user) return goSignin();
+
+      const user = session.user;
+      AUTHUSERID = user.id;
+      AUTHNAME = user.user_metadata?.first_name || "";
+      AUTHEMP = getEmpFromEmail(user.email);
+
+      $("userName").textContent = AUTHNAME || "Signed In";
+      $("userEmp").textContent = AUTHEMP ? `#${AUTHEMP}` : "";
+      $("welcomeLine").textContent = "Powered by F8";
+    }
+
+    async function rpcTry(names, payloads){
+      let lastError = null;
+
+      for(const name of names){
+        for(const payload of payloads){
+          const { data, error } = await sb.rpc(name, payload);
+
+          if(!error){
+            return { ok:true, data, name, payload };
+          }
+
+          lastError = error;
+
+          const code = error?.code || "";
+          if(code === "PGRST202" || code === "404"){
+            continue;
+          }
+        }
+      }
+
+      return { ok:false, error:lastError };
+    }
+
     async function fetchUsers(){
       $("userList").innerHTML = `<div class="muted" style="padding:10px 8px; font-weight:1000;">Loading…</div>`;
 
-      const { data, error } = await sb.rpc("tp_admin_list_users");
-
-      if(error){
-        console.warn("tp_admin_list_users error:", error);
-        showToast("Not authorized for admin console.");
-        window.location.href = BACK_PAGE;
+      if(!isAdminEmpFallback(AUTHEMP)){
+        $("userList").innerHTML = `<div class="muted" style="padding:10px 8px; font-weight:1100;">Admin access is not enabled for this account.</div>`;
+        showToast("Admin access not enabled.");
         return;
       }
 
-      ALL_USERS = Array.isArray(data) ? data : [];
+      const res = await rpcTry(
+        ["tp_admin_list_users"],
+        [
+          {},
+          { p_search: null, p_limit: 250, p_offset: 0 },
+          { p_search: "", p_limit: 250, p_offset: 0 },
+          { search: null, limit: 250, offset: 0 },
+          { search: "", limit: 250, offset: 0 }
+        ]
+      );
+
+      if(!res.ok){
+        console.warn("tp_admin_list_users error:", res.error);
+
+        $("userList").innerHTML = `
+          <div class="muted" style="padding:10px 8px; font-weight:1100;">
+            Admin page loaded, but users could not be pulled. Check the browser console for the RPC error.
+          </div>
+        `;
+
+        showToast("Admin loaded, but users did not pull.");
+        return;
+      }
+
+      ALL_USERS = Array.isArray(res.data) ? res.data : [];
+
       paintUsers();
       paintOverview();
+
+      if(ALL_USERS.length === 0){
+        showToast("Admin loaded, but no users returned.");
+      }
     }
 
     function paintOverview(){
       $("totalUsers").textContent = num(ALL_USERS.length);
+      $("totalManagers").textContent = num(ALL_USERS.filter(isManagerUser).length);
 
-      const managers = ALL_USERS.filter(u => !!u.is_manager);
-      $("totalManagers").textContent = num(managers.length);
+      const latest = [...ALL_USERS]
+        .filter(u => !!u.last_seen_at)
+        .sort((a,b) => new Date(b.last_seen_at) - new Date(a.last_seen_at))[0] || null;
 
-      const latest = ALL_USERS.find(u => !!u.last_seen_at) || null;
       $("recentActivity").textContent = latest?.last_seen_at ? prettyTs(latest.last_seen_at) : "—";
       $("recentHint").textContent = latest
-        ? `${latest.first_name || "User"} (#${latest.emp || "—"}) last sign-in`
+        ? `${displayNameOf(latest)} (#${empOf(latest) || "—"}) last sign-in`
         : "No recent activity found";
-    }
-
-    function managerDisplay(emp){
-      const u = ALL_USERS.find(x => String(x.emp || "") === String(emp || ""));
-      if(!u) return emp ? `#${emp}` : "";
-      return `${u.first_name || "Manager"} (#${u.emp})`;
     }
 
     function paintUsers(){
       const q = String($("searchUsers").value || "").trim().toLowerCase();
 
       const list = !q ? ALL_USERS : ALL_USERS.filter(u => {
-        const name = String(u.first_name || "").toLowerCase();
-        const emp = String(u.emp || "").toLowerCase();
-        const email = String(u.email || "").toLowerCase();
-        const manager = String(u.manager_name || u.manager_emp || "").toLowerCase();
-        return name.includes(q) || emp.includes(q) || email.includes(q) || manager.includes(q);
+        return displayNameOf(u).toLowerCase().includes(q) ||
+          empOf(u).toLowerCase().includes(q) ||
+          emailOf(u).toLowerCase().includes(q);
       });
 
       const wrap = $("userList");
@@ -834,27 +880,20 @@
         btn.className = "uRow";
         btn.setAttribute("role","button");
         btn.setAttribute("tabindex","0");
-        btn.dataset.uid = u.user_id;
+        btn.dataset.uid = userIdOf(u);
 
-        const displayName = u.first_name ? u.first_name : "Unnamed";
-        const emp = u.emp ? `#${u.emp}` : "#—";
-        const email = u.email || "";
-
-        const tags = [];
-        if(u.is_manager){
-          tags.push(`<span class="pillMini pillManager">Manager</span>`);
-        }
-        if(u.manager_emp){
-          tags.push(`<span class="pillMini pillAssigned">Reports to ${escapeHtml(managerDisplay(u.manager_emp))}</span>`);
-        }
+        const displayName = displayNameOf(u);
+        const emp = empOf(u) ? `#${empOf(u)}` : "#—";
+        const email = emailOf(u);
+        const managerBadge = isManagerUser(u) ? `<span class="pillManager">Manager</span>` : ``;
 
         btn.innerHTML = `
           <div class="uLeft">
             <div class="uName">${escapeHtml(displayName)} <span style="opacity:.55; font-weight:1100; margin-left:6px;">${escapeHtml(emp)}</span></div>
             <div class="uMeta">${escapeHtml(email)}</div>
-            <div class="uTags">${tags.join("")}</div>
           </div>
           <div class="uRight">
+            ${managerBadge}
             <span class="pillMini">View</span>
             <span class="openMini">${escapeHtml(u.last_seen_at ? prettyTs(u.last_seen_at) : "Never")}</span>
           </div>
@@ -903,47 +942,56 @@
 
       $("pcTripTotal").textContent = "—";
       $("pcPayMtd").textContent = "—";
+      $("pcTotalTours").textContent = "—";
+      $("pcRate").textContent = "—";
       $("pcLastPay").textContent = "—";
 
       $("statesTbody").innerHTML = `<tr><td colspan="4" class="muted" style="font-weight:1000;">Loading…</td></tr>`;
     }
 
-    function populateRoleControls(userRow){
-      $("roleIsManager").checked = !!userRow.is_manager;
+    function buildManagerOptions(activeUser){
+      const sel = $("managerSelect");
+      const activeId = userIdOf(activeUser);
+      const assignedId = managerIdOf(activeUser);
 
-      const sel = $("roleManagerSelect");
       sel.innerHTML = `<option value="">No manager assigned</option>`;
 
-      const managers = ALL_USERS
-        .filter(u => !!u.is_manager && String(u.emp || "") !== String(userRow.emp || ""))
-        .sort((a,b) => String(a.first_name || "").localeCompare(String(b.first_name || "")));
+      ALL_USERS
+        .filter(u => isManagerUser(u) && userIdOf(u) !== activeId)
+        .sort((a,b) => displayNameOf(a).localeCompare(displayNameOf(b)))
+        .forEach(m => {
+          const opt = document.createElement("option");
+          opt.value = userIdOf(m);
+          opt.textContent = `${displayNameOf(m)} ${empOf(m) ? `(#${empOf(m)})` : ""}`;
+          sel.appendChild(opt);
+        });
 
-      managers.forEach(m => {
-        const opt = document.createElement("option");
-        opt.value = m.emp || "";
-        opt.textContent = `${m.first_name || "Manager"} (#${m.emp || "—"})`;
-        sel.appendChild(opt);
-      });
+      sel.value = assignedId || "";
+    }
 
-      sel.value = userRow.manager_emp || "";
+    function paintRoleControls(userRow){
+      const isMgr = isManagerUser(userRow);
+      $("btnToggleManager").classList.toggle("on", isMgr);
+      $("btnToggleManager").textContent = isMgr ? "Manager: On" : "Manager: Off";
+      buildManagerOptions(userRow);
     }
 
     async function openSnapshot(userRow){
-      CURRENT_USER_ROW = userRow;
+      ACTIVE_USER = userRow;
 
-      $("snapName").textContent = `${userRow.first_name || "Unnamed"} ${userRow.emp ? `(#${userRow.emp})` : ""}`.trim();
-      $("snapMeta").textContent = userRow.email || "—";
+      $("snapName").textContent = `${displayNameOf(userRow)} ${empOf(userRow) ? `(#${empOf(userRow)})` : ""}`.trim();
+      $("snapMeta").textContent = emailOf(userRow) || "—";
 
       resetSnapshotFields();
-      populateRoleControls(userRow);
+      paintRoleControls(userRow);
       openSnap();
 
       const { data, error } = await sb
         .from("tp_calc_state")
         .select("calc_key,site_key,month_key,state,updated_at")
-        .eq("user_id", userRow.user_id)
+        .eq("user_id", userIdOf(userRow))
         .order("updated_at", { ascending:false })
-        .limit(12);
+        .limit(24);
 
       if(error){
         console.warn("tp_calc_state read error:", error);
@@ -955,73 +1003,108 @@
 
       if(rows.length === 0){
         $("statesTbody").innerHTML = `<tr><td colspan="4" class="muted" style="font-weight:1100;">No calculator data yet.</td></tr>`;
-      }else{
-        $("statesTbody").innerHTML = rows.map(r => `
-          <tr>
-            <td>${escapeHtml(r.calc_key || "—")}</td>
-            <td>${escapeHtml(r.site_key || "—")}</td>
-            <td>${escapeHtml(r.month_key || "—")}</td>
-            <td>${escapeHtml(prettyTs(r.updated_at))}</td>
-          </tr>
-        `).join("");
+        return;
       }
 
+      $("statesTbody").innerHTML = rows.map(r => `
+        <tr>
+          <td>${escapeHtml(r.calc_key || "—")}</td>
+          <td>${escapeHtml(r.site_key || "—")}</td>
+          <td>${escapeHtml(r.month_key || "—")}</td>
+          <td>${escapeHtml(prettyTs(r.updated_at))}</td>
+        </tr>
+      `).join("");
+
+      paintSiteSnapshot(rows);
+      paintPaySnapshot(rows);
+    }
+
+    function paintSiteSnapshot(rows){
       const sc = rows.find(r => String(r.calc_key || "") === "site-calc") || null;
 
-      if(sc && sc.state && typeof sc.state === "object"){
-        const byDate = sc.state.byDate && typeof sc.state.byDate === "object" ? sc.state.byDate : {};
-        let budgetTotal = 0;
-        let actualTotal = 0;
+      if(!sc || !sc.state || typeof sc.state !== "object") return;
 
-        for(const k in byDate){
-          const v = byDate[k] || {};
-          const b = parseInt(String(v.budget ?? "0"), 10);
-          const a = parseInt(String(v.actual ?? "0"), 10);
-          budgetTotal += Number.isFinite(b) && b > 0 ? b : 0;
-          actualTotal += Number.isFinite(a) && a > 0 ? a : 0;
-        }
+      const byDate = sc.state.byDate && typeof sc.state.byDate === "object" ? sc.state.byDate : {};
+      let budgetTotal = 0;
+      let actualTotal = 0;
 
-        const mgr = parseFloat(String(sc.state.mgrOverrideRate ?? "0"));
-        const mgrRate = Number.isFinite(mgr) && mgr > 0 ? mgr : 0;
+      for(const k in byDate){
+        const v = byDate[k] || {};
+        const b = parseInt(String(v.budget ?? "0"), 10);
+        const a = parseInt(String(v.actual ?? "0"), 10);
 
-        $("scMonth").textContent = sc.month_key || "—";
-        $("scSite").textContent = sc.site_key || "—";
-        $("scBudget").textContent = num(budgetTotal);
-        $("scActual").textContent = num(actualTotal);
-        $("scPct").textContent = budgetTotal > 0 ? pct(actualTotal / budgetTotal) : "0%";
-        $("scMgrRate").textContent = money(mgrRate);
-        $("scUpdated").textContent = prettyTs(sc.updated_at);
+        budgetTotal += Number.isFinite(b) && b > 0 ? b : 0;
+        actualTotal += Number.isFinite(a) && a > 0 ? a : 0;
+      }
+
+      const mgr = parseFloat(String(sc.state.mgrOverrideRate ?? "0"));
+      const mgrRate = Number.isFinite(mgr) && mgr > 0 ? mgr : 0;
+
+      $("scMonth").textContent = sc.month_key || "—";
+      $("scSite").textContent = sc.site_key || "—";
+      $("scBudget").textContent = num(budgetTotal);
+      $("scActual").textContent = num(actualTotal);
+      $("scPct").textContent = budgetTotal > 0 ? pct(actualTotal / budgetTotal) : "0%";
+      $("scMgrRate").textContent = money(mgrRate);
+      $("scUpdated").textContent = prettyTs(sc.updated_at);
+    }
+
+    function highestRateForTours(matrix, totalTours){
+      const rows = Array.isArray(matrix)
+        ? matrix
+          .map(r => ({ tours:Number(r.tours || 0), rate:Number(r.rate || 0) }))
+          .filter(r => Number.isFinite(r.tours) && Number.isFinite(r.rate))
+          .sort((a,b) => a.tours - b.tours)
+        : [];
+
+      if(!rows.length) return null;
+
+      const exact = rows.find(r => r.tours === totalTours);
+      if(exact) return exact.rate;
+
+      const eligible = rows.filter(r => r.tours <= totalTours);
+      if(eligible.length) return eligible[eligible.length - 1].rate;
+
+      return null;
+    }
+
+    function paintPaySnapshot(rows){
+      const latest = rows.find(r => String(r.calc_key || "") === "pay-calc-latest") || null;
+
+      if(latest && latest.state && typeof latest.state === "object"){
+        const st = latest.state;
+
+        $("pcTripTotal").textContent = num(st.trip_points_running || 0);
+        $("pcPayMtd").textContent = money(st.current_pay_mtd || 0);
+        $("pcTotalTours").textContent = num(st.total_tours || 0);
+        $("pcRate").textContent = st.rate === null || typeof st.rate === "undefined" ? "—" : money(st.rate);
+        $("pcLastPay").textContent = st.last_trip_entry_date ? prettyDate(st.last_trip_entry_date) : prettyTs(st.touched_at);
+
+        return;
       }
 
       const pay = rows.find(r => String(r.calc_key || "") === "pay-calc") || null;
+      const trip = rows.find(r => String(r.calc_key || "") === "pay-calc-trip-ytd") || null;
 
       let currentPayMTD = 0;
+      let totalTours = 0;
+      let rate = null;
 
       if(pay && pay.state && typeof pay.state === "object"){
         const st = pay.state;
 
-        const tours = Number(st.monthTours?.owners || 0)
-          + Number(st.monthTours?.goos || 0)
-          + Number(st.monthTours?.renters || 0);
+        totalTours =
+          Number(st.monthTours?.owners || 0) +
+          Number(st.monthTours?.goos || 0) +
+          Number(st.monthTours?.renters || 0);
 
-        const matrix = Array.isArray(st.matrix) ? st.matrix : [];
-        const sorted = matrix
-          .map(m => ({ tours:Number(m.tours || 0), rate:Number(m.rate || 0) }))
-          .filter(m => Number.isFinite(m.tours) && Number.isFinite(m.rate))
-          .sort((a,b) => a.tours - b.tours);
+        rate = highestRateForTours(st.matrix, totalTours);
 
-        let rate = 0;
-        for(const row of sorted){
-          if(tours >= row.tours) rate = row.rate;
-        }
-
-        const toursPay = tours * rate;
+        const toursPay = rate === null ? 0 : totalTours * rate;
         const hourly = 15 * 37.5;
 
         currentPayMTD = hourly + toursPay;
       }
-
-      const trip = rows.find(r => String(r.calc_key || "") === "pay-calc-trip-ytd") || null;
 
       let tripTotal = 0;
       let lastTripDate = null;
@@ -1029,59 +1112,123 @@
       if(trip && trip.state && Array.isArray(trip.state.tripEntries)){
         const entries = trip.state.tripEntries;
         tripTotal = entries.reduce((sum, e) => sum + Number(e.points || 0), 0);
-
-        if(entries.length > 0){
-          lastTripDate = entries[0].date;
-        }
+        if(entries.length > 0) lastTripDate = entries[0].date;
       }
 
       $("pcTripTotal").textContent = num(tripTotal);
       $("pcPayMtd").textContent = money(currentPayMTD);
+      $("pcTotalTours").textContent = num(totalTours);
+      $("pcRate").textContent = rate === null ? "—" : money(rate);
       $("pcLastPay").textContent = lastTripDate ? prettyDate(lastTripDate) : "—";
     }
 
-    $("btnSaveRole").addEventListener("click", async () => {
-      if(!CURRENT_USER_ROW){
-        showToast("No user selected.");
+    async function toggleManagerRole(){
+      if(!ACTIVE_USER) return;
+
+      const targetId = userIdOf(ACTIVE_USER);
+      const nextValue = !isManagerUser(ACTIVE_USER);
+
+      $("btnToggleManager").disabled = true;
+
+      const res = await rpcTry(
+        ["tp_admin_set_manager_role", "tp_admin_update_manager_role", "tp_admin_set_user_manager_role"],
+        [
+          { p_user_id: targetId, p_is_manager: nextValue },
+          { user_id: targetId, is_manager: nextValue },
+          { target_user_id: targetId, is_manager: nextValue }
+        ]
+      );
+
+      $("btnToggleManager").disabled = false;
+
+      if(!res.ok){
+        console.warn("manager role rpc error:", res.error);
+        showToast("Manager role did not save. Check RPC.");
         return;
       }
 
-      const emp = CURRENT_USER_ROW.emp || "";
-      const isManager = $("roleIsManager").checked;
-      const managerEmp = $("roleManagerSelect").value || null;
+      ACTIVE_USER.is_manager = nextValue;
+      const idx = ALL_USERS.findIndex(u => userIdOf(u) === targetId);
+      if(idx >= 0) ALL_USERS[idx].is_manager = nextValue;
 
-      const btn = $("btnSaveRole");
-      const oldText = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = "Saving…";
+      paintRoleControls(ACTIVE_USER);
+      paintUsers();
+      paintOverview();
 
-      const { error } = await sb.rpc("tp_admin_set_user_role", {
-        p_emp: emp,
-        p_is_manager: isManager,
-        p_manager_emp: managerEmp
-      });
+      showToast(nextValue ? "Manager role enabled." : "Manager role removed.");
+    }
 
-      btn.disabled = false;
-      btn.textContent = oldText;
+    async function assignManager(){
+      if(!ACTIVE_USER) return;
 
-      if(error){
-        console.warn("tp_admin_set_user_role error:", error);
-        showToast(error.message || "Could not save role.");
+      const targetId = userIdOf(ACTIVE_USER);
+      const managerId = $("managerSelect").value || null;
+
+      $("managerSelect").disabled = true;
+
+      const res = await rpcTry(
+        ["tp_admin_assign_manager", "tp_admin_set_assigned_manager", "tp_admin_update_user_manager"],
+        [
+          { p_user_id: targetId, p_manager_user_id: managerId },
+          { user_id: targetId, manager_user_id: managerId },
+          { target_user_id: targetId, manager_user_id: managerId }
+        ]
+      );
+
+      $("managerSelect").disabled = false;
+
+      if(!res.ok){
+        console.warn("assign manager rpc error:", res.error);
+        showToast("Manager assignment did not save. Check RPC.");
         return;
       }
 
-      showToast("Role saved.");
+      ACTIVE_USER.manager_user_id = managerId || "";
+      const idx = ALL_USERS.findIndex(u => userIdOf(u) === targetId);
+      if(idx >= 0) ALL_USERS[idx].manager_user_id = managerId || "";
 
-      await fetchUsers();
+      showToast(managerId ? "Manager assigned." : "Manager assignment cleared.");
+    }
 
-      const updated = ALL_USERS.find(u => String(u.emp || "") === String(emp || ""));
-      if(updated){
-        CURRENT_USER_ROW = updated;
-        populateRoleControls(updated);
-        $("snapName").textContent = `${updated.first_name || "Unnamed"} ${updated.emp ? `(#${updated.emp})` : ""}`.trim();
-        $("snapMeta").textContent = updated.email || "—";
+    async function removeUser(){
+      if(!ACTIVE_USER) return;
+
+      const targetId = userIdOf(ACTIVE_USER);
+      const label = `${displayNameOf(ACTIVE_USER)} ${empOf(ACTIVE_USER) ? `#${empOf(ACTIVE_USER)}` : ""}`.trim();
+
+      const ok = window.confirm(`Remove ${label} from the admin user list?`);
+      if(!ok) return;
+
+      $("btnRemoveUser").disabled = true;
+
+      const res = await rpcTry(
+        ["tp_admin_remove_user", "tp_admin_soft_delete_user", "tp_admin_delete_user"],
+        [
+          { p_user_id: targetId },
+          { user_id: targetId },
+          { target_user_id: targetId }
+        ]
+      );
+
+      $("btnRemoveUser").disabled = false;
+
+      if(!res.ok){
+        console.warn("remove user rpc error:", res.error);
+        showToast("User was not removed. Check RPC.");
+        return;
       }
-    });
+
+      ALL_USERS = ALL_USERS.filter(u => userIdOf(u) !== targetId);
+      closeSnap();
+      paintUsers();
+      paintOverview();
+
+      showToast("User removed.");
+    }
+
+    $("btnToggleManager").addEventListener("click", toggleManagerRole);
+    $("managerSelect").addEventListener("change", assignManager);
+    $("btnRemoveUser").addEventListener("click", removeUser);
 
     (async function init(){
       await requireAuthOrRedirect();
