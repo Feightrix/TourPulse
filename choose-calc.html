@@ -64,11 +64,10 @@
 
   <script>
     /***********************
-     * SUPABASE CONFIG
+     * SUPABASE CONFIG (yours)
      ***********************/
     const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
-
     const SIGNIN_PAGE = "signin.html";
 
     const sb = (window.supabase && window.supabase.createClient)
@@ -85,25 +84,67 @@
       showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
     }
 
-    function goSignin(){
-      window.location.replace(SIGNIN_PAGE);
-    }
+    function goSignin(){ window.location.replace(SIGNIN_PAGE); }
 
     function getEmpFromEmail(email){
       return String(email || "").split("@")[0] || "";
     }
 
     /***********************
-     * ADMIN GATE
-     * Only employee numbers listed here will see Admin Console.
+     * ADMIN GATE (wired to your existing RPC)
+     * We infer admin status by attempting tp_admin_list_users:
+     * - success => admin
+     * - failure => not admin (fallback to emp allowlist)
      ***********************/
-    const ADMIN_EMPS = [
-      "078195"
-    ];
+    const RPC_LIST_USERS = "tp_admin_list_users";
+    const ADMIN_EMPS_FALLBACK = ["078195"];
 
-    function isAdminEmp(emp){
+    function isAdminEmpFallback(emp){
       const e = String(emp || "").trim();
-      return !!e && ADMIN_EMPS.includes(e);
+      return !!e && ADMIN_EMPS_FALLBACK.includes(e);
+    }
+
+    async function tryRpcListUsers(payload){
+      const { data, error } = await sb.rpc(RPC_LIST_USERS, payload);
+      if(error) return { ok:false, error };
+      return { ok:true, data };
+    }
+
+    async function checkIsAdmin(emp){
+      // no supabase? fallback
+      if(!sb) return isAdminEmpFallback(emp);
+
+      // Try a few payload shapes safely (covers different function signatures)
+      const attempts = [
+        {}, // if function takes no params
+        { p_search: null, p_limit: 1, p_offset: 0 },
+        { p_search: "",   p_limit: 1, p_offset: 0 },
+        { search: null,   limit: 1,   offset: 0 },
+        { search: "",     limit: 1,   offset: 0 }
+      ];
+
+      for(const payload of attempts){
+        try{
+          const res = await tryRpcListUsers(payload);
+          if(res.ok){
+            // If we can list users at all, this account is admin.
+            return true;
+          }
+          // If we got a “not found” or signature mismatch, keep trying other payloads
+          const code = res.error?.code || "";
+          if(code === "PGRST202" || code === "404") continue;
+
+          // Permission denied / RLS / other failures => treat as not admin
+          console.warn("admin rpc error:", res.error);
+          return isAdminEmpFallback(emp);
+        }catch(err){
+          console.warn("admin rpc exception:", err);
+          return isAdminEmpFallback(emp);
+        }
+      }
+
+      // None of the payload shapes matched the RPC signature
+      return isAdminEmpFallback(emp);
     }
 
     /***********************
@@ -124,25 +165,20 @@
         path: "site-calc.html",
         locked: false
       },
+
+      // ✅ Admin gateway (hidden unless admin)
       {
         key: "admin",
         title: "Admin Console",
-        desc: "View logins, usage, roles, manager assignments, and captured tour inputs across calculators.",
+        desc: "View logins, usage, and captured tour inputs across calculators.",
         path: "admin-console.html",
         locked: false,
         adminOnly: true
       },
       {
-        key: "monthly-tour-budget",
-        title: "Monthly Tour Budget",
-        desc: "Set goals, track tours, and validate pacing for the month.",
-        path: "",
-        locked: true
-      },
-      {
         key: "sales-volume",
         title: "Sales Volume",
-        desc: "Handy helpers for conversions, pacing, and daily checks.",
+        desc: "Handy helpers (conversions, pacing, daily checks).",
         path: "",
         locked: true
       }
@@ -163,7 +199,11 @@
         card.className = "calcCard";
 
         const locked = !!item.locked;
-        const badge = locked ? `<span class="badge">LOCKED</span>` : ``;
+        const isAdminCard = !!item.adminOnly;
+
+        const badge = locked
+          ? `<span class="badge">LOCKED</span>`
+          : (isAdminCard ? `<span class="badge">ADMIN</span>` : ``);
 
         const btnClass = locked ? "goBtn locked" : "goBtn open";
         const btnText  = locked ? "Locked" : "Open";
@@ -176,11 +216,11 @@
           </div>
 
           <div>
-            <div class="calcTitle">${escapeHtml(item.title)}</div>
-            <p class="calcDesc">${escapeHtml(item.desc)}</p>
+            <div class="calcTitle">${item.title}</div>
+            <p class="calcDesc">${item.desc}</p>
           </div>
 
-          <button class="${btnClass}" type="button" data-path="${escapeAttr(dataPath)}">
+          <button class="${btnClass}" type="button" data-path="${dataPath}">
             ${btnText}
           </button>
         `;
@@ -205,7 +245,6 @@
         c.desc.toLowerCase().includes(q) ||
         c.key.toLowerCase().includes(q)
       );
-
       renderCards(filtered);
     }
 
@@ -215,12 +254,10 @@
         if(!btn) return;
 
         const path = btn.getAttribute("data-path") || "";
-
         if(!path){
           showToast("Locked for now.");
           return;
         }
-
         window.location.href = path;
       });
     }
@@ -232,38 +269,32 @@
       if(!sb) return goSignin();
 
       const { data: { session } } = await sb.auth.getSession();
-
       if(!session?.user) return goSignin();
 
       const user = session.user;
       const first = user.user_metadata?.first_name || "";
       const emp = getEmpFromEmail(user.email);
 
-      _isAdmin = isAdminEmp(emp);
+      _isAdmin = await checkIsAdmin(emp);
 
       $("userName").textContent = first || "Signed In";
       $("userEmp").textContent = emp ? `#${emp}` : "";
       $("welcomeLine").textContent = "Powered by F8";
 
-      $("heroTitle").textContent = first
-        ? `What are we running today, ${first}?`
-        : "Choose a Calculator";
+      $("heroTitle").textContent = first ? `What are we running today, ${first}?` : "Choose a Calculator";
 
-      $("heroSub").textContent = _isAdmin
-        ? "Admin Console is enabled for your account."
-        : "Choose the calculator you need below.";
+      if(_isAdmin){
+        $("heroSub").textContent = "Admin Console is enabled for your account.";
+      }
     }
 
     async function signOut(){
       if(!sb) return goSignin();
-
       const { error } = await sb.auth.signOut();
-
       if(error){
         showToast(error.message || "Sign out failed.");
         return;
       }
-
       showToast("Signed out.");
       goSignin();
     }
@@ -276,28 +307,10 @@
       });
     }
 
-    function escapeHtml(s){
-      return String(s)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
-    function escapeAttr(v){
-      return String(v ?? "").replaceAll('"',"&quot;");
-    }
-
-    /***********************
-     * INIT
-     ***********************/
     (async function init(){
       await requireAuthOrRedirect();
-
       renderCards(getVisibleCalcs());
       wireCardClicks();
-
       $("searchInput").addEventListener("input", applySearch);
     })();
   </script>
