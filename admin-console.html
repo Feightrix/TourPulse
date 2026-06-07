@@ -742,6 +742,7 @@
 
     async function signOut(){
       if(!sb) return goSignin();
+
       const { error } = await sb.auth.signOut();
 
       if(error){
@@ -766,9 +767,11 @@
       if(!sb) return goSignin();
 
       const { data: { session } } = await sb.auth.getSession();
+
       if(!session?.user) return goSignin();
 
       const user = session.user;
+
       AUTHUSERID = user.id;
       AUTHNAME = user.user_metadata?.first_name || "";
       AUTHEMP = getEmpFromEmail(user.email);
@@ -810,19 +813,14 @@
         return;
       }
 
-      const res = await rpcTry(
-        ["tp_admin_list_users"],
-        [
-          {},
-          { p_search: null, p_limit: 250, p_offset: 0 },
-          { p_search: "", p_limit: 250, p_offset: 0 },
-          { search: null, limit: 250, offset: 0 },
-          { search: "", limit: 250, offset: 0 }
-        ]
-      );
+      const { data, error } = await sb.rpc("tp_admin_list_users", {
+        p_search: "",
+        p_limit: 250,
+        p_offset: 0
+      });
 
-      if(!res.ok){
-        console.warn("tp_admin_list_users error:", res.error);
+      if(error){
+        console.warn("tp_admin_list_users error:", error);
 
         $("userList").innerHTML = `
           <div class="muted" style="padding:10px 8px; font-weight:1100;">
@@ -834,7 +832,7 @@
         return;
       }
 
-      ALL_USERS = Array.isArray(res.data) ? res.data : [];
+      ALL_USERS = Array.isArray(data) ? data : [];
 
       paintUsers();
       paintOverview();
@@ -923,6 +921,7 @@
     }
 
     $("closeSnapX").addEventListener("click", closeSnap);
+
     $("snapOverlay").addEventListener("click", (e) => {
       if(e.target === $("snapOverlay")) closeSnap();
     });
