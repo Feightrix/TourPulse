@@ -43,13 +43,11 @@
       box-sizing: border-box;
     }
 
-    /* Inputs fill their cell cleanly */
     body.tp-paycalc .tableWrap .cellInput{
       width: 100%;
       box-sizing: border-box;
     }
 
-    /* X remove button at end of each row */
     body.tp-paycalc .iconX{
       width: 40px;
       height: 40px;
@@ -68,14 +66,77 @@
     }
     body.tp-paycalc .iconX:active{ transform: scale(.98); }
 
-    /* Make sure the last column stays tight */
     body.tp-paycalc .colDel,
     body.tp-paycalc td.colDel{
       width: 56px;
       text-align: right;
     }
 
-    /* ===== Mobile: keep everything in one line per row ===== */
+    /* ===== Manager Matrix Control ===== */
+    body.tp-paycalc .matrixAdminBar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+      padding:12px 12px;
+      border-radius:16px;
+      border:1px solid rgba(15,23,42,.12);
+      background:rgba(255,255,255,.72);
+      box-shadow:0 10px 24px rgba(2,6,23,.06);
+    }
+
+    body.tp-paycalc .matrixSourceText{
+      font-size:13px;
+      font-weight:900;
+      color:rgba(15,23,42,.62);
+    }
+
+    body.tp-paycalc .matrixSourcePill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(15,23,42,.10);
+      background:rgba(10,166,181,.10);
+      color:rgba(10,166,181,.98);
+      font-weight:1200;
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+
+    body.tp-paycalc .matrixSourcePill.locked{
+      background:rgba(15,23,42,.07);
+      color:rgba(15,23,42,.58);
+    }
+
+    body.tp-paycalc .matrixSourcePill:before{
+      content:"";
+      width:9px;
+      height:9px;
+      border-radius:50%;
+      background:rgba(10,166,181,.95);
+      box-shadow:0 0 0 5px rgba(10,166,181,.14);
+    }
+
+    body.tp-paycalc .matrixSourcePill.locked:before{
+      background:rgba(15,23,42,.35);
+      box-shadow:0 0 0 5px rgba(15,23,42,.08);
+    }
+
+    body.tp-paycalc #matrixPane.isLocked .cellInput,
+    body.tp-paycalc #matrixPane.isLocked .iconX,
+    body.tp-paycalc #matrixPane.isLocked #btnImportCsv,
+    body.tp-paycalc #matrixPane.isLocked #btnAddPayRow,
+    body.tp-paycalc #matrixPane.isLocked #btnResetPay{
+      opacity:.55;
+      pointer-events:none;
+    }
+
     @media (max-width: 520px){
       body.tp-paycalc .settingsBody{
         padding-left: 14px;
@@ -86,44 +147,40 @@
         padding-right: 6px;
       }
 
-      /* Slightly tighter on mobile so inputs don't wrap */
       body.tp-paycalc .tableWrap td{
         padding: 10px 10px;
       }
+
       body.tp-paycalc .tableWrap thead th{
         padding: 10px 10px;
         font-size: 11px;
       }
 
-      /* Force columns to behave */
       body.tp-paycalc .tableWrap table{
         table-layout: fixed;
       }
-    }
 
-    /* ===== Points tab: stack fields on mobile (override inline min-width) ===== */
-    @media (max-width: 520px){
       body.tp-paycalc #pointsPane .row{
         flex-wrap: wrap;
         gap: 12px;
       }
+
       body.tp-paycalc #pointsPane .field{
         min-width: 0 !important;
         width: 100% !important;
         flex: 1 1 100% !important;
       }
+
       body.tp-paycalc #pointsPane .cellInput{
         width: 100%;
         box-sizing: border-box;
       }
+
       body.tp-paycalc .miniTableWrap{
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
       }
-    }
 
-    /* ===== FIX: style.css is hiding table headers on mobile — override (pay-calc only) ===== */
-    @media (max-width: 520px){
       body.tp-paycalc #matrixPane .tableWrap thead{
         display: table-header-group !important;
         visibility: visible !important;
@@ -136,27 +193,11 @@
       }
 
       body.tp-paycalc #matrixPane .tableWrap thead tr{
-        display: table-row !important;
-      }
-
-      body.tp-paycalc #matrixPane .tableWrap thead th{
-        display: table-cell !important;
-      }
-    }
-
-    /* ===== Mobile Matrix: force a clean 3-column grid (TOURS | RATE | X) ===== */
-    @media (max-width: 520px){
-      body.tp-paycalc #matrixPane .tableWrap{
-        padding-left: 14px;
-        padding-right: 14px;
-      }
-
-      /* Make header row align with body rows */
-      body.tp-paycalc #matrixPane .tableWrap thead tr{
         display: grid !important;
         grid-template-columns: 1fr 1fr 56px;
         gap: 12px;
         align-items: end;
+        background: transparent !important;
       }
 
       body.tp-paycalc #matrixPane .tableWrap thead th{
@@ -165,9 +206,10 @@
         font-size: 11px;
         letter-spacing: .08em;
         white-space: nowrap;
+        background: transparent !important;
+        border: 0 !important;
       }
 
-      /* Make each body row a 3-col grid */
       body.tp-paycalc #matrixPane .tableWrap tbody tr{
         display: grid !important;
         grid-template-columns: 1fr 1fr 56px;
@@ -181,7 +223,6 @@
         vertical-align: middle;
       }
 
-      /* Full-width pills inside each grid cell */
       body.tp-paycalc #matrixPane .tableWrap .cellInput{
         width: 100% !important;
         max-width: none !important;
@@ -190,7 +231,6 @@
         text-align: center;
       }
 
-      /* Tight X column */
       body.tp-paycalc #matrixPane .tableWrap td.colDel{
         width: 56px !important;
         text-align: center !important;
@@ -202,14 +242,6 @@
         height: 44px;
       }
 
-      /* stop the blank delete-header from looking like a 3rd section */
-      body.tp-paycalc #matrixPane .tableWrap thead tr{
-        background: transparent !important;
-      }
-      body.tp-paycalc #matrixPane .tableWrap thead th{
-        background: transparent !important;
-        border: 0 !important;
-      }
       body.tp-paycalc #matrixPane .tableWrap thead th.colDel{
         visibility: hidden !important;
         padding: 0 !important;
@@ -270,7 +302,6 @@
 
       <!-- Main area -->
       <div class="grid">
-        <!-- LEFT: inputs -->
         <div class="card">
           <h1>Monthly Tour Inputs</h1>
           <p class="muted">Enter this month’s tour counts. Summary updates instantly.</p>
@@ -325,13 +356,12 @@
               </div>
 
               <p class="muted" style="margin-top:10px;">
-                The highlighted row matches your current total tours.
+                The highlighted row matches the current pay threshold.
               </p>
             </div>
           </details>
         </div>
 
-        <!-- RIGHT: summary -->
         <div class="card summaryCard">
           <div class="summaryTop">
             <p class="summaryTitle"><span>Summary</span></p>
@@ -434,9 +464,13 @@
       </div>
 
       <div class="settingsBody">
-        <!-- MATRIX TAB -->
         <div id="matrixPane">
           <div class="sectionCard">
+            <div class="matrixAdminBar">
+              <span class="matrixSourcePill" id="matrixSourcePill">Matrix</span>
+              <span class="matrixSourceText" id="matrixSourceText">Loading matrix access…</span>
+            </div>
+
             <div class="tableWrap">
               <table aria-label="Monthly Matrix table">
                 <thead>
@@ -464,12 +498,10 @@
             </div>
 
             <div class="muted" style="margin-top:10px;">CSV format: <span class="mono">tours,rate</span></div>
-
             <input class="hidden" type="file" id="csvFile" accept=".csv,text/csv" />
           </div>
         </div>
 
-        <!-- POINTS TAB -->
         <div id="pointsPane" class="hidden">
           <div class="sectionCard">
             <div class="row" style="align-items:flex-end;">
@@ -532,7 +564,7 @@
 
     const HOURLY_RATE = 15;
     const WEEKLY_HOURS = 37.5;
-    const HOURLY_WEEK_PAY = HOURLY_RATE * WEEKLY_HOURS; // 562.50
+    const HOURLY_WEEK_PAY = HOURLY_RATE * WEEKLY_HOURS;
 
     const DEFAULT_PPTS = { owner: 1260, goo: 1570, renter: 1570 };
 
@@ -549,8 +581,44 @@
       window.clearTimeout(showToast._timer);
       showToast._timer = window.setTimeout(() => t.classList.remove("show"), ms);
     }
+
     function goSignin(){ window.location.replace(SIGNIN_PAGE); }
     function getEmpFromEmail(email){ return String(email || "").split("@")[0] || ""; }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function escapeAttr(v){
+      return String(v ?? "").replaceAll('"',"&quot;");
+    }
+
+    function safeInt(v){
+      const n = parseInt(String(v ?? "0"), 10);
+      return Number.isFinite(n) && n >= 0 ? n : 0;
+    }
+
+    function money(n){
+      const x = Number(n || 0);
+      return x.toLocaleString(undefined, { style:"currency", currency:"USD" });
+    }
+
+    function num(n){
+      return Number(n || 0).toLocaleString();
+    }
+
+    function todayISO(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const day = String(d.getDate()).padStart(2,"0");
+      return `${y}-${m}-${day}`;
+    }
 
     const SITES = [
       { key:"cape-canaveral", title:"Cape Canaveral", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/bltd5e047ac82ec503c/61a794c237c855238d66ec0c/cape-canaveral-resort-property-building-sunset-1440x1080.jpg" },
@@ -567,15 +635,483 @@
       { key:"williamsburg", title:"Williamsburg", img:"https://images.contentstack.io/v3/assets/bltba617d00249585dc/blt0dd0b98197e30327/5daf1a6adf78486c826dc4b9/holiday-inn-club-vacations-williamsburg-5745140523-16x5.jpeg" }
     ];
 
-    // ====== Auth / header ======
     let AUTHEMP = "";
     let AUTHNAME = "";
     let SITEKEY = "";
     let SITETITLE = "";
     let AUTHUSERID = "";
 
+    let USERROLE = {
+      isManager: false,
+      managerUserId: null,
+      isActive: true
+    };
+
+    let MATRIX_LOCKED = false;
+    let MATRIX_SOURCE = "personal";
+    let MATRIX_MANAGER_ID = null;
+
+    function isAdminEmp(){
+      return String(AUTHEMP || "").trim() === "078195";
+    }
+
+    function canEditManagerMatrix(){
+      return isAdminEmp() || USERROLE.isManager === true;
+    }
+
+    function hasAssignedManager(){
+      return !!USERROLE.managerUserId;
+    }
+
+    async function loadUserRole(){
+      USERROLE = {
+        isManager: false,
+        managerUserId: null,
+        isActive: true
+      };
+
+      if(!sb || !AUTHUSERID) return;
+
+      const { data, error } = await sb
+        .from("tp_user_roles")
+        .select("is_manager,manager_user_id,is_active")
+        .eq("user_id", AUTHUSERID)
+        .maybeSingle();
+
+      if(error){
+        console.warn("loadUserRole error:", error);
+        return;
+      }
+
+      if(data){
+        USERROLE = {
+          isManager: data.is_manager === true,
+          managerUserId: data.manager_user_id || null,
+          isActive: data.is_active !== false
+        };
+      }
+
+      if(isAdminEmp()){
+        USERROLE.isManager = true;
+      }
+    }
+
+    function matrixStatusLabel(){
+      if(canEditManagerMatrix()) return "Manager Matrix";
+      if(hasAssignedManager()) return "Team Matrix";
+      return "Personal Matrix";
+    }
+
+    function paintMatrixAccessUI(){
+      const pill = $("matrixSourcePill");
+      const text = $("matrixSourceText");
+      const pane = $("matrixPane");
+
+      if(!pill || !text || !pane) return;
+
+      MATRIX_LOCKED = !canEditManagerMatrix() && hasAssignedManager();
+
+      pane.classList.toggle("isLocked", MATRIX_LOCKED);
+      pill.classList.toggle("locked", MATRIX_LOCKED);
+      pill.textContent = matrixStatusLabel();
+
+      if(canEditManagerMatrix()){
+        text.textContent = "You can edit and save this matrix for your assigned team for the selected site/month.";
+      }else if(hasAssignedManager()){
+        text.textContent = "This matrix is controlled by your assigned manager for the selected site/month.";
+      }else{
+        text.textContent = "No manager is assigned. This account is using its personal matrix.";
+      }
+
+      const lockedEls = document.querySelectorAll(
+        "#payBody input, #payBody button, #btnImportCsv, #btnAddPayRow, #btnResetPay"
+      );
+
+      lockedEls.forEach(el => {
+        el.disabled = MATRIX_LOCKED;
+      });
+    }
+
+    function defaultMatrix(){
+      return [
+        { tours: 3, rate: 70 },
+        { tours: 4, rate: 95 },
+        { tours: 5, rate: 120 },
+        { tours: 6, rate: 125 },
+        { tours: 7, rate: 130 },
+        { tours: 8, rate: 135 },
+        { tours: 9, rate: 140 },
+        { tours: 10, rate: 145 },
+        { tours: 11, rate: 150 }
+      ];
+    }
+
+    function normalizeMatrixRows(rows){
+      if(!Array.isArray(rows)) return defaultMatrix();
+
+      const clean = rows
+        .map(r => ({
+          tours: safeInt(r?.tours),
+          rate: safeInt(r?.rate)
+        }))
+        .filter(r => r.tours > 0 || r.rate > 0);
+
+      return clean.length ? clean : defaultMatrix();
+    }
+
+    async function cloudReadManagerMatrix(){
+      if(!sb || !AUTHUSERID || !SITEKEY || !monthKey()) return null;
+
+      const { data, error } = await sb.rpc("tp_get_pay_matrix", {
+        p_site_key: SITEKEY,
+        p_month_key: monthKey()
+      });
+
+      if(error){
+        console.warn("tp_get_pay_matrix error:", error);
+        return null;
+      }
+
+      const row = Array.isArray(data) ? data[0] : data;
+
+      if(!row || !row.matrix) return null;
+
+      MATRIX_SOURCE = row.source || "manager";
+      MATRIX_MANAGER_ID = row.manager_user_id || null;
+
+      return normalizeMatrixRows(row.matrix);
+    }
+
+    let _managerMatrixWriteTimer = null;
+
+    function scheduleManagerMatrixWrite(matrix){
+      if(!canEditManagerMatrix()) return;
+      if(!sb || !AUTHUSERID || !SITEKEY || !monthKey()) return;
+
+      const cleanMatrix = normalizeMatrixRows(matrix);
+
+      window.clearTimeout(_managerMatrixWriteTimer);
+      _managerMatrixWriteTimer = window.setTimeout(async () => {
+        const { error } = await sb.rpc("tp_save_manager_pay_matrix", {
+          p_site_key: SITEKEY,
+          p_month_key: monthKey(),
+          p_matrix: cleanMatrix
+        });
+
+        if(error){
+          console.warn("tp_save_manager_pay_matrix error:", error);
+          showToast("Manager matrix save failed.");
+          return;
+        }
+
+        showToast("Manager matrix saved.");
+      }, 500);
+    }
+
+    function yearKey(){
+      const mk = monthKey() || "";
+      const y = mk.slice(0,4);
+      return y || String(new Date().getFullYear());
+    }
+
+    function monthKey(){ return $("monthSelect").value || ""; }
+
+    function storeKeyLocal(){
+      return `tourpulse:paycalc:v3:${AUTHEMP||"unknown"}:${SITEKEY||"nosite"}:${monthKey()||"nomonth"}`;
+    }
+
+    function cloudRowKey(){
+      return {
+        user_id: AUTHUSERID || "",
+        calc_key: "pay-calc",
+        site_key: SITEKEY || "nosite",
+        month_key: monthKey() || "nomonth"
+      };
+    }
+
+    function cloudTripYearRowKey(){
+      return {
+        user_id: AUTHUSERID || "",
+        calc_key: "pay-calc-trip-ytd",
+        site_key: SITEKEY || "nosite",
+        month_key: yearKey() || "noyear"
+      };
+    }
+
+    function cloudLatestRowKey(){
+      return {
+        user_id: AUTHUSERID || "",
+        calc_key: "pay-calc-latest",
+        site_key: SITEKEY || "nosite",
+        month_key: "latest"
+      };
+    }
+
+    function defaultMonthData(){
+      return {
+        pointsPerTour: { ...DEFAULT_PPTS },
+        monthTours: { owners: 0, goos: 0, renters: 0 },
+        tripEntries: [],
+        matrix: defaultMatrix()
+      };
+    }
+
+    function readLocalMonthData(){
+      try{
+        const raw = localStorage.getItem(storeKeyLocal());
+        if(!raw) return defaultMonthData();
+        return normalizeState(JSON.parse(raw));
+      }catch(_){
+        return defaultMonthData();
+      }
+    }
+
+    function writeLocalMonthData(data){
+      try{
+        localStorage.setItem(storeKeyLocal(), JSON.stringify(data));
+      }catch(_){}
+    }
+
+    let _cloudWriteTimer = null;
+
+    async function cloudRead(){
+      if(!sb || !AUTHUSERID) return null;
+      const k = cloudRowKey();
+
+      const { data, error } = await sb
+        .from("tp_calc_state")
+        .select("state,updated_at")
+        .eq("user_id", k.user_id)
+        .eq("calc_key", k.calc_key)
+        .eq("site_key", k.site_key)
+        .eq("month_key", k.month_key)
+        .maybeSingle();
+
+      if(error){
+        console.warn("cloudRead error:", error);
+        return null;
+      }
+
+      return data?.state || null;
+    }
+
+    async function cloudWriteNow(stateObj){
+      if(!sb || !AUTHUSERID) return false;
+      const k = cloudRowKey();
+
+      const payload = { ...k, state: { ...stateObj, _touched_at: new Date().toISOString() } };
+
+      const { error } = await sb
+        .from("tp_calc_state")
+        .upsert(payload, { onConflict: "user_id,calc_key,site_key,month_key" });
+
+      if(error){
+        console.warn("cloudWrite error:", error);
+        return false;
+      }
+
+      return true;
+    }
+
+    function scheduleCloudWrite(stateObj){
+      window.clearTimeout(_cloudWriteTimer);
+      _cloudWriteTimer = window.setTimeout(async () => {
+        await cloudWriteNow(stateObj);
+      }, 450);
+    }
+
+    function rateRowForTours(matrix, totalTours){
+      const t = safeInt(totalTours);
+      const rows = Array.isArray(matrix) ? matrix : [];
+      if(!rows.length || t <= 0) return null;
+
+      const sorted = rows
+        .map(r => ({ tours: safeInt(r?.tours), rate: safeInt(r?.rate) }))
+        .filter(r => r.tours > 0 && r.rate >= 0)
+        .sort((a,b) => a.tours - b.tours);
+
+      let best = null;
+      for(const r of sorted){
+        if(r.tours <= t) best = r;
+        else break;
+      }
+
+      return best;
+    }
+
+    function findRateForTours(matrix, totalTours){
+      const row = rateRowForTours(matrix, totalTours);
+      return row ? safeInt(row.rate) : null;
+    }
+
+    function currentMonthlyPoints(data){
+      const ownersTours = safeInt(data.monthTours.owners);
+      const goosTours = safeInt(data.monthTours.goos);
+      const rentersTours = safeInt(data.monthTours.renters);
+
+      const ownersPts = ownersTours * safeInt(data.pointsPerTour.owner);
+      const goosPts = goosTours * safeInt(data.pointsPerTour.goo);
+      const rentersPts = rentersTours * safeInt(data.pointsPerTour.renter);
+
+      return { ownersPts, goosPts, rentersPts, total: ownersPts + goosPts + rentersPts };
+    }
+
+    let _cloudLatestTimer = null;
+
+    function computeLatestSnapshot(data){
+      const ownersTours = safeInt(data.monthTours.owners);
+      const goosTours = safeInt(data.monthTours.goos);
+      const rentersTours = safeInt(data.monthTours.renters);
+      const totalTours = ownersTours + goosTours + rentersTours;
+
+      const rate = findRateForTours(data.matrix, totalTours);
+      const toursPay = (rate === null) ? 0 : totalTours * rate;
+      const hourlyPay = HOURLY_WEEK_PAY;
+      const grandTotal = hourlyPay + toursPay;
+
+      const pts = currentMonthlyPoints(data);
+      const tripPointsYtd = (_yearTripEntries || []).reduce((sum, e) => sum + safeInt(e.points), 0);
+      const lastTripDate = (_yearTripEntries || []).length ? String(_yearTripEntries[0].date || "") : "";
+
+      return {
+        month_key: monthKey() || "",
+        year_key: yearKey() || "",
+        site_key: SITEKEY || "",
+        site_title: SITETITLE || "",
+        trip_points_running: tripPointsYtd,
+        current_pay_mtd: grandTotal,
+        total_tours: totalTours,
+        rate: (rate === null ? null : rate),
+        hourly_pay: hourlyPay,
+        tours_pay: toursPay,
+        monthly_points_total: safeInt(pts.total),
+        last_trip_entry_date: lastTripDate,
+        touched_at: new Date().toISOString()
+      };
+    }
+
+    async function cloudWriteLatestNow(snapshot){
+      if(!sb || !AUTHUSERID || !SITEKEY) return false;
+
+      const k = cloudLatestRowKey();
+      const payload = { ...k, state: snapshot };
+
+      const { error } = await sb
+        .from("tp_calc_state")
+        .upsert(payload, { onConflict: "user_id,calc_key,site_key,month_key" });
+
+      if(error){
+        console.warn("cloudWriteLatest error:", error);
+        return false;
+      }
+
+      return true;
+    }
+
+    function scheduleCloudWriteLatestSnapshot(data){
+      if(!sb || !AUTHUSERID || !SITEKEY || !monthKey()) return;
+
+      const snap = computeLatestSnapshot(data);
+
+      window.clearTimeout(_cloudLatestTimer);
+      _cloudLatestTimer = window.setTimeout(async () => {
+        await cloudWriteLatestNow(snap);
+      }, 550);
+    }
+
+    function saveDataAndSync(data){
+      writeLocalMonthData(data);
+      scheduleCloudWrite(data);
+      scheduleCloudWriteLatestSnapshot(data);
+    }
+
+    function saveMatrixAndSync(data){
+      saveDataAndSync(data);
+      scheduleManagerMatrixWrite(data.matrix || []);
+    }
+
+    let _yearTripEntries = [];
+    let _cloudTripYearTimer = null;
+    let _addTripBusy = false;
+    let _addBtnDefaultText = "Add Points";
+
+    function setAddBtnBusy(on){
+      const btn = $("btnAddTripPoints");
+      if(!btn) return;
+
+      btn.disabled = !!on;
+      btn.textContent = on ? "Saving…" : _addBtnDefaultText;
+      btn.style.opacity = on ? ".85" : "";
+      btn.style.pointerEvents = on ? "none" : "";
+    }
+
+    function normalizeTripEntries(arr){
+      if(!Array.isArray(arr)) return [];
+      return arr.map(e => ({
+        id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
+        date: String(e?.date ?? ""),
+        points: safeInt(e?.points)
+      }));
+    }
+
+    async function cloudReadTripYear(){
+      if(!sb || !AUTHUSERID) return null;
+      const k = cloudTripYearRowKey();
+
+      const { data, error } = await sb
+        .from("tp_calc_state")
+        .select("state,updated_at")
+        .eq("user_id", k.user_id)
+        .eq("calc_key", k.calc_key)
+        .eq("site_key", k.site_key)
+        .eq("month_key", k.month_key)
+        .maybeSingle();
+
+      if(error){
+        console.warn("cloudReadTripYear error:", error);
+        return null;
+      }
+
+      return data?.state || null;
+    }
+
+    async function cloudWriteTripYearNow(entries){
+      if(!sb || !AUTHUSERID) return false;
+      const k = cloudTripYearRowKey();
+
+      const payload = { ...k, state: { tripEntries: entries || [] } };
+
+      const { error } = await sb
+        .from("tp_calc_state")
+        .upsert(payload, { onConflict: "user_id,calc_key,site_key,month_key" });
+
+      if(error){
+        console.warn("cloudWriteTripYear error:", error);
+        return false;
+      }
+
+      return true;
+    }
+
+    function scheduleCloudWriteTripYear(entries){
+      window.clearTimeout(_cloudTripYearTimer);
+      _cloudTripYearTimer = window.setTimeout(async () => {
+        await cloudWriteTripYearNow(entries);
+      }, 450);
+    }
+
+    async function loadTripYearForCurrentContext(){
+      _yearTripEntries = [];
+      const cloudState = await cloudReadTripYear();
+
+      if(cloudState && typeof cloudState === "object"){
+        _yearTripEntries = normalizeTripEntries(cloudState.tripEntries);
+      }
+    }
+
     async function requireAuthOrRedirect(){
       if(!sb) return goSignin();
+
       const { data: { session } } = await sb.auth.getSession();
       if(!session?.user) return goSignin();
 
@@ -584,14 +1120,21 @@
       AUTHNAME = user.user_metadata?.first_name || "";
       AUTHEMP = getEmpFromEmail(user.email);
 
+      await loadUserRole();
+
       $("userName").textContent = AUTHNAME || "Signed In";
       $("userEmp").textContent = AUTHEMP ? `#${AUTHEMP}` : "";
     }
 
     async function signOut(){
       if(!sb) return goSignin();
+
       const { error } = await sb.auth.signOut();
-      if(error){ showToast(error.message || "Sign out failed."); return; }
+      if(error){
+        showToast(error.message || "Sign out failed.");
+        return;
+      }
+
       showToast("Signed out.");
       goSignin();
     }
@@ -604,9 +1147,6 @@
         if(event === "SIGNED_OUT" || !session?.user) goSignin();
       });
     }
-
-    // ====== Month dropdown ======
-    function monthKey(){ return $("monthSelect").value || ""; }
 
     function buildMonthOptions(){
       const sel = $("monthSelect");
@@ -637,402 +1177,42 @@
       $("monthSelect").value = `${y}-${m}`;
     }
 
-    // ====== Year key (for YTD Trip Points) ======
-    function yearKey(){
-      const mk = monthKey() || "";
-      const y = mk.slice(0,4);
-      return y || String(new Date().getFullYear());
-    }
-
-    // ====== Local backup storage key (MONTHLY state only) ======
-    function storeKeyLocal(){
-      return `tourpulse:paycalc:v3:${AUTHEMP||"unknown"}:${SITEKEY||"nosite"}:${monthKey()||"nomonth"}`;
-    }
-
-    // ====== Supabase cloud key (MONTHLY state) ======
-    function cloudRowKey(){
-      return {
-        user_id: AUTHUSERID || "",
-        calc_key: "pay-calc",
-        site_key: SITEKEY || "nosite",
-        month_key: monthKey() || "nomonth"
-      };
-    }
-
-    // ====== Supabase cloud key (YEARLY trip log) ======
-    function cloudTripYearRowKey(){
-      return {
-        user_id: AUTHUSERID || "",
-        calc_key: "pay-calc-trip-ytd",
-        site_key: SITEKEY || "nosite",
-        month_key: yearKey() || "noyear"
-      };
-    }
-
-    // ✅ Admin-friendly latest snapshot
-    function cloudLatestRowKey(){
-      return {
-        user_id: AUTHUSERID || "",
-        calc_key: "pay-calc-latest",
-        site_key: SITEKEY || "nosite",
-        month_key: "latest"
-      };
-    }
-
-    function safeInt(v){
-      const n = parseInt(String(v ?? "0"), 10);
-      return Number.isFinite(n) && n >= 0 ? n : 0;
-    }
-    function money(n){
-      const x = Number(n || 0);
-      return x.toLocaleString(undefined, { style:"currency", currency:"USD" });
-    }
-    function num(n){
-      return Number(n || 0).toLocaleString();
-    }
-    function todayISO(){
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth()+1).padStart(2,"0");
-      const day = String(d.getDate()).padStart(2,"0");
-      return `${y}-${m}-${day}`;
-    }
-
-    // ====== Data Model (per month) ======
-    function defaultMatrix(){
-      return [
-        { tours: 3, rate: 70 },
-        { tours: 4, rate: 95 },
-        { tours: 5, rate: 120 },
-        { tours: 6, rate: 125 },
-        { tours: 7, rate: 130 },
-        { tours: 8, rate: 135 },
-        { tours: 9, rate: 140 },
-        { tours: 10, rate: 145 },
-        { tours: 11, rate: 150 }
-      ];
-    }
-
-    function defaultMonthData(){
-      return {
-        pointsPerTour: { owner: 1260, goo: 1570, renter: 1570 },
-        monthTours: { owners: 0, goos: 0, renters: 0 },
-        tripEntries: [],
-        matrix: defaultMatrix()
-      };
-    }
-
-    // ====== LOCAL read/write (MONTHLY backup) ======
-    function readLocalMonthData(){
-      try{
-        const raw = localStorage.getItem(storeKeyLocal());
-        if(!raw) return defaultMonthData();
-        const x = JSON.parse(raw);
-
-        const ppt = x?.pointsPerTour || {};
-        const pointsPerTour = {
-          owner: safeInt(ppt.owner ?? 1260),
-          goo: safeInt(ppt.goo ?? 1570),
-          renter: safeInt(ppt.renter ?? 1570)
-        };
-
-        const mt = x?.monthTours || {};
-        const monthTours = {
-          owners: safeInt(mt.owners),
-          goos: safeInt(mt.goos),
-          renters: safeInt(mt.renters)
-        };
-
-        const tripEntries = Array.isArray(x?.tripEntries) ? x.tripEntries.map(e => ({
-          id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
-          date: String(e?.date ?? ""),
-          points: safeInt(e?.points)
-        })) : [];
-
-        const matrix = Array.isArray(x?.matrix) ? x.matrix.map(r => ({
-          tours: safeInt(r?.tours),
-          rate: safeInt(r?.rate)
-        })) : defaultMatrix();
-
-        return { pointsPerTour, monthTours, tripEntries, matrix };
-      }catch(_){
-        return defaultMonthData();
-      }
-    }
-
-    function writeLocalMonthData(data){
-      try{
-        localStorage.setItem(storeKeyLocal(), JSON.stringify(data));
-      }catch(_){}
-    }
-
-    // ====== CLOUD read/write (MONTHLY) ======
-    let _cloudWriteTimer = null;
-
-    async function cloudRead(){
-      if(!sb || !AUTHUSERID) return null;
-      const k = cloudRowKey();
-      if(!k.user_id || !k.site_key || !k.month_key) return null;
-
-      const { data, error } = await sb
-        .from("tp_calc_state")
-        .select("state,updated_at")
-        .eq("user_id", k.user_id)
-        .eq("calc_key", k.calc_key)
-        .eq("site_key", k.site_key)
-        .eq("month_key", k.month_key)
-        .maybeSingle();
-
-      if(error){
-        console.warn("cloudRead error:", error);
-        return null;
-      }
-      return data?.state || null;
-    }
-
-    async function cloudWriteNow(stateObj){
-      if(!sb || !AUTHUSERID) return false;
-      const k = cloudRowKey();
-      if(!k.user_id || !k.site_key || !k.month_key) return false;
-
-      const payload = { ...k, state: { ...stateObj, _touched_at: new Date().toISOString() } };
-
-      const { error } = await sb
-        .from("tp_calc_state")
-        .upsert(payload, { onConflict: "user_id,calc_key,site_key,month_key" });
-
-      if(error){
-        console.warn("cloudWrite error:", error);
-        return false;
-      }
-      return true;
-    }
-
-    function scheduleCloudWrite(stateObj){
-      window.clearTimeout(_cloudWriteTimer);
-      _cloudWriteTimer = window.setTimeout(async () => {
-        await cloudWriteNow(stateObj);
-      }, 450);
-    }
-
-    // ====== Rate lookup (NO CAP) ======
-    // Rule:
-    // - Find the highest "tours" threshold <= totalTours, and use its rate.
-    // - If totalTours exceeds the highest row, keep using that top rate.
-    // - If totalTours is below the lowest threshold (or matrix empty), return null.
-    function rateRowForTours(matrix, totalTours){
-      const t = safeInt(totalTours);
-      const rows = Array.isArray(matrix) ? matrix : [];
-      if(!rows.length) return null;
-
-      const sorted = rows
-        .map(r => ({ tours: safeInt(r?.tours), rate: safeInt(r?.rate) }))
-        .filter(r => r.tours > 0 && r.rate >= 0)
-        .sort((a,b) => a.tours - b.tours);
-
-      if(!sorted.length) return null;
-      if(t <= 0) return null;
-
-      let best = null;
-      for(const r of sorted){
-        if(r.tours <= t) best = r;
-        else break;
-      }
-      return best; // may be null if below first threshold
-    }
-    function findRateForTours(matrix, totalTours){
-      const row = rateRowForTours(matrix, totalTours);
-      return row ? safeInt(row.rate) : null;
-    }
-
-    function currentMonthlyPoints(data){
-      const ownersTours = safeInt(data.monthTours.owners);
-      const goosTours = safeInt(data.monthTours.goos);
-      const rentersTours = safeInt(data.monthTours.renters);
-
-      const ownersPts = ownersTours * safeInt(data.pointsPerTour.owner);
-      const goosPts = goosTours * safeInt(data.pointsPerTour.goo);
-      const rentersPts = rentersTours * safeInt(data.pointsPerTour.renter);
-      return { ownersPts, goosPts, rentersPts, total: ownersPts + goosPts + rentersPts };
-    }
-
-    // ====== CLOUD write (LATEST SNAPSHOT for Admin modal) ======
-    let _cloudLatestTimer = null;
-
-    function computeLatestSnapshot(data){
-      const ownersTours = safeInt(data.monthTours.owners);
-      const goosTours = safeInt(data.monthTours.goos);
-      const rentersTours = safeInt(data.monthTours.renters);
-      const totalTours = ownersTours + goosTours + rentersTours;
-
-      const rate = findRateForTours(data.matrix, totalTours);
-      const toursPay = (rate === null) ? 0 : totalTours * rate;
-
-      const hourlyPay = HOURLY_WEEK_PAY;
-      const grandTotal = hourlyPay + toursPay;
-
-      const pts = currentMonthlyPoints(data);
-      const monthlyPointsTotal = safeInt(pts.total);
-
-      const tripPointsYtd = (_yearTripEntries || []).reduce((sum, e) => sum + safeInt(e.points), 0);
-      const lastTripDate = (_yearTripEntries || []).length ? String(_yearTripEntries[0].date || "") : "";
-
-      return {
-        month_key: monthKey() || "",
-        year_key: yearKey() || "",
-        site_key: SITEKEY || "",
-        site_title: SITETITLE || "",
-        trip_points_running: tripPointsYtd,
-        current_pay_mtd: grandTotal,
-
-        total_tours: totalTours,
-        rate: (rate === null ? null : rate),
-        hourly_pay: hourlyPay,
-        tours_pay: toursPay,
-        monthly_points_total: monthlyPointsTotal,
-        last_trip_entry_date: lastTripDate,
-        touched_at: new Date().toISOString()
-      };
-    }
-
-    async function cloudWriteLatestNow(snapshot){
-      if(!sb || !AUTHUSERID) return false;
-      if(!SITEKEY) return false;
-
-      const k = cloudLatestRowKey();
-      const payload = { ...k, state: snapshot };
-
-      const { error } = await sb
-        .from("tp_calc_state")
-        .upsert(payload, { onConflict: "user_id,calc_key,site_key,month_key" });
-
-      if(error){
-        console.warn("cloudWriteLatest error:", error);
-        return false;
-      }
-      return true;
-    }
-
-    function scheduleCloudWriteLatestSnapshot(data){
-      if(!sb || !AUTHUSERID || !SITEKEY || !monthKey()) return;
-      const snap = computeLatestSnapshot(data);
-
-      window.clearTimeout(_cloudLatestTimer);
-      _cloudLatestTimer = window.setTimeout(async () => {
-        await cloudWriteLatestNow(snap);
-      }, 550);
-    }
-
-    function saveDataAndSync(data){
-      writeLocalMonthData(data);
-      scheduleCloudWrite(data);
-      scheduleCloudWriteLatestSnapshot(data);
-    }
-
-    // ====== CLOUD read/write (YEARLY Trip Log — Supabase ONLY) ======
-    let _yearTripEntries = [];
-    let _cloudTripYearTimer = null;
-
-    let _addTripBusy = false;
-    let _addBtnDefaultText = "Add Points";
-    function setAddBtnBusy(on){
-      const btn = $("btnAddTripPoints");
-      if(!btn) return;
-      if(!_addBtnDefaultText) _addBtnDefaultText = btn.textContent || "Add Points";
-      btn.disabled = !!on;
-      btn.textContent = on ? "Saving…" : _addBtnDefaultText;
-      btn.style.opacity = on ? ".85" : "";
-      btn.style.pointerEvents = on ? "none" : "";
-    }
-
-    function normalizeTripEntries(arr){
-      if(!Array.isArray(arr)) return [];
-      return arr.map(e => ({
-        id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
-        date: String(e?.date ?? ""),
-        points: safeInt(e?.points)
-      }));
-    }
-
-    async function cloudReadTripYear(){
-      if(!sb || !AUTHUSERID) return null;
-      const k = cloudTripYearRowKey();
-      if(!k.user_id || !k.site_key || !k.month_key) return null;
-
-      const { data, error } = await sb
-        .from("tp_calc_state")
-        .select("state,updated_at")
-        .eq("user_id", k.user_id)
-        .eq("calc_key", k.calc_key)
-        .eq("site_key", k.site_key)
-        .eq("month_key", k.month_key)
-        .maybeSingle();
-
-      if(error){
-        console.warn("cloudReadTripYear error:", error);
-        return null;
-      }
-      return data?.state || null;
-    }
-
-    async function cloudWriteTripYearNow(entries){
-      if(!sb || !AUTHUSERID) return false;
-      const k = cloudTripYearRowKey();
-      if(!k.user_id || !k.site_key || !k.month_key) return false;
-
-      const payload = { ...k, state: { tripEntries: entries || [] } };
-
-      const { error } = await sb
-        .from("tp_calc_state")
-        .upsert(payload, { onConflict: "user_id,calc_key,site_key,month_key" });
-
-      if(error){
-        console.warn("cloudWriteTripYear error:", error);
-        return false;
-      }
-      return true;
-    }
-
-    function scheduleCloudWriteTripYear(entries){
-      window.clearTimeout(_cloudTripYearTimer);
-      _cloudTripYearTimer = window.setTimeout(async () => {
-        await cloudWriteTripYearNow(entries);
-      }, 450);
-    }
-
-    async function loadTripYearForCurrentContext(){
-      _yearTripEntries = [];
-      const cloudState = await cloudReadTripYear();
-      if(cloudState && typeof cloudState === "object"){
-        _yearTripEntries = normalizeTripEntries(cloudState.tripEntries);
-      }
-    }
-
-    // ====== Site selection / banner ======
     function openSiteModal(){
       $("siteOverlay").classList.add("show");
       $("siteSearch").value = "";
       renderSites(SITES);
       setTimeout(() => $("siteSearch")?.focus(), 0);
     }
-    function closeSiteModal(){ $("siteOverlay").classList.remove("show"); }
+
+    function closeSiteModal(){
+      $("siteOverlay").classList.remove("show");
+    }
 
     $("btnChooseSite").addEventListener("click", openSiteModal);
     $("btnChangeSite").addEventListener("click", openSiteModal);
     $("closeSiteX").addEventListener("click", closeSiteModal);
     $("siteCancel").addEventListener("click", closeSiteModal);
-    $("siteOverlay").addEventListener("click", (e) => { if(e.target === $("siteOverlay")) closeSiteModal(); });
-    document.addEventListener("keydown", (e) => { if(e.key === "Escape") { closeSiteModal(); closeMatrix(); } });
+    $("siteOverlay").addEventListener("click", (e) => {
+      if(e.target === $("siteOverlay")) closeSiteModal();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if(e.key === "Escape"){
+        closeSiteModal();
+        closeMatrix();
+      }
+    });
 
     function setBanner(site){
       SITETITLE = site?.title || "";
       SITEKEY = site?.key || "";
-      $("bannerSite").textContent = site?.title || "—";
 
+      $("bannerSite").textContent = site?.title || "—";
       $("btnChooseSite").style.display = site?.title ? "none" : "inline-flex";
       $("btnChangeSite").style.display = site?.title ? "inline-flex" : "none";
 
       const imgEl = $("bannerImg");
+
       if(site?.img){
         imgEl.src = site.img;
         imgEl.style.display = "block";
@@ -1049,6 +1229,7 @@
         localStorage.setItem("f8_pay_site_key", site.key);
         localStorage.setItem("f8_pay_site_title", site.title);
       }catch(_){}
+
       setBanner(site);
       showToast("Site selected.");
       await loadAllForCurrentMonth();
@@ -1059,12 +1240,15 @@
         const key = localStorage.getItem("f8_pay_site_key") || "";
         if(!key) return null;
         return SITES.find(s => s.key === key) || null;
-      }catch(_){ return null; }
+      }catch(_){
+        return null;
+      }
     }
 
     function renderSites(list){
       const grid = $("sitesGrid");
       grid.innerHTML = "";
+
       list.forEach(site => {
         const btn = document.createElement("button");
         btn.type = "button";
@@ -1082,10 +1266,12 @@
         `;
 
         const img = btn.querySelector(".tileImg");
+
         if(site.img){
           img.src = site.img;
           img.style.display = "block";
         }
+
         grid.appendChild(btn);
       });
     }
@@ -1093,38 +1279,53 @@
     function applySiteSearch(){
       const q = String($("siteSearch").value || "").trim().toLowerCase();
       if(!q) return renderSites(SITES);
-      const filtered = SITES.filter(s => s.title.toLowerCase().includes(q) || s.key.toLowerCase().includes(q));
+
+      const filtered = SITES.filter(s =>
+        s.title.toLowerCase().includes(q) ||
+        s.key.toLowerCase().includes(q)
+      );
+
       renderSites(filtered);
     }
+
     $("siteSearch").addEventListener("input", applySiteSearch);
 
     $("sitesGrid").addEventListener("click", async (e) => {
       const btn = e.target?.closest?.("button[data-site]");
       if(!btn) return;
+
       const key = btn.getAttribute("data-site");
       const site = SITES.find(s => s.key === key);
       if(!site) return;
+
       await setSelectedSite(site);
       closeSiteModal();
     });
 
-    // ====== Matrix Modal Logic ======
     function openMatrix(openTab = "matrix"){
       if(!SITEKEY || !monthKey()){
         showToast("Select a site and month first.");
         return;
       }
+
       $("settingsOverlay").classList.add("show");
       setTab(openTab);
+      paintMatrixAccessUI();
     }
-    function closeMatrix(){ $("settingsOverlay").classList.remove("show"); }
+
+    function closeMatrix(){
+      $("settingsOverlay").classList.remove("show");
+    }
 
     $("btnEditMatrix").addEventListener("click", () => openMatrix("matrix"));
     $("closeSettingsX").addEventListener("click", closeMatrix);
-    $("settingsOverlay").addEventListener("click", (e) => { if(e.target === $("settingsOverlay")) closeMatrix(); });
+    $("settingsOverlay").addEventListener("click", (e) => {
+      if(e.target === $("settingsOverlay")) closeMatrix();
+    });
 
     function setTab(which){
       const isMatrix = which === "matrix";
+
       $("tabMatrix").classList.toggle("active", isMatrix);
       $("tabPoints").classList.toggle("active", !isMatrix);
       $("tabMatrix").setAttribute("aria-selected", isMatrix ? "true" : "false");
@@ -1132,15 +1333,17 @@
       $("matrixPane").classList.toggle("hidden", !isMatrix);
       $("pointsPane").classList.toggle("hidden", isMatrix);
     }
+
     $("tabMatrix").addEventListener("click", () => setTab("matrix"));
     $("tabPoints").addEventListener("click", () => setTab("points"));
 
-    // ====== Render Matrix ======
     function renderMatrix(rows){
       const body = $("payBody");
       body.innerHTML = "";
+
       rows.forEach((r, idx) => {
         const tr = document.createElement("tr");
+
         tr.innerHTML = `
           <td>
             <input class="cellInput" inputmode="numeric" type="number" min="0" step="1"
@@ -1154,21 +1357,26 @@
             <button class="iconX" type="button" data-mdel="${idx}" aria-label="Remove row">×</button>
           </td>
         `;
+
         body.appendChild(tr);
       });
+
+      paintMatrixAccessUI();
     }
 
     function renderSelectedMonthMatrixPreview(matrix, totalTours){
       const body = $("previewMatrixBody");
       if(!body) return;
+
       body.innerHTML = "";
 
       const sorted = [...(Array.isArray(matrix) ? matrix : [])]
         .map(r => ({ tours: safeInt(r?.tours), rate: safeInt(r?.rate) }))
+        .filter(r => r.tours > 0 || r.rate > 0)
         .sort((a,b) => a.tours - b.tours);
 
       const t = safeInt(totalTours);
-      const activeRow = rateRowForTours(sorted, t);         // ✅ highlight the threshold row (even when t is above max)
+      const activeRow = rateRowForTours(sorted, t);
       const activeToursKey = activeRow ? safeInt(activeRow.tours) : null;
 
       sorted.forEach(r => {
@@ -1176,7 +1384,8 @@
         const rate = safeInt(r.rate);
 
         const tr = document.createElement("tr");
-        const isActive = (activeToursKey !== null) && (tours === activeToursKey);
+        const isActive = activeToursKey !== null && tours === activeToursKey;
+
         if(isActive) tr.classList.add("active");
 
         tr.innerHTML = `
@@ -1186,11 +1395,11 @@
           </td>
           <td style="font-weight:1100;">${escapeHtml(rate ? money(rate) : "$—")}</td>
         `;
+
         body.appendChild(tr);
       });
     }
 
-    // ====== CSV Import/Export ======
     function toCsv(rows){
       const lines = ["tours,rate"];
       rows.forEach(r => lines.push(`${safeInt(r.tours)},${safeInt(r.rate)}`));
@@ -1201,11 +1410,14 @@
       const blob = new Blob([content], { type: mime });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
+
       a.href = url;
       a.download = name;
+
       document.body.appendChild(a);
       a.click();
       a.remove();
+
       URL.revokeObjectURL(url);
     }
 
@@ -1216,38 +1428,62 @@
       showToast("CSV exported.");
     });
 
-    $("btnImportCsv").addEventListener("click", () => $("csvFile").click());
+    $("btnImportCsv").addEventListener("click", () => {
+      if(MATRIX_LOCKED){
+        showToast("Matrix is controlled by your manager.");
+        return;
+      }
+
+      $("csvFile").click();
+    });
 
     $("csvFile").addEventListener("change", async (e) => {
       const file = e.target.files?.[0];
       if(!file) return;
 
-      const text = await file.text();
-      const lines = text.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
-      if(lines.length === 0){ showToast("Empty CSV."); return; }
-
-      const rows = [];
-      for(let i=0;i<lines.length;i++){
-        const line = lines[i];
-        if(i === 0 && /tours\s*,\s*rate/i.test(line)) continue;
-        const parts = line.split(",").map(x => x.trim());
-        if(parts.length < 2) continue;
-        rows.push({ tours: safeInt(parts[0]), rate: safeInt(parts[1]) });
+      if(MATRIX_LOCKED){
+        $("csvFile").value = "";
+        showToast("Matrix is controlled by your manager.");
+        return;
       }
 
-      const data = (_currentData || readLocalMonthData());
-      if(rows.length) data.matrix = rows;
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
 
-      saveDataAndSync(data);
+      if(lines.length === 0){
+        showToast("Empty CSV.");
+        return;
+      }
+
+      const rows = [];
+
+      for(let i = 0; i < lines.length; i++){
+        const line = lines[i];
+        if(i === 0 && /tours\s*,\s*rate/i.test(line)) continue;
+
+        const parts = line.split(",").map(x => x.trim());
+        if(parts.length < 2) continue;
+
+        rows.push({
+          tours: safeInt(parts[0]),
+          rate: safeInt(parts[1])
+        });
+      }
+
+      const data = _currentData || readLocalMonthData();
+
+      if(rows.length) data.matrix = normalizeMatrixRows(rows);
+
+      saveMatrixAndSync(data);
       _currentData = data;
 
       renderMatrix(data.matrix);
       $("csvFile").value = "";
       refreshAllUI(data);
+
       showToast(rows.length ? "CSV imported." : "No valid rows found.");
     });
 
-    // ====== Live Calculations ======
     function formatDatePretty(iso){
       const d = new Date(iso + "T00:00:00");
       if(Number.isNaN(d.getTime())) return iso;
@@ -1257,13 +1493,16 @@
     function renderTripLog(entries){
       const body = $("tripLogBody");
       body.innerHTML = "";
+
       (entries || []).forEach((e) => {
         const tr = document.createElement("tr");
+
         tr.innerHTML = `
           <td style="font-weight:950;">${escapeHtml(formatDatePretty(e.date))}</td>
           <td style="font-weight:1100;">${escapeHtml(num(e.points))}</td>
           <td><button class="iconBtn" type="button" data-trm="${escapeAttr(e.id)}">Remove</button></td>
         `;
+
         body.appendChild(tr);
       });
     }
@@ -1284,7 +1523,6 @@
       const tripPointsTotal = (_yearTripEntries || []).reduce((sum, e) => sum + safeInt(e.points), 0);
       const lastAdded = (_yearTripEntries || []).length ? _yearTripEntries[0].date : null;
 
-      // ✅ NO CAP: totals above top-of-matrix keep top rate
       const rate = findRateForTours(data.matrix, totalTours);
       const toursPay = (rate === null) ? 0 : totalTours * rate;
 
@@ -1315,69 +1553,79 @@
       $("pillTripPointsModal").textContent = num(tripPointsTotal);
       renderTripLog(_yearTripEntries);
 
+      paintMatrixAccessUI();
       scheduleCloudWriteLatestSnapshot(data);
     }
 
-    // ====== In-memory current state ======
     let _currentData = null;
 
     function normalizeState(x){
       const base = defaultMonthData();
+
       if(!x || typeof x !== "object") return base;
 
       const ppt = x.pointsPerTour || {};
+      const mt = x.monthTours || {};
+
       const pointsPerTour = {
-        owner: safeInt(ppt.owner ?? 1260),
-        goo: safeInt(ppt.goo ?? 1570),
-        renter: safeInt(ppt.renter ?? 1570)
+        owner: safeInt(ppt.owner ?? DEFAULT_PPTS.owner),
+        goo: safeInt(ppt.goo ?? DEFAULT_PPTS.goo),
+        renter: safeInt(ppt.renter ?? DEFAULT_PPTS.renter)
       };
 
-      const mt = x.monthTours || {};
       const monthTours = {
         owners: safeInt(mt.owners),
         goos: safeInt(mt.goos),
         renters: safeInt(mt.renters)
       };
 
-      const tripEntries = Array.isArray(x.tripEntries) ? x.tripEntries.map(e => ({
-        id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
-        date: String(e?.date ?? ""),
-        points: safeInt(e?.points)
-      })) : [];
+      const tripEntries = Array.isArray(x.tripEntries)
+        ? x.tripEntries.map(e => ({
+            id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
+            date: String(e?.date ?? ""),
+            points: safeInt(e?.points)
+          }))
+        : [];
 
-      const matrix = Array.isArray(x.matrix) ? x.matrix.map(r => ({
-        tours: safeInt(r?.tours),
-        rate: safeInt(r?.rate)
-      })) : defaultMatrix();
+      const matrix = normalizeMatrixRows(x.matrix);
 
       return { pointsPerTour, monthTours, tripEntries, matrix };
     }
 
-    // ====== Central load (cloud first, local fallback) ======
     async function loadAllForCurrentMonth(){
       if(!AUTHEMP || !SITEKEY || !monthKey()) return;
 
       await loadTripYearForCurrentContext();
 
+      let data = null;
+
       const cloudState = await cloudRead();
+
       if(cloudState && typeof cloudState === "object"){
-        const data = normalizeState(cloudState);
+        data = normalizeState(cloudState);
         writeLocalMonthData(data);
-        _currentData = data;
-        renderMatrix(data.matrix);
-        refreshAllUI(data);
-        return;
+      }else{
+        data = readLocalMonthData();
       }
 
-      const local = readLocalMonthData();
-      _currentData = local;
-      renderMatrix(local.matrix);
-      refreshAllUI(local);
+      const managerMatrix = await cloudReadManagerMatrix();
+
+      if(managerMatrix){
+        data.matrix = managerMatrix;
+      }else if(hasAssignedManager() && !canEditManagerMatrix()){
+        MATRIX_SOURCE = "assigned-manager-missing";
+      }else{
+        MATRIX_SOURCE = "personal";
+      }
+
+      _currentData = data;
+      renderMatrix(data.matrix);
+      refreshAllUI(data);
     }
 
-    // ====== Event wiring ======
     function saveMonthToursFromInputs(){
       const data = _currentData || readLocalMonthData();
+
       data.monthTours.owners = safeInt($("monthOwners").value);
       data.monthTours.goos = safeInt($("monthGoos").value);
       data.monthTours.renters = safeInt($("monthRenters").value);
@@ -1391,9 +1639,14 @@
       $(id).addEventListener("input", saveMonthToursFromInputs);
     });
 
-    // matrix edits
     $("payBody").addEventListener("input", (e) => {
+      if(MATRIX_LOCKED){
+        showToast("Matrix is controlled by your manager.");
+        return;
+      }
+
       const el = e.target;
+
       if(!(el instanceof HTMLInputElement)) return;
       if(!el.classList.contains("cellInput")) return;
 
@@ -1406,20 +1659,28 @@
       if(field === "tours") data.matrix[i].tours = safeInt(el.value);
       if(field === "rate") data.matrix[i].rate = safeInt(el.value);
 
-      saveDataAndSync(data);
+      saveMatrixAndSync(data);
       _currentData = data;
       refreshAllUI(data);
     });
 
     $("payBody").addEventListener("click", (e) => {
+      if(MATRIX_LOCKED){
+        showToast("Matrix is controlled by your manager.");
+        return;
+      }
+
       const btn = e.target?.closest?.("button[data-mdel]");
       if(!btn) return;
+
       const idx = safeInt(btn.getAttribute("data-mdel"));
 
       const data = _currentData || readLocalMonthData();
       data.matrix.splice(idx, 1);
 
-      saveDataAndSync(data);
+      data.matrix = normalizeMatrixRows(data.matrix);
+
+      saveMatrixAndSync(data);
       _currentData = data;
 
       renderMatrix(data.matrix);
@@ -1427,10 +1688,15 @@
     });
 
     $("btnAddPayRow").addEventListener("click", () => {
+      if(MATRIX_LOCKED){
+        showToast("Matrix is controlled by your manager.");
+        return;
+      }
+
       const data = _currentData || readLocalMonthData();
       data.matrix.push({ tours: 0, rate: 0 });
 
-      saveDataAndSync(data);
+      saveMatrixAndSync(data);
       _currentData = data;
 
       renderMatrix(data.matrix);
@@ -1438,20 +1704,25 @@
     });
 
     $("btnResetPay").addEventListener("click", () => {
+      if(MATRIX_LOCKED){
+        showToast("Matrix is controlled by your manager.");
+        return;
+      }
+
       const data = _currentData || readLocalMonthData();
       data.matrix = defaultMatrix();
 
-      saveDataAndSync(data);
+      saveMatrixAndSync(data);
       _currentData = data;
 
       renderMatrix(data.matrix);
       refreshAllUI(data);
     });
 
-    // points per tour edits
     ["ptsOwner","ptsGoo","ptsRenter"].forEach(id => {
       $(id).addEventListener("input", () => {
         const data = _currentData || readLocalMonthData();
+
         data.pointsPerTour.owner = safeInt($("ptsOwner").value);
         data.pointsPerTour.goo = safeInt($("ptsGoo").value);
         data.pointsPerTour.renter = safeInt($("ptsRenter").value);
@@ -1463,15 +1734,16 @@
       });
     });
 
-    // ====== Trip Points (YTD) — Supabase ONLY ======
     $("btnAddTripPoints").addEventListener("click", async () => {
       if(_addTripBusy) return;
+
       _addTripBusy = true;
       setAddBtnBusy(true);
 
       try{
         const data = _currentData || readLocalMonthData();
         const pts = currentMonthlyPoints(data);
+
         if(safeInt(pts.total) <= 0){
           showToast("No points to add.");
           return;
@@ -1482,6 +1754,7 @@
         _yearTripEntries.unshift({ id, date: todayISO(), points: safeInt(pts.total) });
 
         const ok = await cloudWriteTripYearNow(_yearTripEntries);
+
         if(!ok){
           _yearTripEntries = (_yearTripEntries || []).filter(e => e.id !== id);
           refreshAllUI(data);
@@ -1491,7 +1764,7 @@
 
         refreshAllUI(data);
         showToast("Points added.");
-      } finally{
+      }finally{
         window.setTimeout(() => {
           _addTripBusy = false;
           setAddBtnBusy(false);
@@ -1502,12 +1775,14 @@
     $("tripLogBody").addEventListener("click", (e) => {
       const btn = e.target?.closest?.("button[data-trm]");
       if(!btn) return;
+
       const id = btn.getAttribute("data-trm");
 
       _yearTripEntries = (_yearTripEntries || []).filter(x => x.id !== id);
       scheduleCloudWriteTripYear(_yearTripEntries);
 
       const data = _currentData || readLocalMonthData();
+
       refreshAllUI(data);
       showToast("Entry removed.");
     });
@@ -1517,27 +1792,15 @@
       scheduleCloudWriteTripYear(_yearTripEntries);
 
       const data = _currentData || readLocalMonthData();
+
       refreshAllUI(data);
       showToast("Trip log cleared.");
     });
 
-    // month change (cloud load)
     $("monthSelect").addEventListener("change", async () => {
       await loadAllForCurrentMonth();
       showToast("Month loaded.");
     });
-
-    function escapeHtml(s){
-      return String(s)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-    function escapeAttr(v){
-      return String(v ?? "").replaceAll('"',"&quot;");
-    }
 
     (async function init(){
       await requireAuthOrRedirect();
@@ -1545,12 +1808,15 @@
 
       const selected = loadSelectedSite();
       setBanner(selected);
+
       if(!selected) openSiteModal();
 
       setTab("matrix");
 
       if(selected){
         await loadAllForCurrentMonth();
+      }else{
+        paintMatrixAccessUI();
       }
     })();
   </script>
