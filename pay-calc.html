@@ -19,7 +19,6 @@
       box-sizing: border-box;
     }
 
-    /* ===== Matrix table: keep rows INLINE with headers ===== */
     body.tp-paycalc .tableWrap table{
       width: 100%;
       table-layout: fixed;
@@ -75,6 +74,79 @@
       text-align: right;
     }
 
+    body.tp-paycalc .managerSetupBar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:14px;
+      padding:12px 12px;
+      border-radius:16px;
+      border:1px solid rgba(15,23,42,.12);
+      background:rgba(255,255,255,.72);
+      box-shadow:0 10px 24px rgba(2,6,23,.06);
+    }
+
+    body.tp-paycalc .setupPill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(15,23,42,.10);
+      background:rgba(10,166,181,.10);
+      color:rgba(10,166,181,.98);
+      font-weight:1200;
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+
+    body.tp-paycalc .setupPill:before{
+      content:"";
+      width:9px;
+      height:9px;
+      border-radius:50%;
+      background:rgba(10,166,181,.95);
+      box-shadow:0 0 0 5px rgba(10,166,181,.14);
+      flex:0 0 auto;
+    }
+
+    body.tp-paycalc .setupPill.locked{
+      background:rgba(15,23,42,.07);
+      color:rgba(15,23,42,.58);
+    }
+
+    body.tp-paycalc .setupPill.locked:before{
+      background:rgba(15,23,42,.35);
+      box-shadow:0 0 0 5px rgba(15,23,42,.08);
+    }
+
+    body.tp-paycalc .setupText{
+      font-size:13px;
+      font-weight:900;
+      color:rgba(15,23,42,.62);
+      line-height:1.35;
+    }
+
+    body.tp-paycalc .lockedControls .cellInput,
+    body.tp-paycalc .lockedControls .iconX,
+    body.tp-paycalc .lockedControls #btnImportCsv,
+    body.tp-paycalc .lockedControls #btnAddPayRow,
+    body.tp-paycalc .lockedControls #btnResetPay{
+      opacity:.55;
+      pointer-events:none;
+    }
+
+    body.tp-paycalc .pointsLocked #ptsOwner,
+    body.tp-paycalc .pointsLocked #ptsGoo,
+    body.tp-paycalc .pointsLocked #ptsRenter{
+      opacity:.55;
+      pointer-events:none;
+    }
+
     @media (max-width: 520px){
       body.tp-paycalc .settingsBody{
         padding-left: 14px;
@@ -97,9 +169,7 @@
       body.tp-paycalc .tableWrap table{
         table-layout: fixed;
       }
-    }
 
-    @media (max-width: 520px){
       body.tp-paycalc #pointsPane .row{
         flex-wrap: wrap;
         gap: 12px;
@@ -120,9 +190,7 @@
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
       }
-    }
 
-    @media (max-width: 520px){
       body.tp-paycalc #matrixPane .tableWrap thead{
         display: table-header-group !important;
         visibility: visible !important;
@@ -132,21 +200,6 @@
         clip: auto !important;
         clip-path: none !important;
         position: static !important;
-      }
-
-      body.tp-paycalc #matrixPane .tableWrap thead tr{
-        display: table-row !important;
-      }
-
-      body.tp-paycalc #matrixPane .tableWrap thead th{
-        display: table-cell !important;
-      }
-    }
-
-    @media (max-width: 520px){
-      body.tp-paycalc #matrixPane .tableWrap{
-        padding-left: 14px;
-        padding-right: 14px;
       }
 
       body.tp-paycalc #matrixPane .tableWrap thead tr{
@@ -162,6 +215,8 @@
         font-size: 11px;
         letter-spacing: .08em;
         white-space: nowrap;
+        background: transparent !important;
+        border: 0 !important;
       }
 
       body.tp-paycalc #matrixPane .tableWrap tbody tr{
@@ -194,15 +249,6 @@
       body.tp-paycalc #matrixPane .tableWrap .iconX{
         width: 44px;
         height: 44px;
-      }
-
-      body.tp-paycalc #matrixPane .tableWrap thead tr{
-        background: transparent !important;
-      }
-
-      body.tp-paycalc #matrixPane .tableWrap thead th{
-        background: transparent !important;
-        border: 0 !important;
       }
 
       body.tp-paycalc #matrixPane .tableWrap thead th.colDel{
@@ -429,6 +475,11 @@
       </div>
 
       <div class="settingsBody">
+        <div class="managerSetupBar">
+          <span class="setupPill" id="setupPill">Personal Setup</span>
+          <span class="setupText" id="setupText">Loading setup access…</span>
+        </div>
+
         <div id="matrixPane">
           <div class="sectionCard">
             <div class="tableWrap">
@@ -573,6 +624,16 @@
     let SITETITLE = "";
     let AUTHUSERID = "";
 
+    let USERROLE = {
+      isManager: false,
+      managerUserId: null,
+      isActive: true
+    };
+
+    let PAY_CONFIG_SOURCE = "personal";
+    let PAY_CONFIG_MANAGER_ID = null;
+    let PAY_SETUP_LOCKED = false;
+
     async function requireAuthOrRedirect(){
       if(!sb) return goSignin();
 
@@ -584,8 +645,97 @@
       AUTHNAME = user.user_metadata?.first_name || "";
       AUTHEMP = getEmpFromEmail(user.email);
 
+      await loadUserRole();
+
       $("userName").textContent = AUTHNAME || "Signed In";
       $("userEmp").textContent = AUTHEMP ? `#${AUTHEMP}` : "";
+    }
+
+    function isAdminEmp(){
+      return String(AUTHEMP || "").trim() === "078195";
+    }
+
+    async function loadUserRole(){
+      USERROLE = {
+        isManager: false,
+        managerUserId: null,
+        isActive: true
+      };
+
+      if(!sb || !AUTHUSERID) return;
+
+      const { data, error } = await sb
+        .from("tp_user_roles")
+        .select("is_manager,manager_user_id,is_active")
+        .eq("user_id", AUTHUSERID)
+        .maybeSingle();
+
+      if(error){
+        console.warn("loadUserRole error:", error);
+        return;
+      }
+
+      if(data){
+        USERROLE = {
+          isManager: data.is_manager === true,
+          managerUserId: data.manager_user_id || null,
+          isActive: data.is_active !== false
+        };
+      }
+
+      if(isAdminEmp()){
+        USERROLE.isManager = true;
+      }
+    }
+
+    function hasAssignedManager(){
+      return !!USERROLE.managerUserId;
+    }
+
+    function canEditManagerPaySetup(){
+      return isAdminEmp() || USERROLE.isManager === true;
+    }
+
+    function paintPaySetupAccessUI(){
+      const pill = $("setupPill");
+      const text = $("setupText");
+      const matrixPane = $("matrixPane");
+      const pointsPane = $("pointsPane");
+
+      PAY_SETUP_LOCKED = hasAssignedManager() && !canEditManagerPaySetup();
+
+      if(matrixPane) matrixPane.classList.toggle("lockedControls", PAY_SETUP_LOCKED);
+      if(pointsPane) pointsPane.classList.toggle("pointsLocked", PAY_SETUP_LOCKED);
+
+      if(pill){
+        pill.classList.toggle("locked", PAY_SETUP_LOCKED);
+
+        if(PAY_SETUP_LOCKED){
+          pill.textContent = "Team Setup";
+        }else if(canEditManagerPaySetup()){
+          pill.textContent = "Manager Setup";
+        }else{
+          pill.textContent = "Personal Setup";
+        }
+      }
+
+      if(text){
+        if(PAY_SETUP_LOCKED){
+          text.textContent = "Matrix and point values are controlled by your assigned manager for this site/month.";
+        }else if(canEditManagerPaySetup()){
+          text.textContent = "Changes to Matrix and Points save to your manager setup and pass down to assigned marketers.";
+        }else{
+          text.textContent = "No manager is assigned. This account is using its personal setup.";
+        }
+      }
+
+      const lockedEls = document.querySelectorAll(
+        "#payBody input, #payBody button, #btnImportCsv, #btnAddPayRow, #btnResetPay, #ptsOwner, #ptsGoo, #ptsRenter"
+      );
+
+      lockedEls.forEach(el => {
+        el.disabled = PAY_SETUP_LOCKED;
+      });
     }
 
     async function signOut(){
@@ -720,6 +870,23 @@
       ];
     }
 
+    function normalizePointsPerTour(ppt){
+      return {
+        owner: safeInt(ppt?.owner ?? DEFAULT_PPTS.owner),
+        goo: safeInt(ppt?.goo ?? DEFAULT_PPTS.goo),
+        renter: safeInt(ppt?.renter ?? DEFAULT_PPTS.renter)
+      };
+    }
+
+    function normalizeMatrix(matrix){
+      const rows = Array.isArray(matrix) ? matrix : defaultMatrix();
+      const clean = rows.map(r => ({
+        tours: safeInt(r?.tours),
+        rate: safeInt(r?.rate)
+      }));
+      return clean.length ? clean : defaultMatrix();
+    }
+
     function defaultMonthData(){
       return {
         pointsPerTour: { ...DEFAULT_PPTS },
@@ -736,12 +903,7 @@
 
         const x = JSON.parse(raw);
 
-        const ppt = x?.pointsPerTour || {};
-        const pointsPerTour = {
-          owner: safeInt(ppt.owner ?? DEFAULT_PPTS.owner),
-          goo: safeInt(ppt.goo ?? DEFAULT_PPTS.goo),
-          renter: safeInt(ppt.renter ?? DEFAULT_PPTS.renter)
-        };
+        const pointsPerTour = normalizePointsPerTour(x?.pointsPerTour);
 
         const mt = x?.monthTours || {};
         const monthTours = {
@@ -756,10 +918,7 @@
           points: safeInt(e?.points)
         })) : [];
 
-        const matrix = Array.isArray(x?.matrix) ? x.matrix.map(r => ({
-          tours: safeInt(r?.tours),
-          rate: safeInt(r?.rate)
-        })) : defaultMatrix();
+        const matrix = normalizeMatrix(x?.matrix);
 
         return { pointsPerTour, monthTours, tripEntries, matrix };
       }catch(_){
@@ -950,35 +1109,42 @@
       }, 550);
     }
 
-    async function saveManagerMatrixIfAllowed(data){
+    let _managerConfigTimer = null;
+
+    function scheduleManagerPayConfigSave(data){
+      if(!canEditManagerPaySetup()) return;
       if(!sb || !AUTHUSERID || !SITEKEY || !monthKey()) return;
 
-      try{
-        const { error } = await sb.rpc("tp_save_manager_pay_matrix", {
+      const matrix = normalizeMatrix(data.matrix);
+      const pointsPerTour = normalizePointsPerTour(data.pointsPerTour);
+
+      window.clearTimeout(_managerConfigTimer);
+      _managerConfigTimer = window.setTimeout(async () => {
+        const { error } = await sb.rpc("tp_save_manager_pay_config", {
           p_site_key: SITEKEY,
           p_month_key: monthKey(),
-          p_matrix: data.matrix || []
+          p_matrix: matrix,
+          p_points_per_tour: pointsPerTour
         });
 
         if(error){
-          console.warn("tp_save_manager_pay_matrix skipped/error:", error);
+          console.warn("tp_save_manager_pay_config error:", error);
+          showToast("Manager setup save failed.");
+          return;
         }
-      }catch(err){
-        console.warn("manager matrix save failed:", err);
-      }
+
+        showToast("Manager setup saved.");
+      }, 500);
     }
 
-    function saveDataAndSync(data){
+    function saveDataAndSync(data, options = {}){
       writeLocalMonthData(data);
       scheduleCloudWrite(data);
       scheduleCloudWriteLatestSnapshot(data);
 
-      /*
-        If the signed-in account is a manager, this saves the matrix into
-        tp_manager_pay_matrices so assigned marketers can inherit it.
-        Regular marketers will be denied by the RPC and continue normally.
-      */
-      saveManagerMatrixIfAllowed(data);
+      if(options.saveManagerSetup === true){
+        scheduleManagerPayConfigSave(data);
+      }
     }
 
     let _yearTripEntries = [];
@@ -1076,35 +1242,53 @@
       }
     }
 
-    async function loadManagerMatrixIfAssigned(data){
-      if(!sb || !AUTHUSERID || !SITEKEY || !monthKey()) return data;
+    async function loadManagerPayConfig(data){
+      PAY_CONFIG_SOURCE = "personal";
+      PAY_CONFIG_MANAGER_ID = null;
+
+      if(!sb || !AUTHUSERID || !SITEKEY || !monthKey()){
+        paintPaySetupAccessUI();
+        return data;
+      }
 
       try{
-        const { data: rows, error } = await sb.rpc("tp_get_pay_matrix", {
+        const { data: rows, error } = await sb.rpc("tp_get_manager_pay_config", {
           p_site_key: SITEKEY,
           p_month_key: monthKey()
         });
 
         if(error){
-          console.warn("tp_get_pay_matrix error:", error);
+          console.warn("tp_get_manager_pay_config error:", error);
+          paintPaySetupAccessUI();
           return data;
         }
 
         const row = Array.isArray(rows) ? rows[0] : rows;
-        const matrix = row?.matrix;
 
-        if(Array.isArray(matrix) && matrix.length){
-          data.matrix = matrix.map(r => ({
-            tours: safeInt(r?.tours),
-            rate: safeInt(r?.rate)
-          }));
+        if(row){
+          PAY_CONFIG_SOURCE = row.source || "personal";
+          PAY_CONFIG_MANAGER_ID = row.manager_user_id || null;
 
-          showToast(row?.source === "manager" ? "Manager matrix loaded." : "Matrix loaded.");
+          if(Array.isArray(row.matrix) && row.matrix.length){
+            data.matrix = normalizeMatrix(row.matrix);
+          }
+
+          if(row.points_per_tour && typeof row.points_per_tour === "object"){
+            data.pointsPerTour = normalizePointsPerTour(row.points_per_tour);
+          }
+
+          if(row.source === "assigned-manager"){
+            showToast("Team setup loaded.");
+          }else if(row.source === "manager-self"){
+            showToast("Manager setup loaded.");
+          }
         }
 
+        paintPaySetupAccessUI();
         return data;
       }catch(err){
-        console.warn("manager matrix load failed:", err);
+        console.warn("manager pay config load failed:", err);
+        paintPaySetupAccessUI();
         return data;
       }
     }
@@ -1245,6 +1429,7 @@
 
       $("settingsOverlay").classList.add("show");
       setTab(openTab);
+      paintPaySetupAccessUI();
     }
 
     function closeMatrix(){
@@ -1268,6 +1453,8 @@
 
       $("matrixPane").classList.toggle("hidden", !isMatrix);
       $("pointsPane").classList.toggle("hidden", isMatrix);
+
+      paintPaySetupAccessUI();
     }
 
     $("tabMatrix").addEventListener("click", () => setTab("matrix"));
@@ -1296,6 +1483,8 @@
 
         body.appendChild(tr);
       });
+
+      paintPaySetupAccessUI();
     }
 
     function renderSelectedMonthMatrixPreview(matrix, totalTours){
@@ -1365,11 +1554,23 @@
       showToast("CSV exported.");
     });
 
-    $("btnImportCsv").addEventListener("click", () => $("csvFile").click());
+    $("btnImportCsv").addEventListener("click", () => {
+      if(PAY_SETUP_LOCKED){
+        showToast("Setup is controlled by your manager.");
+        return;
+      }
+      $("csvFile").click();
+    });
 
     $("csvFile").addEventListener("change", async (e) => {
       const file = e.target.files?.[0];
       if(!file) return;
+
+      if(PAY_SETUP_LOCKED){
+        $("csvFile").value = "";
+        showToast("Setup is controlled by your manager.");
+        return;
+      }
 
       const text = await file.text();
       const lines = text.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
@@ -1399,10 +1600,10 @@
       const data = (_currentData || readLocalMonthData());
 
       if(rows.length){
-        data.matrix = rows;
+        data.matrix = normalizeMatrix(rows);
       }
 
-      saveDataAndSync(data);
+      saveDataAndSync(data, { saveManagerSetup: true });
       _currentData = data;
 
       renderMatrix(data.matrix);
@@ -1490,6 +1691,7 @@
       $("pillTripPointsModal").textContent = num(tripPointsTotal);
       renderTripLog(_yearTripEntries);
 
+      paintPaySetupAccessUI();
       scheduleCloudWriteLatestSnapshot(data);
     }
 
@@ -1500,12 +1702,7 @@
 
       if(!x || typeof x !== "object") return base;
 
-      const ppt = x.pointsPerTour || {};
-      const pointsPerTour = {
-        owner: safeInt(ppt.owner ?? DEFAULT_PPTS.owner),
-        goo: safeInt(ppt.goo ?? DEFAULT_PPTS.goo),
-        renter: safeInt(ppt.renter ?? DEFAULT_PPTS.renter)
-      };
+      const pointsPerTour = normalizePointsPerTour(x.pointsPerTour);
 
       const mt = x.monthTours || {};
       const monthTours = {
@@ -1520,10 +1717,7 @@
         points: safeInt(e?.points)
       })) : [];
 
-      const matrix = Array.isArray(x.matrix) ? x.matrix.map(r => ({
-        tours: safeInt(r?.tours),
-        rate: safeInt(r?.rate)
-      })) : defaultMatrix();
+      const matrix = normalizeMatrix(x.matrix);
 
       return { pointsPerTour, monthTours, tripEntries, matrix };
     }
@@ -1535,35 +1729,21 @@
 
       const cloudState = await cloudRead();
 
+      let data = null;
+
       if(cloudState && typeof cloudState === "object"){
-        let data = normalizeState(cloudState);
-
-        /*
-          This keeps the marketer’s personal tours/points,
-          but overrides the matrix with their manager’s matrix
-          when they are assigned to a manager.
-        */
-        data = await loadManagerMatrixIfAssigned(data);
-
-        writeLocalMonthData(data);
-        _currentData = data;
-
-        renderMatrix(data.matrix);
-        refreshAllUI(data);
-        return;
+        data = normalizeState(cloudState);
+      }else{
+        data = readLocalMonthData();
       }
 
-      let local = readLocalMonthData();
+      data = await loadManagerPayConfig(data);
 
-      /*
-        This also covers marketers who do not have their own cloud row yet.
-      */
-      local = await loadManagerMatrixIfAssigned(local);
+      writeLocalMonthData(data);
+      _currentData = data;
 
-      _currentData = local;
-
-      renderMatrix(local.matrix);
-      refreshAllUI(local);
+      renderMatrix(data.matrix);
+      refreshAllUI(data);
     }
 
     function saveMonthToursFromInputs(){
@@ -1584,6 +1764,11 @@
     });
 
     $("payBody").addEventListener("input", (e) => {
+      if(PAY_SETUP_LOCKED){
+        showToast("Setup is controlled by your manager.");
+        return;
+      }
+
       const el = e.target;
 
       if(!(el instanceof HTMLInputElement)) return;
@@ -1604,13 +1789,18 @@
         data.matrix[i].rate = safeInt(el.value);
       }
 
-      saveDataAndSync(data);
+      saveDataAndSync(data, { saveManagerSetup: true });
       _currentData = data;
 
       refreshAllUI(data);
     });
 
     $("payBody").addEventListener("click", (e) => {
+      if(PAY_SETUP_LOCKED){
+        showToast("Setup is controlled by your manager.");
+        return;
+      }
+
       const btn = e.target?.closest?.("button[data-mdel]");
       if(!btn) return;
 
@@ -1618,8 +1808,9 @@
       const data = _currentData || readLocalMonthData();
 
       data.matrix.splice(idx, 1);
+      data.matrix = normalizeMatrix(data.matrix);
 
-      saveDataAndSync(data);
+      saveDataAndSync(data, { saveManagerSetup: true });
       _currentData = data;
 
       renderMatrix(data.matrix);
@@ -1627,11 +1818,16 @@
     });
 
     $("btnAddPayRow").addEventListener("click", () => {
+      if(PAY_SETUP_LOCKED){
+        showToast("Setup is controlled by your manager.");
+        return;
+      }
+
       const data = _currentData || readLocalMonthData();
 
       data.matrix.push({ tours: 0, rate: 0 });
 
-      saveDataAndSync(data);
+      saveDataAndSync(data, { saveManagerSetup: true });
       _currentData = data;
 
       renderMatrix(data.matrix);
@@ -1639,11 +1835,16 @@
     });
 
     $("btnResetPay").addEventListener("click", () => {
+      if(PAY_SETUP_LOCKED){
+        showToast("Setup is controlled by your manager.");
+        return;
+      }
+
       const data = _currentData || readLocalMonthData();
 
       data.matrix = defaultMatrix();
 
-      saveDataAndSync(data);
+      saveDataAndSync(data, { saveManagerSetup: true });
       _currentData = data;
 
       renderMatrix(data.matrix);
@@ -1652,13 +1853,18 @@
 
     ["ptsOwner","ptsGoo","ptsRenter"].forEach(id => {
       $(id).addEventListener("input", () => {
+        if(PAY_SETUP_LOCKED){
+          showToast("Points are controlled by your manager.");
+          return;
+        }
+
         const data = _currentData || readLocalMonthData();
 
         data.pointsPerTour.owner = safeInt($("ptsOwner").value);
         data.pointsPerTour.goo = safeInt($("ptsGoo").value);
         data.pointsPerTour.renter = safeInt($("ptsRenter").value);
 
-        saveDataAndSync(data);
+        saveDataAndSync(data, { saveManagerSetup: true });
         _currentData = data;
 
         refreshAllUI(data);
@@ -1767,6 +1973,8 @@
 
       if(selected){
         await loadAllForCurrentMonth();
+      }else{
+        paintPaySetupAccessUI();
       }
     })();
   </script>
