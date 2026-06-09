@@ -147,6 +147,20 @@
       pointer-events:none;
     }
 
+    body.tp-paycalc .legacyNote{
+      display:inline-flex;
+      align-items:center;
+      padding:5px 8px;
+      border-radius:999px;
+      background:rgba(15,23,42,.07);
+      color:rgba(15,23,42,.58);
+      font-size:11px;
+      font-weight:1100;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+
     @media (max-width: 520px){
       body.tp-paycalc .settingsBody{
         padding-left: 14px;
@@ -535,7 +549,7 @@
             </div>
 
             <p class="muted" style="margin-top:12px;">
-              These values affect Monthly Points and Trip Points calculations.
+              Point values apply across <b>all months</b> for the selected site when saved by a manager.
             </p>
 
             <div style="height:10px;"></div>
@@ -559,7 +573,7 @@
             </div>
 
             <p class="muted" style="margin-top:10px;">
-              Entries are created from <b>Summary → Add Points</b>.
+              New entries recalculate when point values change. Older legacy entries keep their original point total.
             </p>
           </div>
         </div>
@@ -721,9 +735,9 @@
 
       if(text){
         if(PAY_SETUP_LOCKED){
-          text.textContent = "Matrix and point values are controlled by your assigned manager for this site/month.";
+          text.textContent = "Matrix and point values are controlled by your assigned manager for this site.";
         }else if(canEditManagerPaySetup()){
-          text.textContent = "Changes to Matrix and Points save to your manager setup and pass down to assigned marketers.";
+          text.textContent = "Matrix saves by month. Points save across all months for this selected site.";
         }else{
           text.textContent = "No manager is assigned. This account is using its personal setup.";
         }
@@ -915,7 +929,9 @@
         const tripEntries = Array.isArray(x?.tripEntries) ? x.tripEntries.map(e => ({
           id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
           date: String(e?.date ?? ""),
-          points: safeInt(e?.points)
+          points: safeInt(e?.points),
+          mix: normalizeTourMix(e?.mix || null),
+          legacy: !e?.mix
         })) : [];
 
         const matrix = normalizeMatrix(x?.matrix);
@@ -1025,14 +1041,54 @@
       return row ? safeInt(row.rate) : null;
     }
 
-    function currentMonthlyPoints(data){
-      const ownersTours = safeInt(data.monthTours.owners);
-      const goosTours = safeInt(data.monthTours.goos);
-      const rentersTours = safeInt(data.monthTours.renters);
+    function normalizeTourMix(mix){
+      if(!mix || typeof mix !== "object") return null;
+      return {
+        owners: safeInt(mix.owners),
+        goos: safeInt(mix.goos),
+        renters: safeInt(mix.renters)
+      };
+    }
 
-      const ownersPts = ownersTours * safeInt(data.pointsPerTour.owner);
-      const goosPts = goosTours * safeInt(data.pointsPerTour.goo);
-      const rentersPts = rentersTours * safeInt(data.pointsPerTour.renter);
+    function currentTourMix(data){
+      return {
+        owners: safeInt(data.monthTours.owners),
+        goos: safeInt(data.monthTours.goos),
+        renters: safeInt(data.monthTours.renters)
+      };
+    }
+
+    function pointsFromMix(mix, pointsPerTour){
+      const m = normalizeTourMix(mix);
+      const ppt = normalizePointsPerTour(pointsPerTour);
+
+      if(!m) return 0;
+
+      return (
+        safeInt(m.owners) * safeInt(ppt.owner) +
+        safeInt(m.goos) * safeInt(ppt.goo) +
+        safeInt(m.renters) * safeInt(ppt.renter)
+      );
+    }
+
+    function tripEntryPoints(entry, pointsPerTour){
+      if(entry?.mix){
+        return pointsFromMix(entry.mix, pointsPerTour);
+      }
+      return safeInt(entry?.points);
+    }
+
+    function tripPointsTotal(entries, pointsPerTour){
+      return (entries || []).reduce((sum, e) => sum + tripEntryPoints(e, pointsPerTour), 0);
+    }
+
+    function currentMonthlyPoints(data){
+      const mix = currentTourMix(data);
+      const ppt = normalizePointsPerTour(data.pointsPerTour);
+
+      const ownersPts = safeInt(mix.owners) * safeInt(ppt.owner);
+      const goosPts = safeInt(mix.goos) * safeInt(ppt.goo);
+      const rentersPts = safeInt(mix.renters) * safeInt(ppt.renter);
 
       return {
         ownersPts,
@@ -1059,7 +1115,7 @@
       const pts = currentMonthlyPoints(data);
       const monthlyPointsTotal = safeInt(pts.total);
 
-      const tripPointsYtd = (_yearTripEntries || []).reduce((sum, e) => sum + safeInt(e.points), 0);
+      const tripPointsYtd = tripPointsTotal(_yearTripEntries, data.pointsPerTour);
       const lastTripDate = (_yearTripEntries || []).length ? String(_yearTripEntries[0].date || "") : "";
 
       return {
@@ -1110,8 +1166,9 @@
     }
 
     let _managerConfigTimer = null;
+    let _managerSitePointsTimer = null;
 
-    function scheduleManagerPayConfigSave(data){
+    function scheduleManagerMatrixSave(data){
       if(!canEditManagerPaySetup()) return;
       if(!sb || !AUTHUSERID || !SITEKEY || !monthKey()) return;
 
@@ -1129,11 +1186,34 @@
 
         if(error){
           console.warn("tp_save_manager_pay_config error:", error);
-          showToast("Manager setup save failed.");
+          showToast("Manager matrix save failed.");
           return;
         }
 
-        showToast("Manager setup saved.");
+        showToast("Manager matrix saved.");
+      }, 500);
+    }
+
+    function scheduleManagerSitePointsSave(data){
+      if(!canEditManagerPaySetup()) return;
+      if(!sb || !AUTHUSERID || !SITEKEY) return;
+
+      const pointsPerTour = normalizePointsPerTour(data.pointsPerTour);
+
+      window.clearTimeout(_managerSitePointsTimer);
+      _managerSitePointsTimer = window.setTimeout(async () => {
+        const { error } = await sb.rpc("tp_save_manager_site_points", {
+          p_site_key: SITEKEY,
+          p_points_per_tour: pointsPerTour
+        });
+
+        if(error){
+          console.warn("tp_save_manager_site_points error:", error);
+          showToast("Site points save failed.");
+          return;
+        }
+
+        showToast("Site points saved across all months.");
       }, 500);
     }
 
@@ -1142,8 +1222,12 @@
       scheduleCloudWrite(data);
       scheduleCloudWriteLatestSnapshot(data);
 
-      if(options.saveManagerSetup === true){
-        scheduleManagerPayConfigSave(data);
+      if(options.saveManagerMatrix === true){
+        scheduleManagerMatrixSave(data);
+      }
+
+      if(options.saveSitePoints === true){
+        scheduleManagerSitePointsSave(data);
       }
     }
 
@@ -1170,11 +1254,16 @@
     function normalizeTripEntries(arr){
       if(!Array.isArray(arr)) return [];
 
-      return arr.map(e => ({
-        id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
-        date: String(e?.date ?? ""),
-        points: safeInt(e?.points)
-      }));
+      return arr.map(e => {
+        const mix = normalizeTourMix(e?.mix || null);
+        return {
+          id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
+          date: String(e?.date ?? ""),
+          points: safeInt(e?.points),
+          mix,
+          legacy: !mix
+        };
+      });
     }
 
     async function cloudReadTripYear(){
@@ -1242,14 +1331,8 @@
       }
     }
 
-    async function loadManagerPayConfig(data){
-      PAY_CONFIG_SOURCE = "personal";
-      PAY_CONFIG_MANAGER_ID = null;
-
-      if(!sb || !AUTHUSERID || !SITEKEY || !monthKey()){
-        paintPaySetupAccessUI();
-        return data;
-      }
+    async function loadMonthlyManagerMatrix(data){
+      if(!sb || !AUTHUSERID || !SITEKEY || !monthKey()) return data;
 
       try{
         const { data: rows, error } = await sb.rpc("tp_get_manager_pay_config", {
@@ -1259,7 +1342,6 @@
 
         if(error){
           console.warn("tp_get_manager_pay_config error:", error);
-          paintPaySetupAccessUI();
           return data;
         }
 
@@ -1272,25 +1354,58 @@
           if(Array.isArray(row.matrix) && row.matrix.length){
             data.matrix = normalizeMatrix(row.matrix);
           }
+        }
 
-          if(row.points_per_tour && typeof row.points_per_tour === "object"){
-            data.pointsPerTour = normalizePointsPerTour(row.points_per_tour);
-          }
+        return data;
+      }catch(err){
+        console.warn("monthly manager matrix load failed:", err);
+        return data;
+      }
+    }
+
+    async function loadSiteWideManagerPoints(data){
+      if(!sb || !AUTHUSERID || !SITEKEY) return data;
+
+      try{
+        const { data: rows, error } = await sb.rpc("tp_get_manager_site_points", {
+          p_site_key: SITEKEY
+        });
+
+        if(error){
+          console.warn("tp_get_manager_site_points error:", error);
+          return data;
+        }
+
+        const row = Array.isArray(rows) ? rows[0] : rows;
+
+        if(row && row.points_per_tour && typeof row.points_per_tour === "object"){
+          PAY_CONFIG_SOURCE = row.source || PAY_CONFIG_SOURCE;
+          PAY_CONFIG_MANAGER_ID = row.manager_user_id || PAY_CONFIG_MANAGER_ID;
+          data.pointsPerTour = normalizePointsPerTour(row.points_per_tour);
 
           if(row.source === "assigned-manager"){
-            showToast("Team setup loaded.");
+            showToast("Team points loaded.");
           }else if(row.source === "manager-self"){
-            showToast("Manager setup loaded.");
+            showToast("Site points loaded.");
           }
         }
 
-        paintPaySetupAccessUI();
         return data;
       }catch(err){
-        console.warn("manager pay config load failed:", err);
-        paintPaySetupAccessUI();
+        console.warn("site-wide manager points load failed:", err);
         return data;
       }
+    }
+
+    async function loadManagerPaySetup(data){
+      PAY_CONFIG_SOURCE = "personal";
+      PAY_CONFIG_MANAGER_ID = null;
+
+      data = await loadMonthlyManagerMatrix(data);
+      data = await loadSiteWideManagerPoints(data);
+
+      paintPaySetupAccessUI();
+      return data;
     }
 
     function openSiteModal(){
@@ -1603,7 +1718,7 @@
         data.matrix = normalizeMatrix(rows);
       }
 
-      saveDataAndSync(data, { saveManagerSetup: true });
+      saveDataAndSync(data, { saveManagerMatrix: true });
       _currentData = data;
 
       renderMatrix(data.matrix);
@@ -1625,16 +1740,22 @@
       });
     }
 
-    function renderTripLog(entries){
+    function renderTripLog(entries, pointsPerTour){
       const body = $("tripLogBody");
       body.innerHTML = "";
 
       (entries || []).forEach((e) => {
+        const points = tripEntryPoints(e, pointsPerTour);
+        const legacy = !e?.mix;
+
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
-          <td style="font-weight:950;">${escapeHtml(formatDatePretty(e.date))}</td>
-          <td style="font-weight:1100;">${escapeHtml(num(e.points))}</td>
+          <td style="font-weight:950;">
+            ${escapeHtml(formatDatePretty(e.date))}
+            ${legacy ? `<span class="legacyNote" title="This older entry keeps its original total because it was saved before tour-mix tracking.">Legacy</span>` : ``}
+          </td>
+          <td style="font-weight:1100;">${escapeHtml(num(points))}</td>
           <td><button class="iconBtn" type="button" data-trm="${escapeAttr(e.id)}">Remove</button></td>
         `;
 
@@ -1655,7 +1776,7 @@
       const pts = currentMonthlyPoints(data);
       const monthlyPointsTotal = pts.total;
 
-      const tripPointsTotal = (_yearTripEntries || []).reduce((sum, e) => sum + safeInt(e.points), 0);
+      const tripPoints = tripPointsTotal(_yearTripEntries, data.pointsPerTour);
       const lastAdded = (_yearTripEntries || []).length ? _yearTripEntries[0].date : null;
 
       const rate = findRateForTours(data.matrix, totalTours);
@@ -1666,7 +1787,7 @@
 
       $("pillTotalTours").textContent = String(totalTours);
       $("pillRate").textContent = (rate === null) ? "$—" : money(rate);
-      $("pillTripPoints").textContent = num(tripPointsTotal);
+      $("pillTripPoints").textContent = num(tripPoints);
 
       if($("previewRate")){
         $("previewRate").textContent = (rate === null) ? "$—" : money(rate);
@@ -1681,15 +1802,15 @@
       $("sumToursPay").textContent = money(toursPay);
       $("sumMonthlyPoints").textContent = num(monthlyPointsTotal);
       $("sumPointsBreakdown").textContent = `Points — Owners: ${num(pts.ownersPts)} • GOO’s: ${num(pts.goosPts)} • Renters: ${num(pts.rentersPts)}`;
-      $("sumTripPoints").textContent = num(tripPointsTotal);
+      $("sumTripPoints").textContent = num(tripPoints);
       $("sumLastAdded").textContent = lastAdded ? `Last added: ${formatDatePretty(lastAdded)}` : "Last added: —";
 
       $("ptsOwner").value = String(data.pointsPerTour.owner);
       $("ptsGoo").value = String(data.pointsPerTour.goo);
       $("ptsRenter").value = String(data.pointsPerTour.renter);
 
-      $("pillTripPointsModal").textContent = num(tripPointsTotal);
-      renderTripLog(_yearTripEntries);
+      $("pillTripPointsModal").textContent = num(tripPoints);
+      renderTripLog(_yearTripEntries, data.pointsPerTour);
 
       paintPaySetupAccessUI();
       scheduleCloudWriteLatestSnapshot(data);
@@ -1711,11 +1832,7 @@
         renters: safeInt(mt.renters)
       };
 
-      const tripEntries = Array.isArray(x.tripEntries) ? x.tripEntries.map(e => ({
-        id: String(e?.id ?? (crypto?.randomUUID ? crypto.randomUUID() : Date.now() + Math.random().toString(16).slice(2))),
-        date: String(e?.date ?? ""),
-        points: safeInt(e?.points)
-      })) : [];
+      const tripEntries = Array.isArray(x.tripEntries) ? normalizeTripEntries(x.tripEntries) : [];
 
       const matrix = normalizeMatrix(x.matrix);
 
@@ -1737,7 +1854,7 @@
         data = readLocalMonthData();
       }
 
-      data = await loadManagerPayConfig(data);
+      data = await loadManagerPaySetup(data);
 
       writeLocalMonthData(data);
       _currentData = data;
@@ -1789,7 +1906,7 @@
         data.matrix[i].rate = safeInt(el.value);
       }
 
-      saveDataAndSync(data, { saveManagerSetup: true });
+      saveDataAndSync(data, { saveManagerMatrix: true });
       _currentData = data;
 
       refreshAllUI(data);
@@ -1810,7 +1927,7 @@
       data.matrix.splice(idx, 1);
       data.matrix = normalizeMatrix(data.matrix);
 
-      saveDataAndSync(data, { saveManagerSetup: true });
+      saveDataAndSync(data, { saveManagerMatrix: true });
       _currentData = data;
 
       renderMatrix(data.matrix);
@@ -1827,7 +1944,7 @@
 
       data.matrix.push({ tours: 0, rate: 0 });
 
-      saveDataAndSync(data, { saveManagerSetup: true });
+      saveDataAndSync(data, { saveManagerMatrix: true });
       _currentData = data;
 
       renderMatrix(data.matrix);
@@ -1844,7 +1961,7 @@
 
       data.matrix = defaultMatrix();
 
-      saveDataAndSync(data, { saveManagerSetup: true });
+      saveDataAndSync(data, { saveManagerMatrix: true });
       _currentData = data;
 
       renderMatrix(data.matrix);
@@ -1864,7 +1981,7 @@
         data.pointsPerTour.goo = safeInt($("ptsGoo").value);
         data.pointsPerTour.renter = safeInt($("ptsRenter").value);
 
-        saveDataAndSync(data, { saveManagerSetup: true });
+        saveDataAndSync(data, { saveSitePoints: true });
         _currentData = data;
 
         refreshAllUI(data);
@@ -1887,12 +2004,15 @@
         }
 
         const id = (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2));
+        const mix = currentTourMix(data);
 
         _yearTripEntries = Array.isArray(_yearTripEntries) ? _yearTripEntries : [];
         _yearTripEntries.unshift({
           id,
           date: todayISO(),
-          points: safeInt(pts.total)
+          points: safeInt(pts.total),
+          mix,
+          legacy: false
         });
 
         const ok = await cloudWriteTripYearNow(_yearTripEntries);
