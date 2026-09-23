@@ -185,8 +185,57 @@
       box-shadow:0 12px 28px rgba(2,6,23,.07);
     }
 
-    body.tp-eod .savedSummary{
+    body.tp-eod .breakdownCard{
       margin-top:16px;
+      display:none;
+      border:1px solid rgba(15,23,42,.11);
+      border-radius:18px;
+      overflow:hidden;
+      background:rgba(255,255,255,.88);
+      text-align:left;
+    }
+
+    body.tp-eod .breakdownCard.show{ display:block; }
+
+    body.tp-eod .breakdownHeader,
+    body.tp-eod .breakdownRow{
+      display:grid;
+      grid-template-columns:1fr 92px 92px;
+      gap:10px;
+      align-items:center;
+      padding:11px 14px;
+    }
+
+    body.tp-eod .breakdownHeader{
+      background:rgba(10,166,181,.08);
+      border-bottom:1px solid rgba(15,23,42,.09);
+      color:rgba(15,23,42,.54);
+      font-size:10px;
+      font-weight:1100;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+    }
+
+    body.tp-eod .breakdownRow{
+      border-bottom:1px solid rgba(15,23,42,.07);
+      font-size:13px;
+    }
+
+    body.tp-eod .breakdownRow:last-child{ border-bottom:none; }
+
+    body.tp-eod .breakdownType{
+      font-weight:1050;
+      color:rgba(15,23,42,.88);
+    }
+
+    body.tp-eod .breakdownNumber{
+      text-align:right;
+      font-weight:1100;
+      color:rgba(15,23,42,.86);
+    }
+
+    body.tp-eod .savedSummary{
+      margin-top:12px;
       display:none;
       grid-template-columns:repeat(3,minmax(0,1fr));
       gap:10px;
@@ -215,6 +264,47 @@
       font-size:24px;
       font-weight:1200;
       color:rgba(15,23,42,.92);
+    }
+
+    body.tp-eod .pageActions{
+      margin-top:16px;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    body.tp-eod .pageActions.show{ display:flex; }
+
+    body.tp-eod .editBtn,
+    body.tp-eod .submitPageBtn{
+      appearance:none;
+      border-radius:16px;
+      padding:13px 18px;
+      min-width:180px;
+      cursor:pointer;
+      font-weight:1100;
+      font-size:13px;
+    }
+
+    body.tp-eod .editBtn{
+      border:1px solid rgba(15,23,42,.13);
+      background:rgba(15,23,42,.04);
+      color:rgba(15,23,42,.78);
+    }
+
+    body.tp-eod .submitPageBtn{
+      border:1px solid rgba(10,166,181,.30);
+      background:linear-gradient(135deg,rgba(10,166,181,.22),rgba(17,125,140,.14));
+      color:rgba(15,23,42,.90);
+      box-shadow:0 12px 28px rgba(2,6,23,.07);
+    }
+
+    body.tp-eod .submitPageBtn:disabled,
+    body.tp-eod .editBtn:disabled{
+      opacity:.55;
+      cursor:not-allowed;
     }
 
     body.tp-eod .notice{
@@ -432,59 +522,6 @@
       cursor:not-allowed;
     }
 
-    body.tp-eod .reviewList{
-      margin-top:16px;
-      display:grid;
-      gap:8px;
-      text-align:left;
-    }
-
-    body.tp-eod .reviewRow{
-      display:grid;
-      grid-template-columns:1fr auto auto;
-      gap:12px;
-      align-items:center;
-      padding:10px 12px;
-      border:1px solid rgba(15,23,42,.09);
-      border-radius:14px;
-      background:rgba(255,255,255,.80);
-      font-size:13px;
-    }
-
-    body.tp-eod .reviewType{ font-weight:1050; }
-
-    body.tp-eod .reviewMetric{
-      text-align:right;
-      color:rgba(15,23,42,.62);
-      min-width:72px;
-    }
-
-    body.tp-eod .reviewTotals{
-      margin-top:12px;
-      padding:13px;
-      border-radius:15px;
-      background:rgba(10,166,181,.09);
-      border:1px solid rgba(10,166,181,.15);
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:8px;
-      text-align:center;
-    }
-
-    body.tp-eod .reviewTotals b{
-      display:block;
-      font-size:20px;
-      color:rgba(15,23,42,.92);
-    }
-
-    body.tp-eod .reviewTotals span{
-      font-size:10px;
-      font-weight:1000;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      color:rgba(15,23,42,.50);
-    }
-
     @media (max-width:700px){
       body.tp-eod .contextGrid{ grid-template-columns:1fr; }
       body.tp-eod .savedSummary{ grid-template-columns:repeat(3,1fr); }
@@ -500,6 +537,19 @@
       }
 
       body.tp-eod .launchBtn{
+        width:100%;
+        min-width:0;
+      }
+
+      body.tp-eod .breakdownHeader,
+      body.tp-eod .breakdownRow{
+        grid-template-columns:1fr 70px 70px;
+        padding-left:12px;
+        padding-right:12px;
+      }
+
+      body.tp-eod .editBtn,
+      body.tp-eod .submitPageBtn{
         width:100%;
         min-width:0;
       }
@@ -527,14 +577,6 @@
         bottom:0;
         background:rgba(255,255,255,.96);
         padding-bottom:2px;
-      }
-
-      body.tp-eod .reviewRow{
-        grid-template-columns:1fr auto;
-      }
-
-      body.tp-eod .reviewMetric:last-child{
-        grid-column:2;
       }
 
       body.tp-eod input[type="number"]::-webkit-outer-spin-button,
@@ -578,7 +620,7 @@
         <div class="eodHeroTop">
           <div>
             <h1>End of Day Tracker</h1>
-            <p>A quick guided check-in. You’ll answer one question at a time, then review everything before submitting.</p>
+            <p>A quick guided check-in. You’ll answer one question at a time, then review the full breakdown on this page.</p>
           </div>
           <span class="statusPill" id="syncStatus">Not submitted</span>
         </div>
@@ -606,6 +648,44 @@
           <h2 id="launchTitle">Ready to finish your day?</h2>
           <p id="launchText">TourPulse will walk you through VIP, GA, GOO, RCI, and Renter one question at a time.</p>
 
+          <div class="breakdownCard" id="breakdownCard">
+            <div class="breakdownHeader">
+              <div>Arrival Type</div>
+              <div style="text-align:right;">Seen</div>
+              <div style="text-align:right;">Booked</div>
+            </div>
+
+            <div class="breakdownRow">
+              <div class="breakdownType">VIP</div>
+              <div class="breakdownNumber" id="bdVipSeen">0</div>
+              <div class="breakdownNumber" id="bdVipBooked">0</div>
+            </div>
+
+            <div class="breakdownRow">
+              <div class="breakdownType">GA</div>
+              <div class="breakdownNumber" id="bdGaSeen">0</div>
+              <div class="breakdownNumber" id="bdGaBooked">0</div>
+            </div>
+
+            <div class="breakdownRow">
+              <div class="breakdownType">GOO</div>
+              <div class="breakdownNumber" id="bdGooSeen">0</div>
+              <div class="breakdownNumber" id="bdGooBooked">0</div>
+            </div>
+
+            <div class="breakdownRow">
+              <div class="breakdownType">RCI</div>
+              <div class="breakdownNumber" id="bdRciSeen">0</div>
+              <div class="breakdownNumber" id="bdRciBooked">0</div>
+            </div>
+
+            <div class="breakdownRow">
+              <div class="breakdownType">Renter</div>
+              <div class="breakdownNumber" id="bdRenterSeen">0</div>
+              <div class="breakdownNumber" id="bdRenterBooked">0</div>
+            </div>
+          </div>
+
           <div class="savedSummary" id="savedSummary">
             <div class="sumBox">
               <div class="sumK">Arrivals Seen</div>
@@ -622,6 +702,11 @@
           </div>
 
           <button class="launchBtn" type="button" id="btnStart">Start End of Day</button>
+
+          <div class="pageActions" id="pageActions">
+            <button class="editBtn" type="button" id="btnEditResponses">Edit Responses</button>
+            <button class="submitPageBtn" type="button" id="btnSubmitPage">Submit End of Day</button>
+          </div>
         </div>
 
         <div class="notice" id="notice"></div>
@@ -694,6 +779,8 @@
     let ACTIVE_CONFIG = null;
     let IS_SUBMITTING = false;
     let HAS_EXISTING = false;
+    let HAS_COMPLETED_FORM = false;
+    let IS_DIRTY = false;
     let CURRENT_STEP = 0;
 
     const VALUES = {
@@ -788,24 +875,46 @@
 
     function refreshSavedSummary(){
       const t = totals();
+      const showBreakdown = HAS_EXISTING || HAS_COMPLETED_FORM;
+
+      $("bdVipSeen").textContent = String(VALUES.vip.seen);
+      $("bdVipBooked").textContent = String(VALUES.vip.booked);
+
+      $("bdGaSeen").textContent = String(VALUES.ga.seen);
+      $("bdGaBooked").textContent = String(VALUES.ga.booked);
+
+      $("bdGooSeen").textContent = String(VALUES.goo.seen);
+      $("bdGooBooked").textContent = String(VALUES.goo.booked);
+
+      $("bdRciSeen").textContent = String(VALUES.rci.seen);
+      $("bdRciBooked").textContent = String(VALUES.rci.booked);
+
+      $("bdRenterSeen").textContent = String(VALUES.renter.seen);
+      $("bdRenterBooked").textContent = String(VALUES.renter.booked);
 
       $("savedSeen").textContent = String(t.seen);
       $("savedBooked").textContent = String(t.booked);
       $("savedConversion").textContent = `${(t.conversion * 100).toFixed(t.seen ? 1 : 0)}%`;
 
-      $("savedSummary").classList.toggle("show", HAS_EXISTING);
+      $("breakdownCard").classList.toggle("show", showBreakdown);
+      $("savedSummary").classList.toggle("show", showBreakdown);
+      $("pageActions").classList.toggle("show", showBreakdown);
+      $("btnStart").style.display = showBreakdown ? "none" : "";
 
-      $("launchTitle").textContent = HAS_EXISTING
-        ? "Your End of Day is saved."
-        : "Ready to finish your day?";
-
-      $("launchText").textContent = HAS_EXISTING
-        ? "You can reopen the guided form to review or update today's numbers."
-        : "TourPulse will walk you through VIP, GA, GOO, RCI, and Renter one question at a time.";
-
-      $("btnStart").textContent = HAS_EXISTING
-        ? "Review / Update End of Day"
-        : "Start End of Day";
+      if(HAS_EXISTING && !IS_DIRTY){
+        $("launchTitle").textContent = "Your End of Day is saved.";
+        $("launchText").textContent = "Here is your full arrival breakdown for this date.";
+        $("btnSubmitPage").style.display = "none";
+      }else if(showBreakdown){
+        $("launchTitle").textContent = HAS_EXISTING ? "Review your updates." : "Review your End of Day.";
+        $("launchText").textContent = "Check the breakdown below. Edit anything you need, then submit from this page.";
+        $("btnSubmitPage").style.display = "";
+        $("btnSubmitPage").textContent = HAS_EXISTING ? "Submit Updates" : "Submit End of Day";
+      }else{
+        $("launchTitle").textContent = "Ready to finish your day?";
+        $("launchText").textContent = "TourPulse will walk you through VIP, GA, GOO, RCI, and Renter one question at a time.";
+        $("btnSubmitPage").style.display = "none";
+      }
     }
 
     function setStatus(status, errorText = ""){
@@ -902,6 +1011,8 @@
       showNotice("");
       resetValues();
       HAS_EXISTING = false;
+      HAS_COMPLETED_FORM = false;
+      IS_DIRTY = false;
 
       const reportDate = $("reportDate").value || localDateISO();
 
@@ -921,6 +1032,8 @@
 
       if(row){
         HAS_EXISTING = true;
+        HAS_COMPLETED_FORM = true;
+        IS_DIRTY = false;
 
         VALUES.vip.seen = safeInt(row.vip_seen);
         VALUES.vip.booked = safeInt(row.vip_booked);
@@ -990,26 +1103,16 @@
     }
 
     function renderWizardStep(){
-      const onReview = CURRENT_STEP >= QUESTIONS.length;
-
       $("wizardError").textContent = "";
       $("btnWizardBack").disabled = CURRENT_STEP === 0 || IS_SUBMITTING;
       $("wizardClose").disabled = IS_SUBMITTING;
 
-      const progress = onReview
-        ? 100
-        : ((CURRENT_STEP + 1) / QUESTIONS.length) * 100;
+      const q = QUESTIONS[CURRENT_STEP];
+      const progress = ((CURRENT_STEP + 1) / QUESTIONS.length) * 100;
 
       $("progressFill").style.width = `${progress}%`;
-
-      if(onReview){
-        renderReviewStep();
-        return;
-      }
-
-      const q = QUESTIONS[CURRENT_STEP];
-
       $("wizardStepLabel").textContent = `Question ${CURRENT_STEP + 1} of ${QUESTIONS.length}`;
+
       $("arrivalTag").style.display = "inline-flex";
       $("arrivalTag").textContent = q.label;
       $("wizardQuestion").textContent = q.text;
@@ -1019,7 +1122,7 @@
       $("wizardInput").value = String(safeInt(VALUES[q.type][q.field]));
 
       $("btnWizardNext").textContent =
-        CURRENT_STEP === QUESTIONS.length - 1 ? "Review" : "Next";
+        CURRENT_STEP === QUESTIONS.length - 1 ? "Finish" : "Next";
 
       $("btnWizardNext").disabled = IS_SUBMITTING;
 
@@ -1029,78 +1132,28 @@
       }, 40);
     }
 
-    function renderReviewStep(){
-      const t = totals();
-
-      $("wizardStepLabel").textContent = "Review";
-      $("arrivalTag").style.display = "none";
-      $("wizardQuestion").textContent = "Does everything look right?";
-      $("wizardHint").textContent = "Review your numbers before submitting.";
-
-      $("wizardInputWrap").style.display = "none";
-
-      const rows = [
-        ["VIP", VALUES.vip],
-        ["GA", VALUES.ga],
-        ["GOO", VALUES.goo],
-        ["RCI", VALUES.rci],
-        ["Renter", VALUES.renter]
-      ];
-
-      const reviewHtml = `
-        <div class="reviewList">
-          ${rows.map(([label,v]) => `
-            <div class="reviewRow">
-              <div class="reviewType">${label}</div>
-              <div class="reviewMetric">Seen <b>${safeInt(v.seen)}</b></div>
-              <div class="reviewMetric">Booked <b>${safeInt(v.booked)}</b></div>
-            </div>
-          `).join("")}
-        </div>
-
-        <div class="reviewTotals">
-          <div><b>${t.seen}</b><span>Seen</span></div>
-          <div><b>${t.booked}</b><span>Booked</span></div>
-          <div><b>${(t.conversion * 100).toFixed(t.seen ? 1 : 0)}%</b><span>Conversion</span></div>
-        </div>
-      `;
-
-      $("wizardHint").insertAdjacentHTML("afterend", `<div id="reviewMount">${reviewHtml}</div>`);
-
-      const oldMounts = document.querySelectorAll("#reviewMount");
-      if(oldMounts.length > 1){
-        for(let i = 0; i < oldMounts.length - 1; i++){
-          oldMounts[i].remove();
-        }
-      }
-
-      $("btnWizardNext").textContent = IS_SUBMITTING ? "Saving…" : "Submit End of Day";
-      $("btnWizardNext").disabled = IS_SUBMITTING;
-    }
-
-    function cleanupReviewMount(){
-      document.querySelector("#reviewMount")?.remove();
-    }
-
     async function wizardNext(){
       if(IS_SUBMITTING) return;
 
-      if(CURRENT_STEP < QUESTIONS.length){
-        if(!saveCurrentQuestion()) return;
+      if(!saveCurrentQuestion()) return;
 
-        cleanupReviewMount();
-        CURRENT_STEP += 1;
-        renderWizardStep();
+      if(CURRENT_STEP === QUESTIONS.length - 1){
+        HAS_COMPLETED_FORM = true;
+        IS_DIRTY = true;
+
+        $("wizardOverlay").classList.remove("show");
+        refreshSavedSummary();
+        showNotice("Review the full breakdown below, then submit when everything looks right.");
+        showToast("Responses ready to review.");
         return;
       }
 
-      await submitEod();
+      CURRENT_STEP += 1;
+      renderWizardStep();
     }
 
     function wizardBack(){
       if(IS_SUBMITTING || CURRENT_STEP <= 0) return;
-
-      cleanupReviewMount();
 
       CURRENT_STEP -= 1;
       renderWizardStep();
@@ -1111,10 +1164,9 @@
 
       IS_SUBMITTING = true;
 
-      $("btnWizardNext").disabled = true;
-      $("btnWizardBack").disabled = true;
-      $("wizardClose").disabled = true;
-      $("btnWizardNext").textContent = "Saving…";
+      $("btnSubmitPage").disabled = true;
+      $("btnEditResponses").disabled = true;
+      $("btnSubmitPage").textContent = "Saving…";
       showNotice("");
 
       try{
@@ -1162,10 +1214,9 @@
         }
 
         HAS_EXISTING = true;
+        HAS_COMPLETED_FORM = true;
+        IS_DIRTY = false;
         refreshSavedSummary();
-
-        $("wizardOverlay").classList.remove("show");
-        cleanupReviewMount();
 
         showToast("End of Day saved.");
         await loadExistingSubmission();
@@ -1173,23 +1224,19 @@
         console.error(err);
 
         const msg = err?.message || "Could not save End of Day.";
-        $("wizardError").textContent = msg;
         showNotice(msg, true);
         showToast(msg);
       }finally{
         IS_SUBMITTING = false;
-
-        $("btnWizardNext").disabled = false;
-        $("btnWizardBack").disabled = CURRENT_STEP === 0;
-        $("wizardClose").disabled = false;
-
-        if(CURRENT_STEP >= QUESTIONS.length){
-          $("btnWizardNext").textContent = "Submit End of Day";
-        }
+        $("btnSubmitPage").disabled = false;
+        $("btnEditResponses").disabled = false;
+        refreshSavedSummary();
       }
     }
 
     $("btnStart").addEventListener("click", openWizard);
+    $("btnEditResponses").addEventListener("click", openWizard);
+    $("btnSubmitPage").addEventListener("click", submitEod);
 
     $("wizardClose").addEventListener("click", closeWizard);
     $("btnWizardNext").addEventListener("click", wizardNext);
