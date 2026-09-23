@@ -10,7 +10,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    body.tp-eod .panel{ width:min(980px,100%); }
+    body.tp-eod .panel{ width:min(900px,100%); }
 
     body.tp-eod .eodHero{
       margin:10px 0 16px;
@@ -19,7 +19,7 @@
       border:1px solid rgba(15,23,42,.10);
       background:
         radial-gradient(680px 220px at 15% 0%, rgba(10,166,181,.14), transparent 60%),
-        rgba(255,255,255,.76);
+        rgba(255,255,255,.78);
       box-shadow:0 16px 40px rgba(2,6,23,.06);
     }
 
@@ -36,7 +36,6 @@
       font-size:22px;
       line-height:1.1;
       font-weight:1100;
-      letter-spacing:.1px;
     }
 
     body.tp-eod .eodHero p{
@@ -44,6 +43,7 @@
       color:var(--muted);
       font-size:13px;
       line-height:1.45;
+      max-width:62ch;
     }
 
     body.tp-eod .contextGrid{
@@ -57,7 +57,7 @@
       border:1px solid rgba(15,23,42,.11);
       border-radius:16px;
       padding:12px;
-      background:rgba(255,255,255,.82);
+      background:rgba(255,255,255,.84);
       min-width:0;
     }
 
@@ -147,104 +147,59 @@
       box-shadow:0 0 0 4px rgba(220,38,38,.10);
     }
 
-    body.tp-eod .arrivalGrid{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:14px;
-    }
-
-    body.tp-eod .arrivalCard{
-      border:1px solid rgba(15,23,42,.12);
-      border-radius:19px;
-      background:rgba(255,255,255,.86);
-      box-shadow:0 14px 34px rgba(2,6,23,.06);
-      padding:16px;
-    }
-
-    body.tp-eod .arrivalCard:last-child:nth-child(odd){
-      grid-column:1 / -1;
-    }
-
-    body.tp-eod .arrivalTitleRow{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom:13px;
-    }
-
-    body.tp-eod .arrivalTitle{
-      margin:0;
-      font-size:16px;
-      font-weight:1100;
-      letter-spacing:.1px;
-    }
-
-    body.tp-eod .arrivalMini{
-      font-size:11px;
-      font-weight:1000;
-      color:rgba(10,126,140,.95);
-      background:rgba(10,166,181,.10);
-      border:1px solid rgba(10,166,181,.18);
-      border-radius:999px;
-      padding:6px 9px;
-    }
-
-    body.tp-eod .questionGrid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-    }
-
-    body.tp-eod .question{
-      min-width:0;
-    }
-
-    body.tp-eod .questionLabel{
-      min-height:36px;
-      margin:0 0 7px;
-      color:rgba(15,23,42,.64);
-      font-size:12px;
-      line-height:1.35;
-      font-weight:850;
-    }
-
-    body.tp-eod .eodInput{
-      width:100%;
-      min-width:0;
-      border:1px solid rgba(15,23,42,.14);
-      border-radius:16px;
-      padding:13px 12px;
-      font-size:20px;
-      font-weight:1100;
-      text-align:center;
-      background:#fff;
-      color:rgba(15,23,42,.92);
-      outline:none;
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
-    }
-
-    body.tp-eod .eodInput:focus{
-      border-color:rgba(10,166,181,.45);
-      box-shadow:0 0 0 4px rgba(10,166,181,.10);
-    }
-
-    body.tp-eod .summaryStrip{
-      margin-top:16px;
+    body.tp-eod .launchCard{
       border:1px solid rgba(15,23,42,.12);
       border-radius:20px;
-      background:linear-gradient(135deg,rgba(10,166,181,.10),rgba(255,255,255,.88));
-      padding:15px;
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:12px;
+      background:rgba(255,255,255,.86);
+      box-shadow:0 14px 36px rgba(2,6,23,.06);
+      padding:18px;
+      text-align:center;
     }
 
+    body.tp-eod .launchCard h2{
+      margin:0;
+      font-size:18px;
+      font-weight:1100;
+    }
+
+    body.tp-eod .launchCard p{
+      margin:8px auto 0;
+      max-width:60ch;
+      color:rgba(15,23,42,.60);
+      font-size:13px;
+      line-height:1.5;
+    }
+
+    body.tp-eod .launchBtn{
+      margin-top:16px;
+      appearance:none;
+      border:1px solid rgba(10,166,181,.30);
+      border-radius:16px;
+      padding:14px 22px;
+      min-width:230px;
+      cursor:pointer;
+      font-weight:1100;
+      font-size:14px;
+      background:linear-gradient(135deg,rgba(10,166,181,.22),rgba(17,125,140,.14));
+      color:rgba(15,23,42,.90);
+      box-shadow:0 12px 28px rgba(2,6,23,.07);
+    }
+
+    body.tp-eod .savedSummary{
+      margin-top:16px;
+      display:none;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
+    }
+
+    body.tp-eod .savedSummary.show{ display:grid; }
+
     body.tp-eod .sumBox{
+      padding:12px;
+      border-radius:16px;
+      background:rgba(10,166,181,.07);
+      border:1px solid rgba(10,166,181,.12);
       text-align:center;
-      border-radius:15px;
-      padding:10px;
-      background:rgba(255,255,255,.68);
     }
 
     body.tp-eod .sumK{
@@ -256,38 +211,10 @@
     }
 
     body.tp-eod .sumV{
-      margin-top:4px;
+      margin-top:5px;
       font-size:24px;
       font-weight:1200;
       color:rgba(15,23,42,.92);
-    }
-
-    body.tp-eod .submitRow{
-      display:flex;
-      justify-content:flex-end;
-      align-items:center;
-      gap:12px;
-      margin-top:16px;
-      flex-wrap:wrap;
-    }
-
-    body.tp-eod .submitBtn{
-      appearance:none;
-      border:1px solid rgba(10,166,181,.30);
-      border-radius:16px;
-      padding:14px 18px;
-      min-width:220px;
-      cursor:pointer;
-      font-weight:1100;
-      letter-spacing:.1px;
-      background:linear-gradient(135deg,rgba(10,166,181,.20),rgba(17,125,140,.13));
-      color:rgba(15,23,42,.90);
-      box-shadow:0 12px 28px rgba(2,6,23,.07);
-    }
-
-    body.tp-eod .submitBtn:disabled{
-      cursor:not-allowed;
-      opacity:.58;
     }
 
     body.tp-eod .notice{
@@ -303,6 +230,7 @@
     }
 
     body.tp-eod .notice.show{ display:block; }
+
     body.tp-eod .notice.bad{
       border-color:rgba(220,38,38,.18);
       background:rgba(220,38,38,.06);
@@ -321,7 +249,8 @@
       line-height:1.5;
     }
 
-    body.tp-eod .confirmOverlay{
+    /* ===== Wizard modal ===== */
+    body.tp-eod .wizardOverlay{
       position:fixed;
       inset:0;
       z-index:10001;
@@ -329,74 +258,291 @@
       align-items:center;
       justify-content:center;
       padding:18px;
-      background:rgba(2,6,23,.46);
+      background:rgba(2,6,23,.48);
+      backdrop-filter:blur(3px);
     }
 
-    body.tp-eod .confirmOverlay.show{ display:flex; }
+    body.tp-eod .wizardOverlay.show{ display:flex; }
 
-    body.tp-eod .confirmModal{
-      width:min(480px,100%);
-      border-radius:22px;
+    body.tp-eod .wizardModal{
+      width:min(560px,100%);
+      min-height:430px;
+      max-height:calc(100vh - 36px);
+      overflow:auto;
+      border-radius:24px;
       border:1px solid rgba(15,23,42,.14);
-      background:#fff;
-      box-shadow:0 30px 90px rgba(2,6,23,.22);
+      background:
+        radial-gradient(650px 260px at 18% 0%, rgba(10,166,181,.12), transparent 62%),
+        linear-gradient(180deg,#fff,#fbfdff);
+      box-shadow:0 32px 100px rgba(2,6,23,.25);
       padding:20px;
+      display:flex;
+      flex-direction:column;
     }
 
-    body.tp-eod .confirmModal h2{
-      margin:0;
-      font-size:19px;
+    body.tp-eod .wizardTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+    }
+
+    body.tp-eod .wizardStepLabel{
+      font-size:11px;
       font-weight:1100;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:rgba(10,126,140,.95);
     }
 
-    body.tp-eod .confirmSummary{
+    body.tp-eod .wizardClose{
+      width:38px;
+      height:38px;
+      border-radius:999px;
+      border:1px solid rgba(15,23,42,.12);
+      background:rgba(255,255,255,.9);
+      cursor:pointer;
+      font-size:22px;
+      line-height:1;
+      color:rgba(15,23,42,.68);
+    }
+
+    body.tp-eod .progressTrack{
+      height:8px;
+      border-radius:999px;
       margin-top:14px;
-      border-radius:16px;
-      padding:14px;
-      background:rgba(10,166,181,.08);
-      border:1px solid rgba(10,166,181,.16);
-      line-height:1.55;
+      overflow:hidden;
+      background:rgba(15,23,42,.07);
+    }
+
+    body.tp-eod .progressFill{
+      height:100%;
+      width:0%;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--teal-1),var(--teal-2));
+      transition:width .18s ease;
+    }
+
+    body.tp-eod .questionStage{
+      flex:1 1 auto;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      padding:28px 4px 22px;
+      text-align:center;
+    }
+
+    body.tp-eod .arrivalTag{
+      display:inline-flex;
+      align-self:center;
+      padding:7px 11px;
+      border-radius:999px;
+      border:1px solid rgba(10,166,181,.18);
+      background:rgba(10,166,181,.10);
+      color:rgba(10,126,140,.95);
+      font-size:11px;
+      font-weight:1100;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+    }
+
+    body.tp-eod .wizardQuestion{
+      margin:15px auto 0;
+      max-width:440px;
+      font-size:25px;
+      line-height:1.18;
+      font-weight:1150;
+      color:rgba(15,23,42,.92);
+    }
+
+    body.tp-eod .wizardHint{
+      margin:9px auto 0;
+      max-width:420px;
+      color:rgba(15,23,42,.55);
+      font-size:12px;
+      line-height:1.45;
+      min-height:18px;
+    }
+
+    body.tp-eod .wizardInputWrap{
+      margin:22px auto 0;
+      width:min(230px,100%);
+    }
+
+    body.tp-eod .wizardInput{
+      width:100%;
+      border:1px solid rgba(15,23,42,.15);
+      border-radius:20px;
+      padding:17px 14px;
+      font-size:34px;
+      line-height:1;
+      font-weight:1200;
+      text-align:center;
+      background:#fff;
+      color:rgba(15,23,42,.92);
+      outline:none;
+      box-shadow:0 12px 30px rgba(2,6,23,.06);
+    }
+
+    body.tp-eod .wizardInput:focus{
+      border-color:rgba(10,166,181,.48);
+      box-shadow:0 0 0 5px rgba(10,166,181,.10),0 12px 30px rgba(2,6,23,.06);
+    }
+
+    body.tp-eod .wizardError{
+      margin:10px auto 0;
+      min-height:18px;
+      color:#b91c1c;
+      font-size:12px;
+      font-weight:900;
+    }
+
+    body.tp-eod .wizardActions{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-top:1px solid rgba(15,23,42,.08);
+      padding-top:15px;
+    }
+
+    body.tp-eod .wizardBtn{
+      appearance:none;
+      border-radius:15px;
+      padding:12px 17px;
+      font-weight:1050;
+      cursor:pointer;
+      border:1px solid rgba(15,23,42,.12);
+    }
+
+    body.tp-eod .wizardBtn.back{
+      background:rgba(15,23,42,.04);
+      color:rgba(15,23,42,.72);
+    }
+
+    body.tp-eod .wizardBtn.next{
+      min-width:130px;
+      border-color:rgba(10,166,181,.28);
+      background:linear-gradient(135deg,rgba(10,166,181,.20),rgba(17,125,140,.12));
+      color:rgba(15,23,42,.90);
+    }
+
+    body.tp-eod .wizardBtn:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+    }
+
+    body.tp-eod .reviewList{
+      margin-top:16px;
+      display:grid;
+      gap:8px;
+      text-align:left;
+    }
+
+    body.tp-eod .reviewRow{
+      display:grid;
+      grid-template-columns:1fr auto auto;
+      gap:12px;
+      align-items:center;
+      padding:10px 12px;
+      border:1px solid rgba(15,23,42,.09);
+      border-radius:14px;
+      background:rgba(255,255,255,.80);
       font-size:13px;
     }
 
-    body.tp-eod .confirmActions{
-      display:flex;
-      justify-content:flex-end;
-      gap:10px;
-      margin-top:16px;
+    body.tp-eod .reviewType{ font-weight:1050; }
+
+    body.tp-eod .reviewMetric{
+      text-align:right;
+      color:rgba(15,23,42,.62);
+      min-width:72px;
+    }
+
+    body.tp-eod .reviewTotals{
+      margin-top:12px;
+      padding:13px;
+      border-radius:15px;
+      background:rgba(10,166,181,.09);
+      border:1px solid rgba(10,166,181,.15);
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:8px;
+      text-align:center;
+    }
+
+    body.tp-eod .reviewTotals b{
+      display:block;
+      font-size:20px;
+      color:rgba(15,23,42,.92);
+    }
+
+    body.tp-eod .reviewTotals span{
+      font-size:10px;
+      font-weight:1000;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:rgba(15,23,42,.50);
     }
 
     @media (max-width:700px){
       body.tp-eod .contextGrid{ grid-template-columns:1fr; }
-      body.tp-eod .arrivalGrid{ grid-template-columns:1fr; }
-      body.tp-eod .arrivalCard:last-child:nth-child(odd){ grid-column:auto; }
-      body.tp-eod .summaryStrip{ grid-template-columns:1fr 1fr 1fr; }
+      body.tp-eod .savedSummary{ grid-template-columns:repeat(3,1fr); }
     }
 
     @media (max-width:520px){
       body.tp-eod .panel{ padding:16px; }
+
       body.tp-eod .rightStack{
         width:100%;
         justify-content:space-between;
         flex-wrap:wrap;
       }
-      body.tp-eod .questionGrid{ gap:9px; }
-      body.tp-eod .questionLabel{
-        min-height:50px;
-        font-size:11px;
+
+      body.tp-eod .launchBtn{
+        width:100%;
+        min-width:0;
       }
-      body.tp-eod .eodInput{
-        padding:12px 8px;
-        font-size:18px;
+
+      body.tp-eod .wizardOverlay{ padding:10px; }
+
+      body.tp-eod .wizardModal{
+        min-height:min(560px,calc(100vh - 20px));
+        max-height:calc(100vh - 20px);
+        padding:17px;
+        border-radius:22px;
       }
-      body.tp-eod .summaryStrip{ gap:8px; padding:10px; }
-      body.tp-eod .sumV{ font-size:20px; }
-      body.tp-eod .submitBtn{ width:100%; min-width:0; }
+
+      body.tp-eod .wizardQuestion{
+        font-size:22px;
+      }
+
+      body.tp-eod .wizardInput{
+        font-size:32px;
+        padding:16px 12px;
+      }
+
+      body.tp-eod .wizardActions{
+        position:sticky;
+        bottom:0;
+        background:rgba(255,255,255,.96);
+        padding-bottom:2px;
+      }
+
+      body.tp-eod .reviewRow{
+        grid-template-columns:1fr auto;
+      }
+
+      body.tp-eod .reviewMetric:last-child{
+        grid-column:2;
+      }
+
       body.tp-eod input[type="number"]::-webkit-outer-spin-button,
       body.tp-eod input[type="number"]::-webkit-inner-spin-button{
         -webkit-appearance:none;
         margin:0;
       }
+
       body.tp-eod input[type="number"]{
         -moz-appearance:textfield;
       }
@@ -432,7 +578,7 @@
         <div class="eodHeroTop">
           <div>
             <h1>End of Day Tracker</h1>
-            <p>Enter what you saw and what you booked. TourPulse will handle the rest.</p>
+            <p>A quick guided check-in. You’ll answer one question at a time, then review everything before submitting.</p>
           </div>
           <span class="statusPill" id="syncStatus">Not submitted</span>
         </div>
@@ -456,113 +602,29 @@
       </div>
 
       <div id="trackerContent">
-        <div class="arrivalGrid">
-          <section class="arrivalCard" data-type="vip">
-            <div class="arrivalTitleRow">
-              <h2 class="arrivalTitle">VIP</h2>
-              <span class="arrivalMini">VIP</span>
-            </div>
-            <div class="questionGrid">
-              <div class="question">
-                <p class="questionLabel">How many VIP arrivals did you see?</p>
-                <input class="eodInput" id="vipSeen" type="number" inputmode="numeric" min="0" step="1" value="0" />
-              </div>
-              <div class="question">
-                <p class="questionLabel">How many VIP arrivals did you book?</p>
-                <input class="eodInput" id="vipBooked" type="number" inputmode="numeric" min="0" step="1" value="0" />
-              </div>
-            </div>
-          </section>
+        <div class="launchCard">
+          <h2 id="launchTitle">Ready to finish your day?</h2>
+          <p id="launchText">TourPulse will walk you through VIP, GA, GOO, RCI, and Renter one question at a time.</p>
 
-          <section class="arrivalCard" data-type="ga">
-            <div class="arrivalTitleRow">
-              <h2 class="arrivalTitle">GA</h2>
-              <span class="arrivalMini">GA</span>
+          <div class="savedSummary" id="savedSummary">
+            <div class="sumBox">
+              <div class="sumK">Arrivals Seen</div>
+              <div class="sumV" id="savedSeen">0</div>
             </div>
-            <div class="questionGrid">
-              <div class="question">
-                <p class="questionLabel">How many GA arrivals did you see?</p>
-                <input class="eodInput" id="gaSeen" type="number" inputmode="numeric" min="0" step="1" value="0" />
-              </div>
-              <div class="question">
-                <p class="questionLabel">How many GA arrivals did you book?</p>
-                <input class="eodInput" id="gaBooked" type="number" inputmode="numeric" min="0" step="1" value="0" />
-              </div>
+            <div class="sumBox">
+              <div class="sumK">Tours Booked</div>
+              <div class="sumV" id="savedBooked">0</div>
             </div>
-          </section>
-
-          <section class="arrivalCard" data-type="goo">
-            <div class="arrivalTitleRow">
-              <h2 class="arrivalTitle">GOO</h2>
-              <span class="arrivalMini">GOO</span>
+            <div class="sumBox">
+              <div class="sumK">Conversion</div>
+              <div class="sumV" id="savedConversion">0%</div>
             </div>
-            <div class="questionGrid">
-              <div class="question">
-                <p class="questionLabel">How many GOO arrivals did you see?</p>
-                <input class="eodInput" id="gooSeen" type="number" inputmode="numeric" min="0" step="1" value="0" />
-              </div>
-              <div class="question">
-                <p class="questionLabel">How many GOO arrivals did you book?</p>
-                <input class="eodInput" id="gooBooked" type="number" inputmode="numeric" min="0" step="1" value="0" />
-              </div>
-            </div>
-          </section>
-
-          <section class="arrivalCard" data-type="rci">
-            <div class="arrivalTitleRow">
-              <h2 class="arrivalTitle">RCI</h2>
-              <span class="arrivalMini">RCI</span>
-            </div>
-            <div class="questionGrid">
-              <div class="question">
-                <p class="questionLabel">How many RCI arrivals did you see?</p>
-                <input class="eodInput" id="rciSeen" type="number" inputmode="numeric" min="0" step="1" value="0" />
-              </div>
-              <div class="question">
-                <p class="questionLabel">How many RCI arrivals did you book?</p>
-                <input class="eodInput" id="rciBooked" type="number" inputmode="numeric" min="0" step="1" value="0" />
-              </div>
-            </div>
-          </section>
-
-          <section class="arrivalCard" data-type="renter">
-            <div class="arrivalTitleRow">
-              <h2 class="arrivalTitle">Renter</h2>
-              <span class="arrivalMini">RENTER</span>
-            </div>
-            <div class="questionGrid">
-              <div class="question">
-                <p class="questionLabel">How many Renter arrivals did you see?</p>
-                <input class="eodInput" id="renterSeen" type="number" inputmode="numeric" min="0" step="1" value="0" />
-              </div>
-              <div class="question">
-                <p class="questionLabel">How many Renter arrivals did you book?</p>
-                <input class="eodInput" id="renterBooked" type="number" inputmode="numeric" min="0" step="1" value="0" />
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div class="summaryStrip">
-          <div class="sumBox">
-            <div class="sumK">Arrivals Seen</div>
-            <div class="sumV" id="totalSeen">0</div>
           </div>
-          <div class="sumBox">
-            <div class="sumK">Tours Booked</div>
-            <div class="sumV" id="totalBooked">0</div>
-          </div>
-          <div class="sumBox">
-            <div class="sumK">Conversion</div>
-            <div class="sumV" id="conversion">0%</div>
-          </div>
+
+          <button class="launchBtn" type="button" id="btnStart">Start End of Day</button>
         </div>
 
         <div class="notice" id="notice"></div>
-
-        <div class="submitRow">
-          <button class="submitBtn" type="button" id="btnSubmit">Submit End of Day</button>
-        </div>
       </div>
 
       <div class="emptyState" id="emptyState">
@@ -571,13 +633,44 @@
     </section>
   </div>
 
-  <div class="confirmOverlay" id="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-    <div class="confirmModal">
-      <h2 id="confirmTitle">Confirm End of Day</h2>
-      <div class="confirmSummary" id="confirmSummary"></div>
-      <div class="confirmActions">
-        <button class="btnGhost" type="button" id="btnCancelConfirm">Go Back</button>
-        <button class="submitBtn" type="button" id="btnConfirmSubmit" style="min-width:160px;">Confirm & Submit</button>
+  <!-- ONE-QUESTION-AT-A-TIME WIZARD -->
+  <div class="wizardOverlay" id="wizardOverlay" role="dialog" aria-modal="true" aria-labelledby="wizardQuestion">
+    <div class="wizardModal">
+      <div class="wizardTop">
+        <div>
+          <div class="wizardStepLabel" id="wizardStepLabel">Question 1 of 10</div>
+        </div>
+        <button class="wizardClose" id="wizardClose" type="button" aria-label="Close">×</button>
+      </div>
+
+      <div class="progressTrack" aria-hidden="true">
+        <div class="progressFill" id="progressFill"></div>
+      </div>
+
+      <div class="questionStage" id="questionStage">
+        <span class="arrivalTag" id="arrivalTag">VIP</span>
+        <h2 class="wizardQuestion" id="wizardQuestion">How many VIP arrivals did you see?</h2>
+        <p class="wizardHint" id="wizardHint">Enter 0 if you did not see any.</p>
+
+        <div class="wizardInputWrap">
+          <input
+            class="wizardInput"
+            id="wizardInput"
+            type="number"
+            inputmode="numeric"
+            min="0"
+            step="1"
+            value="0"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="wizardError" id="wizardError"></div>
+      </div>
+
+      <div class="wizardActions">
+        <button class="wizardBtn back" type="button" id="btnWizardBack">Back</button>
+        <button class="wizardBtn next" type="button" id="btnWizardNext">Next</button>
       </div>
     </div>
   </div>
@@ -600,14 +693,33 @@
     let CONFIGS = [];
     let ACTIVE_CONFIG = null;
     let IS_SUBMITTING = false;
+    let HAS_EXISTING = false;
+    let CURRENT_STEP = 0;
 
-    const FIELDS = {
-      vip: { seen:"vipSeen", booked:"vipBooked", label:"VIP" },
-      ga: { seen:"gaSeen", booked:"gaBooked", label:"GA" },
-      goo: { seen:"gooSeen", booked:"gooBooked", label:"GOO" },
-      rci: { seen:"rciSeen", booked:"rciBooked", label:"RCI" },
-      renter: { seen:"renterSeen", booked:"renterBooked", label:"Renter" }
+    const VALUES = {
+      vip: { seen:0, booked:0 },
+      ga: { seen:0, booked:0 },
+      goo: { seen:0, booked:0 },
+      rci: { seen:0, booked:0 },
+      renter: { seen:0, booked:0 }
     };
+
+    const QUESTIONS = [
+      { type:"vip", field:"seen", label:"VIP", text:"How many VIP arrivals did you see?", hint:"Enter 0 if you did not see any VIP arrivals." },
+      { type:"vip", field:"booked", label:"VIP", text:"How many VIP arrivals did you book?", hint:"This cannot be greater than the VIP arrivals you saw." },
+
+      { type:"ga", field:"seen", label:"GA", text:"How many GA arrivals did you see?", hint:"Enter 0 if you did not see any GA arrivals." },
+      { type:"ga", field:"booked", label:"GA", text:"How many GA arrivals did you book?", hint:"This cannot be greater than the GA arrivals you saw." },
+
+      { type:"goo", field:"seen", label:"GOO", text:"How many GOO arrivals did you see?", hint:"Enter 0 if you did not see any GOO arrivals." },
+      { type:"goo", field:"booked", label:"GOO", text:"How many GOO arrivals did you book?", hint:"This cannot be greater than the GOO arrivals you saw." },
+
+      { type:"rci", field:"seen", label:"RCI", text:"How many RCI arrivals did you see?", hint:"Enter 0 if you did not see any RCI arrivals." },
+      { type:"rci", field:"booked", label:"RCI", text:"How many RCI arrivals did you book?", hint:"This cannot be greater than the RCI arrivals you saw." },
+
+      { type:"renter", field:"seen", label:"Renter", text:"How many Renter arrivals did you see?", hint:"Enter 0 if you did not see any Renter arrivals." },
+      { type:"renter", field:"booked", label:"Renter", text:"How many Renter arrivals did you book?", hint:"This cannot be greater than the Renter arrivals you saw." }
+    ];
 
     function showToast(msg, ms = 2200){
       const t = $("toast");
@@ -651,22 +763,18 @@
       return Number.isFinite(n) && n >= 0 ? n : 0;
     }
 
-    function readValues(){
-      const out = {};
-      for(const [key, meta] of Object.entries(FIELDS)){
-        out[key] = {
-          seen: safeInt($(meta.seen).value),
-          booked: safeInt($(meta.booked).value)
-        };
+    function resetValues(){
+      for(const key of Object.keys(VALUES)){
+        VALUES[key].seen = 0;
+        VALUES[key].booked = 0;
       }
-      return out;
     }
 
-    function totals(values = readValues()){
+    function totals(){
       let seen = 0;
       let booked = 0;
 
-      for(const value of Object.values(values)){
+      for(const value of Object.values(VALUES)){
         seen += safeInt(value.seen);
         booked += safeInt(value.booked);
       }
@@ -678,21 +786,26 @@
       };
     }
 
-    function updateSummary(){
+    function refreshSavedSummary(){
       const t = totals();
-      $("totalSeen").textContent = String(t.seen);
-      $("totalBooked").textContent = String(t.booked);
-      $("conversion").textContent = `${(t.conversion * 100).toFixed(t.seen ? 1 : 0)}%`;
-    }
 
-    function validate(values = readValues()){
-      for(const [key, meta] of Object.entries(FIELDS)){
-        const row = values[key];
-        if(row.booked > row.seen){
-          return `${meta.label}: booked cannot be greater than seen.`;
-        }
-      }
-      return "";
+      $("savedSeen").textContent = String(t.seen);
+      $("savedBooked").textContent = String(t.booked);
+      $("savedConversion").textContent = `${(t.conversion * 100).toFixed(t.seen ? 1 : 0)}%`;
+
+      $("savedSummary").classList.toggle("show", HAS_EXISTING);
+
+      $("launchTitle").textContent = HAS_EXISTING
+        ? "Your End of Day is saved."
+        : "Ready to finish your day?";
+
+      $("launchText").textContent = HAS_EXISTING
+        ? "You can reopen the guided form to review or update today's numbers."
+        : "TourPulse will walk you through VIP, GA, GOO, RCI, and Renter one question at a time.";
+
+      $("btnStart").textContent = HAS_EXISTING
+        ? "Review / Update End of Day"
+        : "Start End of Day";
     }
 
     function setStatus(status, errorText = ""){
@@ -714,14 +827,6 @@
       }
     }
 
-    function setSubmitting(on){
-      IS_SUBMITTING = !!on;
-      $("btnSubmit").disabled = IS_SUBMITTING;
-      $("btnConfirmSubmit").disabled = IS_SUBMITTING;
-      $("btnSubmit").textContent = IS_SUBMITTING ? "Saving…" : "Submit End of Day";
-      $("btnConfirmSubmit").textContent = IS_SUBMITTING ? "Saving…" : "Confirm & Submit";
-    }
-
     async function requireAuth(){
       if(!sb) return goSignin();
 
@@ -729,6 +834,7 @@
       if(!session?.user) return goSignin();
 
       AUTHUSER = session.user;
+
       const first = AUTHUSER.user_metadata?.first_name || "Signed In";
       const emp = empFromEmail(AUTHUSER.email);
 
@@ -739,11 +845,14 @@
 
     async function signOut(){
       if(!sb) return goSignin();
+
       const { error } = await sb.auth.signOut();
+
       if(error){
         showToast(error.message || "Sign out failed.");
         return;
       }
+
       goSignin();
     }
 
@@ -791,6 +900,8 @@
       if(!ACTIVE_CONFIG) return;
 
       showNotice("");
+      resetValues();
+      HAS_EXISTING = false;
 
       const reportDate = $("reportDate").value || localDateISO();
 
@@ -802,109 +913,229 @@
       if(error){
         console.error(error);
         showNotice(error.message || "Could not load today's EOD.", true);
+        refreshSavedSummary();
         return;
       }
 
       const row = Array.isArray(data) ? data[0] : data;
 
-      const blank = {
-        vip_seen:0, vip_booked:0,
-        ga_seen:0, ga_booked:0,
-        goo_seen:0, goo_booked:0,
-        rci_seen:0, rci_booked:0,
-        renter_seen:0, renter_booked:0
-      };
-
-      const x = row || blank;
-
-      $("vipSeen").value = safeInt(x.vip_seen);
-      $("vipBooked").value = safeInt(x.vip_booked);
-      $("gaSeen").value = safeInt(x.ga_seen);
-      $("gaBooked").value = safeInt(x.ga_booked);
-      $("gooSeen").value = safeInt(x.goo_seen);
-      $("gooBooked").value = safeInt(x.goo_booked);
-      $("rciSeen").value = safeInt(x.rci_seen);
-      $("rciBooked").value = safeInt(x.rci_booked);
-      $("renterSeen").value = safeInt(x.renter_seen);
-      $("renterBooked").value = safeInt(x.renter_booked);
-
-      updateSummary();
-
       if(row){
+        HAS_EXISTING = true;
+
+        VALUES.vip.seen = safeInt(row.vip_seen);
+        VALUES.vip.booked = safeInt(row.vip_booked);
+
+        VALUES.ga.seen = safeInt(row.ga_seen);
+        VALUES.ga.booked = safeInt(row.ga_booked);
+
+        VALUES.goo.seen = safeInt(row.goo_seen);
+        VALUES.goo.booked = safeInt(row.goo_booked);
+
+        VALUES.rci.seen = safeInt(row.rci_seen);
+        VALUES.rci.booked = safeInt(row.rci_booked);
+
+        VALUES.renter.seen = safeInt(row.renter_seen);
+        VALUES.renter.booked = safeInt(row.renter_booked);
+
         setStatus(row.sync_status, row.sync_error || "");
-        showNotice(
-          row.sync_status === "synced"
-            ? "This EOD has already been submitted. Submitting again will update your same line for this date."
-            : "A saved EOD already exists for this date. Submitting again will update it.",
-          false
-        );
+
+        if(row.sync_status === "synced"){
+          showNotice("Today's EOD is already submitted. You can reopen it if anything needs to be corrected.");
+        }else{
+          showNotice("Today's EOD is saved. You can reopen it if anything needs to be corrected.");
+        }
       }else{
         setStatus("");
       }
+
+      refreshSavedSummary();
     }
 
-    function openConfirm(){
+    function openWizard(){
       if(!ACTIVE_CONFIG) return;
 
-      const values = readValues();
-      const validation = validate(values);
+      CURRENT_STEP = 0;
+      $("wizardOverlay").classList.add("show");
+      renderWizardStep();
 
-      if(validation){
-        showNotice(validation, true);
-        showToast(validation);
+      setTimeout(() => {
+        if(!$("wizardInput").hidden){
+          $("wizardInput").focus();
+          $("wizardInput").select();
+        }
+      }, 60);
+    }
+
+    function closeWizard(){
+      if(IS_SUBMITTING) return;
+      $("wizardOverlay").classList.remove("show");
+      $("wizardError").textContent = "";
+    }
+
+    function saveCurrentQuestion(){
+      if(CURRENT_STEP >= QUESTIONS.length) return true;
+
+      const q = QUESTIONS[CURRENT_STEP];
+      const value = safeInt($("wizardInput").value);
+
+      if(q.field === "booked" && value > safeInt(VALUES[q.type].seen)){
+        $("wizardError").textContent =
+          `Booked cannot be greater than seen (${VALUES[q.type].seen}).`;
+        return false;
+      }
+
+      VALUES[q.type][q.field] = value;
+      $("wizardError").textContent = "";
+      return true;
+    }
+
+    function renderWizardStep(){
+      const onReview = CURRENT_STEP >= QUESTIONS.length;
+
+      $("wizardError").textContent = "";
+      $("btnWizardBack").disabled = CURRENT_STEP === 0 || IS_SUBMITTING;
+      $("wizardClose").disabled = IS_SUBMITTING;
+
+      const progress = onReview
+        ? 100
+        : ((CURRENT_STEP + 1) / QUESTIONS.length) * 100;
+
+      $("progressFill").style.width = `${progress}%`;
+
+      if(onReview){
+        renderReviewStep();
         return;
       }
 
-      showNotice("");
+      const q = QUESTIONS[CURRENT_STEP];
 
-      const t = totals(values);
-      const date = $("reportDate").value || localDateISO();
+      $("wizardStepLabel").textContent = `Question ${CURRENT_STEP + 1} of ${QUESTIONS.length}`;
+      $("arrivalTag").style.display = "inline-flex";
+      $("arrivalTag").textContent = q.label;
+      $("wizardQuestion").textContent = q.text;
+      $("wizardHint").textContent = q.hint;
 
-      $("confirmSummary").innerHTML =
-        `<b>${siteTitle(ACTIVE_CONFIG.site_key)}</b><br>` +
-        `${ACTIVE_CONFIG.excel_name}<br>` +
-        `Date: ${date}<br><br>` +
-        `<b>${t.seen}</b> arrivals seen<br>` +
-        `<b>${t.booked}</b> tours booked<br>` +
-        `<b>${(t.conversion * 100).toFixed(t.seen ? 1 : 0)}%</b> conversion`;
+      $("wizardInputWrap").style.display = "";
+      $("wizardInput").value = String(safeInt(VALUES[q.type][q.field]));
 
-      $("confirmOverlay").classList.add("show");
+      $("btnWizardNext").textContent =
+        CURRENT_STEP === QUESTIONS.length - 1 ? "Review" : "Next";
+
+      $("btnWizardNext").disabled = IS_SUBMITTING;
+
+      setTimeout(() => {
+        $("wizardInput").focus();
+        $("wizardInput").select();
+      }, 40);
     }
 
-    function closeConfirm(){
+    function renderReviewStep(){
+      const t = totals();
+
+      $("wizardStepLabel").textContent = "Review";
+      $("arrivalTag").style.display = "none";
+      $("wizardQuestion").textContent = "Does everything look right?";
+      $("wizardHint").textContent = "Review your numbers before submitting.";
+
+      $("wizardInputWrap").style.display = "none";
+
+      const rows = [
+        ["VIP", VALUES.vip],
+        ["GA", VALUES.ga],
+        ["GOO", VALUES.goo],
+        ["RCI", VALUES.rci],
+        ["Renter", VALUES.renter]
+      ];
+
+      const reviewHtml = `
+        <div class="reviewList">
+          ${rows.map(([label,v]) => `
+            <div class="reviewRow">
+              <div class="reviewType">${label}</div>
+              <div class="reviewMetric">Seen <b>${safeInt(v.seen)}</b></div>
+              <div class="reviewMetric">Booked <b>${safeInt(v.booked)}</b></div>
+            </div>
+          `).join("")}
+        </div>
+
+        <div class="reviewTotals">
+          <div><b>${t.seen}</b><span>Seen</span></div>
+          <div><b>${t.booked}</b><span>Booked</span></div>
+          <div><b>${(t.conversion * 100).toFixed(t.seen ? 1 : 0)}%</b><span>Conversion</span></div>
+        </div>
+      `;
+
+      $("wizardHint").insertAdjacentHTML("afterend", `<div id="reviewMount">${reviewHtml}</div>`);
+
+      const oldMounts = document.querySelectorAll("#reviewMount");
+      if(oldMounts.length > 1){
+        for(let i = 0; i < oldMounts.length - 1; i++){
+          oldMounts[i].remove();
+        }
+      }
+
+      $("btnWizardNext").textContent = IS_SUBMITTING ? "Saving…" : "Submit End of Day";
+      $("btnWizardNext").disabled = IS_SUBMITTING;
+    }
+
+    function cleanupReviewMount(){
+      document.querySelector("#reviewMount")?.remove();
+    }
+
+    async function wizardNext(){
       if(IS_SUBMITTING) return;
-      $("confirmOverlay").classList.remove("show");
+
+      if(CURRENT_STEP < QUESTIONS.length){
+        if(!saveCurrentQuestion()) return;
+
+        cleanupReviewMount();
+        CURRENT_STEP += 1;
+        renderWizardStep();
+        return;
+      }
+
+      await submitEod();
     }
 
-    async function submitConfirmed(){
+    function wizardBack(){
+      if(IS_SUBMITTING || CURRENT_STEP <= 0) return;
+
+      cleanupReviewMount();
+
+      CURRENT_STEP -= 1;
+      renderWizardStep();
+    }
+
+    async function submitEod(){
       if(IS_SUBMITTING || !ACTIVE_CONFIG) return;
 
-      const values = readValues();
-      const validation = validate(values);
+      IS_SUBMITTING = true;
 
-      if(validation){
-        closeConfirm();
-        showNotice(validation, true);
-        return;
-      }
-
-      setSubmitting(true);
+      $("btnWizardNext").disabled = true;
+      $("btnWizardBack").disabled = true;
+      $("wizardClose").disabled = true;
+      $("btnWizardNext").textContent = "Saving…";
       showNotice("");
 
       try{
         const { data: submissionId, error } = await sb.rpc("tp_submit_eod", {
           p_site_key: ACTIVE_CONFIG.site_key,
           p_report_date: $("reportDate").value || localDateISO(),
-          p_vip_seen: values.vip.seen,
-          p_vip_booked: values.vip.booked,
-          p_ga_seen: values.ga.seen,
-          p_ga_booked: values.ga.booked,
-          p_goo_seen: values.goo.seen,
-          p_goo_booked: values.goo.booked,
-          p_rci_seen: values.rci.seen,
-          p_rci_booked: values.rci.booked,
-          p_renter_seen: values.renter.seen,
-          p_renter_booked: values.renter.booked
+
+          p_vip_seen: VALUES.vip.seen,
+          p_vip_booked: VALUES.vip.booked,
+
+          p_ga_seen: VALUES.ga.seen,
+          p_ga_booked: VALUES.ga.booked,
+
+          p_goo_seen: VALUES.goo.seen,
+          p_goo_booked: VALUES.goo.booked,
+
+          p_rci_seen: VALUES.rci.seen,
+          p_rci_booked: VALUES.rci.booked,
+
+          p_renter_seen: VALUES.renter.seen,
+          p_renter_booked: VALUES.renter.booked
         });
 
         if(error) throw error;
@@ -918,48 +1149,73 @@
         if(syncError){
           console.error("eod-sync:", syncError);
           setStatus("pending");
-          showNotice("Your EOD was saved in TourPulse. Excel sync is still pending.", false);
+          showNotice("Your EOD was saved in TourPulse. Excel sync is still pending.");
         }else if(syncData?.synced){
           setStatus("synced");
-          showNotice("Your EOD was saved and synced to the Excel report.", false);
+          showNotice("Your EOD was saved and synced to the Excel report.");
         }else if(syncData?.queued){
           setStatus("pending");
-          showNotice(syncData.message || "Your EOD was saved. Excel sync is pending.", false);
+          showNotice(syncData.message || "Your EOD was saved. Excel sync is pending.");
         }else{
           setStatus("pending");
-          showNotice("Your EOD was saved. Excel sync is pending.", false);
+          showNotice("Your EOD was saved. Excel sync is pending.");
         }
 
-        $("confirmOverlay").classList.remove("show");
+        HAS_EXISTING = true;
+        refreshSavedSummary();
+
+        $("wizardOverlay").classList.remove("show");
+        cleanupReviewMount();
+
         showToast("End of Day saved.");
         await loadExistingSubmission();
       }catch(err){
         console.error(err);
+
         const msg = err?.message || "Could not save End of Day.";
+        $("wizardError").textContent = msg;
         showNotice(msg, true);
         showToast(msg);
       }finally{
-        setSubmitting(false);
+        IS_SUBMITTING = false;
+
+        $("btnWizardNext").disabled = false;
+        $("btnWizardBack").disabled = CURRENT_STEP === 0;
+        $("wizardClose").disabled = false;
+
+        if(CURRENT_STEP >= QUESTIONS.length){
+          $("btnWizardNext").textContent = "Submit End of Day";
+        }
       }
     }
 
-    Object.values(FIELDS).forEach(meta => {
-      $(meta.seen).addEventListener("input", updateSummary);
-      $(meta.booked).addEventListener("input", updateSummary);
+    $("btnStart").addEventListener("click", openWizard);
+
+    $("wizardClose").addEventListener("click", closeWizard);
+    $("btnWizardNext").addEventListener("click", wizardNext);
+    $("btnWizardBack").addEventListener("click", wizardBack);
+
+    $("wizardInput").addEventListener("keydown", e => {
+      if(e.key === "Enter"){
+        e.preventDefault();
+        wizardNext();
+      }
+    });
+
+    $("wizardOverlay").addEventListener("click", e => {
+      if(e.target === $("wizardOverlay")) closeWizard();
     });
 
     $("siteSelect").addEventListener("change", async () => {
-      ACTIVE_CONFIG = CONFIGS.find(x => x.site_key === $("siteSelect").value) || CONFIGS[0] || null;
+      ACTIVE_CONFIG =
+        CONFIGS.find(x => x.site_key === $("siteSelect").value) ||
+        CONFIGS[0] ||
+        null;
+
       await loadExistingSubmission();
     });
 
     $("reportDate").addEventListener("change", loadExistingSubmission);
-    $("btnSubmit").addEventListener("click", openConfirm);
-    $("btnCancelConfirm").addEventListener("click", closeConfirm);
-    $("btnConfirmSubmit").addEventListener("click", submitConfirmed);
-    $("confirmOverlay").addEventListener("click", e => {
-      if(e.target === $("confirmOverlay")) closeConfirm();
-    });
 
     $("btnBack").addEventListener("click", () => window.location.href = BACK_PAGE);
     $("btnSignOut").addEventListener("click", signOut);
@@ -972,7 +1228,7 @@
 
     (async function init(){
       $("reportDate").value = localDateISO();
-      updateSummary();
+
       await requireAuth();
       await loadConfigs();
     })();
