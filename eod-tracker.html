@@ -200,7 +200,7 @@
     body.tp-eod .breakdownHeader,
     body.tp-eod .breakdownRow{
       display:grid;
-      grid-template-columns:1fr 92px 92px;
+      grid-template-columns:1fr 92px 92px 78px;
       gap:10px;
       align-items:center;
       padding:11px 14px;
@@ -232,6 +232,30 @@
       text-align:right;
       font-weight:1100;
       color:rgba(15,23,42,.86);
+    }
+
+    body.tp-eod .lineEditBtn{
+      appearance:none;
+      justify-self:end;
+      border:1px solid rgba(10,166,181,.20);
+      border-radius:999px;
+      background:rgba(10,166,181,.08);
+      color:rgba(10,126,140,.98);
+      padding:7px 10px;
+      min-width:58px;
+      cursor:pointer;
+      font-size:11px;
+      font-weight:1100;
+      line-height:1;
+    }
+
+    body.tp-eod .lineEditBtn:hover{
+      background:rgba(10,166,181,.13);
+    }
+
+    body.tp-eod .lineEditBtn:disabled{
+      opacity:.5;
+      cursor:not-allowed;
     }
 
     body.tp-eod .savedSummary{
@@ -543,7 +567,7 @@
 
       body.tp-eod .breakdownHeader,
       body.tp-eod .breakdownRow{
-        grid-template-columns:1fr 70px 70px;
+        grid-template-columns:1fr 58px 58px 54px;
         padding-left:12px;
         padding-right:12px;
       }
@@ -653,36 +677,42 @@
               <div>Arrival Type</div>
               <div style="text-align:right;">Seen</div>
               <div style="text-align:right;">Booked</div>
+              <div style="text-align:right;">Edit</div>
             </div>
 
             <div class="breakdownRow">
               <div class="breakdownType">VIP</div>
               <div class="breakdownNumber" id="bdVipSeen">0</div>
               <div class="breakdownNumber" id="bdVipBooked">0</div>
+              <button class="lineEditBtn" type="button" data-edit-type="vip">Edit</button>
             </div>
 
             <div class="breakdownRow">
               <div class="breakdownType">GA</div>
               <div class="breakdownNumber" id="bdGaSeen">0</div>
               <div class="breakdownNumber" id="bdGaBooked">0</div>
+              <button class="lineEditBtn" type="button" data-edit-type="ga">Edit</button>
             </div>
 
             <div class="breakdownRow">
               <div class="breakdownType">GOO</div>
               <div class="breakdownNumber" id="bdGooSeen">0</div>
               <div class="breakdownNumber" id="bdGooBooked">0</div>
+              <button class="lineEditBtn" type="button" data-edit-type="goo">Edit</button>
             </div>
 
             <div class="breakdownRow">
               <div class="breakdownType">RCI</div>
               <div class="breakdownNumber" id="bdRciSeen">0</div>
               <div class="breakdownNumber" id="bdRciBooked">0</div>
+              <button class="lineEditBtn" type="button" data-edit-type="rci">Edit</button>
             </div>
 
             <div class="breakdownRow">
               <div class="breakdownType">Renter</div>
               <div class="breakdownNumber" id="bdRenterSeen">0</div>
               <div class="breakdownNumber" id="bdRenterBooked">0</div>
+              <button class="lineEditBtn" type="button" data-edit-type="renter">Edit</button>
             </div>
           </div>
 
@@ -704,7 +734,7 @@
           <button class="launchBtn" type="button" id="btnStart">Start End of Day</button>
 
           <div class="pageActions" id="pageActions">
-            <button class="editBtn" type="button" id="btnEditResponses">Edit Responses</button>
+            <button class="editBtn" type="button" id="btnEditResponses">Edit All Responses</button>
             <button class="submitPageBtn" type="button" id="btnSubmitPage">Submit End of Day</button>
           </div>
         </div>
@@ -782,6 +812,8 @@
     let HAS_COMPLETED_FORM = false;
     let IS_DIRTY = false;
     let CURRENT_STEP = 0;
+    let ACTIVE_QUESTIONS = [];
+    let WIZARD_SCOPE = "all";
 
     const VALUES = {
       vip: { seen:0, booked:0 },
@@ -1064,18 +1096,23 @@
       refreshSavedSummary();
     }
 
-    function openWizard(){
+    function openWizard(type = null){
       if(!ACTIVE_CONFIG) return;
+
+      WIZARD_SCOPE = type ? String(type) : "all";
+      ACTIVE_QUESTIONS = WIZARD_SCOPE === "all"
+        ? [...QUESTIONS]
+        : QUESTIONS.filter(q => q.type === WIZARD_SCOPE);
+
+      if(!ACTIVE_QUESTIONS.length) return;
 
       CURRENT_STEP = 0;
       $("wizardOverlay").classList.add("show");
       renderWizardStep();
 
       setTimeout(() => {
-        if(!$("wizardInput").hidden){
-          $("wizardInput").focus();
-          $("wizardInput").select();
-        }
+        $("wizardInput").focus();
+        $("wizardInput").select();
       }, 60);
     }
 
@@ -1086,9 +1123,9 @@
     }
 
     function saveCurrentQuestion(){
-      if(CURRENT_STEP >= QUESTIONS.length) return true;
+      if(CURRENT_STEP >= ACTIVE_QUESTIONS.length) return true;
 
-      const q = QUESTIONS[CURRENT_STEP];
+      const q = ACTIVE_QUESTIONS[CURRENT_STEP];
       const value = safeInt($("wizardInput").value);
 
       if(q.field === "booked" && value > safeInt(VALUES[q.type].seen)){
@@ -1107,11 +1144,16 @@
       $("btnWizardBack").disabled = CURRENT_STEP === 0 || IS_SUBMITTING;
       $("wizardClose").disabled = IS_SUBMITTING;
 
-      const q = QUESTIONS[CURRENT_STEP];
-      const progress = ((CURRENT_STEP + 1) / QUESTIONS.length) * 100;
+      const q = ACTIVE_QUESTIONS[CURRENT_STEP];
+      const count = ACTIVE_QUESTIONS.length;
+      const progress = ((CURRENT_STEP + 1) / count) * 100;
 
       $("progressFill").style.width = `${progress}%`;
-      $("wizardStepLabel").textContent = `Question ${CURRENT_STEP + 1} of ${QUESTIONS.length}`;
+
+      $("wizardStepLabel").textContent =
+        WIZARD_SCOPE === "all"
+          ? `Question ${CURRENT_STEP + 1} of ${count}`
+          : `${q.label} • ${CURRENT_STEP + 1} of ${count}`;
 
       $("arrivalTag").style.display = "inline-flex";
       $("arrivalTag").textContent = q.label;
@@ -1122,7 +1164,7 @@
       $("wizardInput").value = String(safeInt(VALUES[q.type][q.field]));
 
       $("btnWizardNext").textContent =
-        CURRENT_STEP === QUESTIONS.length - 1 ? "Finish" : "Next";
+        CURRENT_STEP === count - 1 ? "Finish" : "Next";
 
       $("btnWizardNext").disabled = IS_SUBMITTING;
 
@@ -1137,14 +1179,21 @@
 
       if(!saveCurrentQuestion()) return;
 
-      if(CURRENT_STEP === QUESTIONS.length - 1){
+      if(CURRENT_STEP === ACTIVE_QUESTIONS.length - 1){
         HAS_COMPLETED_FORM = true;
         IS_DIRTY = true;
 
         $("wizardOverlay").classList.remove("show");
         refreshSavedSummary();
-        showNotice("Review the full breakdown below, then submit when everything looks right.");
-        showToast("Responses ready to review.");
+
+        if(WIZARD_SCOPE === "all"){
+          showNotice("Review the full breakdown below, then submit when everything looks right.");
+          showToast("Responses ready to review.");
+        }else{
+          const label = ACTIVE_QUESTIONS[0]?.label || "Arrival";
+          showNotice(`${label} updated. Review the breakdown below, then submit your updates.`);
+          showToast(`${label} updated.`);
+        }
         return;
       }
 
@@ -1166,6 +1215,7 @@
 
       $("btnSubmitPage").disabled = true;
       $("btnEditResponses").disabled = true;
+      document.querySelectorAll(".lineEditBtn").forEach(btn => btn.disabled = true);
       $("btnSubmitPage").textContent = "Saving…";
       showNotice("");
 
@@ -1230,13 +1280,20 @@
         IS_SUBMITTING = false;
         $("btnSubmitPage").disabled = false;
         $("btnEditResponses").disabled = false;
+        document.querySelectorAll(".lineEditBtn").forEach(btn => btn.disabled = false);
         refreshSavedSummary();
       }
     }
 
-    $("btnStart").addEventListener("click", openWizard);
-    $("btnEditResponses").addEventListener("click", openWizard);
+    $("btnStart").addEventListener("click", () => openWizard());
+    $("btnEditResponses").addEventListener("click", () => openWizard());
     $("btnSubmitPage").addEventListener("click", submitEod);
+
+    $("breakdownCard").addEventListener("click", e => {
+      const btn = e.target?.closest?.("[data-edit-type]");
+      if(!btn) return;
+      openWizard(btn.getAttribute("data-edit-type"));
+    });
 
     $("wizardClose").addEventListener("click", closeWizard);
     $("btnWizardNext").addEventListener("click", wizardNext);
