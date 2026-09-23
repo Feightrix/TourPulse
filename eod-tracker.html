@@ -49,7 +49,7 @@
     body.tp-eod .contextGrid{
       margin-top:16px;
       display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
+      grid-template-columns:repeat(4,minmax(0,1fr));
       gap:12px;
     }
 
@@ -664,6 +664,13 @@
             <div class="contextLabel">EOD Date</div>
             <input class="contextDate" id="reportDate" type="date" />
           </div>
+
+          <div class="contextCard">
+            <div class="contextLabel">Saved Dates</div>
+            <select class="contextSelect" id="historySelect" aria-label="Saved EOD dates">
+              <option value="">No saved dates yet</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -871,6 +878,68 @@
       return `${y}-${m}-${day}`;
     }
 
+    function formatHistoryDate(iso){
+      const d = new Date(String(iso || "") + "T00:00:00");
+      if(Number.isNaN(d.getTime())) return String(iso || "");
+      return d.toLocaleDateString(undefined, {
+        month:"short",
+        day:"numeric",
+        year:"numeric"
+      });
+    }
+
+    function syncHistorySelection(){
+      const sel = $("historySelect");
+      if(!sel) return;
+
+      const value = $("reportDate").value || "";
+      const exists = Array.from(sel.options).some(opt => opt.value === value);
+      sel.value = exists ? value : "";
+    }
+
+    async function loadDateHistory(){
+      if(!ACTIVE_CONFIG) return;
+
+      const sel = $("historySelect");
+      if(!sel) return;
+
+      const { data, error } = await sb.rpc("tp_list_my_eod_dates", {
+        p_site_key: ACTIVE_CONFIG.site_key
+      });
+
+      if(error){
+        console.error("tp_list_my_eod_dates:", error);
+        sel.innerHTML = '<option value="">Could not load saved dates</option>';
+        sel.disabled = true;
+        return;
+      }
+
+      const rows = Array.isArray(data) ? data : [];
+      sel.innerHTML = "";
+
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = rows.length ? "Select a saved date…" : "No saved dates yet";
+      sel.appendChild(placeholder);
+
+      rows.forEach(row => {
+        const opt = document.createElement("option");
+        opt.value = String(row.report_date || "");
+
+        const seen = safeInt(row.total_seen);
+        const booked = safeInt(row.total_booked);
+        const conv = Number(row.conversion || 0);
+
+        opt.textContent =
+          `${formatHistoryDate(row.report_date)} • ${seen} seen • ${booked} booked • ${conv.toFixed(1)}%`;
+
+        sel.appendChild(opt);
+      });
+
+      sel.disabled = rows.length === 0;
+      syncHistorySelection();
+    }
+
     function siteTitle(key){
       if(key === "myrtle-beach-oceanfront") return "Myrtle Beach Oceanfront";
       if(key === "south-beach") return "South Beach Resort";
@@ -1034,6 +1103,7 @@
         sel.disabled = true;
       }
 
+      await loadDateHistory();
       await loadExistingSubmission();
     }
 
@@ -1094,6 +1164,7 @@
       }
 
       refreshSavedSummary();
+      syncHistorySelection();
     }
 
     function openWizard(type = null){
@@ -1269,6 +1340,7 @@
         refreshSavedSummary();
 
         showToast("End of Day saved.");
+        await loadDateHistory();
         await loadExistingSubmission();
       }catch(err){
         console.error(err);
@@ -1316,10 +1388,22 @@
         CONFIGS[0] ||
         null;
 
+      await loadDateHistory();
       await loadExistingSubmission();
     });
 
-    $("reportDate").addEventListener("change", loadExistingSubmission);
+    $("reportDate").addEventListener("change", async () => {
+      syncHistorySelection();
+      await loadExistingSubmission();
+    });
+
+    $("historySelect").addEventListener("change", async () => {
+      const selectedDate = $("historySelect").value;
+      if(!selectedDate) return;
+
+      $("reportDate").value = selectedDate;
+      await loadExistingSubmission();
+    });
 
     $("btnBack").addEventListener("click", () => window.location.href = BACK_PAGE);
     $("btnSignOut").addEventListener("click", signOut);
