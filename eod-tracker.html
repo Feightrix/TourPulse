@@ -1095,7 +1095,7 @@
       CONFIGS = Array.isArray(data) ? data : [];
 
       if(DELEGATED_MODE && CONFIGS.length){
-        TARGET_NAME = String(CONFIGS[0].target_first_name || CONFIGS[0].excel_name || "Marketer");
+        TARGET_NAME = String(CONFIGS[0].excel_name || CONFIGS[0].target_first_name || "Marketer");
         TARGET_EMP = String(CONFIGS[0].emp || "");
         $("marketerName").textContent = TARGET_EMP ? `${TARGET_NAME} • #${TARGET_EMP}` : TARGET_NAME;
         $("launchTitle").textContent = `Enter End of Day for ${TARGET_NAME}`;
