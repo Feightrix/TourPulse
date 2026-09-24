@@ -200,10 +200,12 @@
     ];
 
     let _isAdmin = false;
+    let _isManager = false;
+    let _hasConsoleAccess = false;
     let _cardsWired = false;
 
     function getVisibleCalcs(){
-      return CALCS.filter(c => !c.adminOnly || _isAdmin);
+      return CALCS.filter(c => !c.adminOnly || _hasConsoleAccess);
     }
 
     function renderCards(list){
@@ -223,7 +225,7 @@
 
         const badge = locked
           ? `<span class="badge">LOCKED</span>`
-          : (isAdminCard ? `<span class="badge">ADMIN</span>` : ``);
+          : (isAdminCard ? `<span class="badge">${_isAdmin ? "ADMIN" : "MANAGER"}</span>` : ``);
 
         const btnClass = locked ? "goBtn locked" : "goBtn open";
         const btnText  = locked ? "Locked" : "Open";
@@ -314,7 +316,18 @@
       const first = user.user_metadata?.first_name || "";
       const emp = getEmpFromEmail(user.email);
 
-      _isAdmin = await checkIsAdmin(emp);
+      const { data: accessData, error: accessError } = await sb.rpc("tp_get_my_console_access");
+      const accessRow = Array.isArray(accessData) ? accessData[0] : accessData;
+
+      if(!accessError && accessRow){
+        _isAdmin = !!accessRow.is_admin;
+        _isManager = !!accessRow.is_manager;
+        _hasConsoleAccess = _isAdmin || _isManager;
+      }else{
+        _isAdmin = await checkIsAdmin(emp);
+        _isManager = false;
+        _hasConsoleAccess = _isAdmin;
+      }
 
       $("userName").textContent = first || "Signed In";
       $("userEmp").textContent = emp ? `#${emp}` : "";
@@ -326,7 +339,9 @@
 
       $("heroSub").textContent = _isAdmin
         ? "Admin Console is enabled for your account."
-        : "Choose the calculator you need for today’s pacing, goals, and pay tracking.";
+        : (_isManager
+          ? "Manager Console is enabled for your account."
+          : "Choose the calculator you need for today’s pacing, goals, and pay tracking.");
     }
 
     async function signOut(){
