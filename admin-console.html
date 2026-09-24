@@ -148,12 +148,50 @@
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      padding:4px 4px 8px;
+      padding:8px 8px;
+      border-radius:12px;
       font-size:13px;
       font-weight:1200;
       letter-spacing:.12em;
       text-transform:uppercase;
       color:rgba(15,23,42,.62);
+      cursor:pointer;
+      user-select:none;
+      transition:background .15s ease, color .15s ease;
+    }
+
+    body.tp-admin .userSectionHeader:hover{
+      background:rgba(15,23,42,.05);
+      color:rgba(15,23,42,.78);
+    }
+
+    body.tp-admin .userSectionHeaderLeft{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      min-width:0;
+    }
+
+    body.tp-admin .sectionChevron{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      width:20px;
+      height:20px;
+      font-size:16px;
+      line-height:1;
+      transform:rotate(90deg);
+      transition:transform .18s ease;
+      color:rgba(15,23,42,.48);
+      flex:0 0 auto;
+    }
+
+    body.tp-admin .userSection.collapsed .sectionChevron{
+      transform:rotate(0deg);
+    }
+
+    body.tp-admin .userSection.collapsed .userSectionList{
+      display:none;
     }
 
     body.tp-admin .userSectionCount{
@@ -1015,13 +1053,41 @@
 
         const header = document.createElement("div");
         header.className = "userSectionHeader";
+        header.setAttribute("role", "button");
+        header.setAttribute("tabindex", "0");
+        header.setAttribute("aria-expanded", "true");
         header.innerHTML = `
-          <span>${escapeHtml(title)}</span>
+          <span class="userSectionHeaderLeft">
+            <span class="sectionChevron" aria-hidden="true">›</span>
+            <span>${escapeHtml(title)}</span>
+          </span>
           <span class="userSectionCount">${users.length}</span>
         `;
 
         const list = document.createElement("div");
         list.className = "userSectionList";
+
+        const storageKey = `tp_admin_section_${String(title || "").toLowerCase().replace(/[^a-z0-9]+/g,"-")}`;
+        const savedCollapsed = localStorage.getItem(storageKey) === "1";
+
+        if(savedCollapsed){
+          section.classList.add("collapsed");
+          header.setAttribute("aria-expanded", "false");
+        }
+
+        const toggleSection = () => {
+          const collapsed = section.classList.toggle("collapsed");
+          header.setAttribute("aria-expanded", collapsed ? "false" : "true");
+          localStorage.setItem(storageKey, collapsed ? "1" : "0");
+        };
+
+        header.addEventListener("click", toggleSection);
+        header.addEventListener("keydown", (e) => {
+          if(e.key === "Enter" || e.key === " "){
+            e.preventDefault();
+            toggleSection();
+          }
+        });
 
         [...users]
           .sort((a,b) => displayNameOf(a).localeCompare(displayNameOf(b), undefined, { sensitivity:"base" }))
