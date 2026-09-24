@@ -139,6 +139,42 @@
       min-height: 118px;
     }
 
+    body.tp-admin .userSection + .userSection{
+      margin-top:18px;
+    }
+
+    body.tp-admin .userSectionHeader{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:4px 4px 8px;
+      font-size:13px;
+      font-weight:1200;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      color:rgba(15,23,42,.62);
+    }
+
+    body.tp-admin .userSectionCount{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:28px;
+      height:28px;
+      padding:0 9px;
+      border-radius:999px;
+      background:rgba(10,166,181,.10);
+      color:rgba(10,166,181,.95);
+      font-size:12px;
+      font-weight:1200;
+      letter-spacing:0;
+    }
+
+    body.tp-admin .userSectionList{
+      display:block;
+    }
+
     body.tp-admin .uRow{
       width:100%;
       display:flex;
@@ -926,34 +962,15 @@
           siteLabel(u.primary_site_key).toLowerCase().includes(q);
       });
 
-      const list = filtered.sort((a,b) => {
-        const aManager = isManagerUser(a);
-        const bManager = isManagerUser(b);
-
-        if(aManager !== bManager) return aManager ? -1 : 1;
-
-        const aSite = aManager ? "Management" : siteLabel(a.primary_site_key);
-        const bSite = bManager ? "Management" : siteLabel(b.primary_site_key);
-        const siteCompare = aSite.localeCompare(bSite, undefined, { sensitivity:"base" });
-
-        if(siteCompare !== 0) return siteCompare;
-
-        return displayNameOf(a).localeCompare(
-          displayNameOf(b),
-          undefined,
-          { sensitivity:"base" }
-        );
-      });
-
       const wrap = $("userList");
       wrap.innerHTML = "";
 
-      if(list.length === 0){
+      if(filtered.length === 0){
         wrap.innerHTML = `<div class="muted" style="padding:10px 8px; font-weight:1100;">No users found.</div>`;
         return;
       }
 
-      list.forEach(u => {
+      const createUserRow = (u) => {
         const btn = document.createElement("div");
         btn.className = "uRow";
         btn.setAttribute("role","button");
@@ -987,8 +1004,53 @@
           }
         });
 
-        wrap.appendChild(btn);
+        return btn;
+      };
+
+      const appendSection = (title, users) => {
+        if(!users.length) return;
+
+        const section = document.createElement("section");
+        section.className = "userSection";
+
+        const header = document.createElement("div");
+        header.className = "userSectionHeader";
+        header.innerHTML = `
+          <span>${escapeHtml(title)}</span>
+          <span class="userSectionCount">${users.length}</span>
+        `;
+
+        const list = document.createElement("div");
+        list.className = "userSectionList";
+
+        [...users]
+          .sort((a,b) => displayNameOf(a).localeCompare(displayNameOf(b), undefined, { sensitivity:"base" }))
+          .forEach(u => list.appendChild(createUserRow(u)));
+
+        section.appendChild(header);
+        section.appendChild(list);
+        wrap.appendChild(section);
+      };
+
+      const managers = filtered.filter(isManagerUser);
+      appendSection("Managers", managers);
+
+      const marketers = filtered.filter(u => !isManagerUser(u));
+      const bySite = new Map();
+
+      marketers.forEach(u => {
+        const site = siteLabel(u.primary_site_key);
+        if(!bySite.has(site)) bySite.set(site, []);
+        bySite.get(site).push(u);
       });
+
+      [...bySite.keys()]
+        .sort((a,b) => {
+          if(a === "No Site") return 1;
+          if(b === "No Site") return -1;
+          return a.localeCompare(b, undefined, { sensitivity:"base" });
+        })
+        .forEach(site => appendSection(site, bySite.get(site)));
     }
 
     $("searchUsers").addEventListener("input", paintUsers);
