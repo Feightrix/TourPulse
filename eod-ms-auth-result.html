@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>TourPulse — Microsoft Connection</title>
+  <link rel="icon" href="favicon.ico">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body{min-height:100vh;display:grid;place-items:center;padding:22px}
+    .msCard{width:min(560px,100%);padding:28px;border:1px solid rgba(15,23,42,.1);border-radius:22px;background:#fff;box-shadow:0 24px 70px rgba(2,6,23,.12);text-align:center}
+    .msMark{width:58px;height:58px;margin:0 auto 16px;border-radius:18px;display:grid;place-items:center;background:rgba(10,166,181,.1);color:#0a7e8c;font-size:28px;font-weight:1000}
+    .msCard.bad .msMark{background:rgba(185,28,28,.08);color:#b91c1c}
+    h1{margin:0;font-size:24px;font-weight:1100}
+    p{margin:12px 0 0;color:rgba(15,23,42,.62);line-height:1.55}
+  </style>
+</head>
+<body>
+  <div class="msCard" id="card">
+    <div class="msMark" id="mark">✓</div>
+    <h1 id="title">TourPulse Microsoft Connection</h1>
+    <p id="message">Loading…</p>
+  </div>
+  <script>
+    const p = new URLSearchParams(location.search);
+    const status = p.get("status") || "ready";
+    const card = document.getElementById("card");
+    const mark = document.getElementById("mark");
+    const title = document.getElementById("title");
+    const msg = document.getElementById("message");
+
+    const states = {
+      ready: ["✓","TourPulse callback is ready","The Microsoft authorization return address is online. You can return to the TourPulse setup and continue.",false],
+      connected: ["✓","Microsoft is connected","TourPulse can now send End of Day marketer entries to the live Excel workbook automatically. You can close this window.",false],
+      incomplete: ["!","Microsoft app setup is not finished","The callback is working, but the Microsoft tenant, client ID, and client secret still need to be added to TourPulse.",true],
+      expired: ["!","Authorization expired","Start the Microsoft connection again from TourPulse.",true],
+      failed: ["!","Microsoft connection failed",p.get("message") || "The Microsoft authorization could not be completed.",true]
+    };
+
+    const x = states[status] || states.failed;
+    mark.textContent=x[0]; title.textContent=x[1]; msg.textContent=x[2];
+    card.classList.toggle("bad",x[3]);
+  </script>
+</body>
+</html>
