@@ -754,6 +754,25 @@
       return String(u?.emp || u?.employee_number || getEmpFromEmail(emailOf(u)) || "");
     }
 
+    function siteLabel(key){
+      const k = String(key || "").trim();
+      const labels = {
+        "cape-canaveral":"Cape Canaveral",
+        "david-walleys":"David Walley’s",
+        "desert-club":"Desert Club",
+        "holiday-hills":"Holiday Hills",
+        "new-orleans":"New Orleans",
+        "orange-lake":"Orange Lake",
+        "scottsdale":"Scottsdale",
+        "seaside":"Seaside",
+        "smokey-mountain":"Smokey Mountain",
+        "south-beach":"South Beach",
+        "myrtle-beach-oceanfront":"Myrtle Beach Oceanfront",
+        "williamsburg":"Williamsburg"
+      };
+      return labels[k] || (k ? k.replaceAll("-", " ").replace(/\b\w/g, m => m.toUpperCase()) : "No Site");
+    }
+
     async function signOut(){
       if(!sb) return goSignin();
 
@@ -900,10 +919,30 @@
     function paintUsers(){
       const q = String($("searchUsers").value || "").trim().toLowerCase();
 
-      const list = !q ? ALL_USERS : ALL_USERS.filter(u => {
+      const filtered = !q ? [...ALL_USERS] : ALL_USERS.filter(u => {
         return displayNameOf(u).toLowerCase().includes(q) ||
           empOf(u).toLowerCase().includes(q) ||
-          emailOf(u).toLowerCase().includes(q);
+          emailOf(u).toLowerCase().includes(q) ||
+          siteLabel(u.primary_site_key).toLowerCase().includes(q);
+      });
+
+      const list = filtered.sort((a,b) => {
+        const aManager = isManagerUser(a);
+        const bManager = isManagerUser(b);
+
+        if(aManager !== bManager) return aManager ? -1 : 1;
+
+        const aSite = aManager ? "Management" : siteLabel(a.primary_site_key);
+        const bSite = bManager ? "Management" : siteLabel(b.primary_site_key);
+        const siteCompare = aSite.localeCompare(bSite, undefined, { sensitivity:"base" });
+
+        if(siteCompare !== 0) return siteCompare;
+
+        return displayNameOf(a).localeCompare(
+          displayNameOf(b),
+          undefined,
+          { sensitivity:"base" }
+        );
       });
 
       const wrap = $("userList");
@@ -930,7 +969,7 @@
         btn.innerHTML = `
           <div class="uLeft">
             <div class="uName">${escapeHtml(displayName)} <span style="opacity:.55; font-weight:1100; margin-left:6px;">${escapeHtml(emp)}</span></div>
-            <div class="uMeta">${escapeHtml(email)}</div>
+            <div class="uMeta">${escapeHtml(isManagerUser(u) ? "Management" : siteLabel(u.primary_site_key))} • ${escapeHtml(email)}</div>
           </div>
           <div class="uRight">
             ${managerBadge}
