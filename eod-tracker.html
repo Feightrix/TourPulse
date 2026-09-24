@@ -803,7 +803,10 @@
     const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
     const SIGNIN_PAGE = "signin.html";
-    const BACK_PAGE = "choose-calc.html";
+    const PAGE_PARAMS = new URLSearchParams(window.location.search);
+    const TARGET_USER_ID = String(PAGE_PARAMS.get("target_user_id") || "").trim();
+    const DELEGATED_MODE = !!TARGET_USER_ID;
+    const BACK_PAGE = DELEGATED_MODE ? "admin-console.html" : "choose-calc.html";
 
     const sb = (window.supabase && window.supabase.createClient)
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
@@ -812,6 +815,8 @@
     const $ = (id) => document.getElementById(id);
 
     let AUTHUSER = null;
+    let TARGET_NAME = "";
+    let TARGET_EMP = "";
     let CONFIGS = [];
     let ACTIVE_CONFIG = null;
     let IS_SUBMITTING = false;
@@ -903,12 +908,15 @@
       const sel = $("historySelect");
       if(!sel) return;
 
-      const { data, error } = await sb.rpc("tp_list_my_eod_dates", {
-        p_site_key: ACTIVE_CONFIG.site_key
-      });
+      const historyRpc = DELEGATED_MODE ? "tp_manager_list_eod_dates" : "tp_list_my_eod_dates";
+      const historyPayload = DELEGATED_MODE
+        ? { p_target_user_id: TARGET_USER_ID, p_site_key: ACTIVE_CONFIG.site_key }
+        : { p_site_key: ACTIVE_CONFIG.site_key };
+
+      const { data, error } = await sb.rpc(historyRpc, historyPayload);
 
       if(error){
-        console.error("tp_list_my_eod_dates:", error);
+        console.error(historyRpc + ":", error);
         sel.innerHTML = '<option value="">Could not load saved dates</option>';
         sel.disabled = true;
         return;
@@ -1050,7 +1058,10 @@
 
       $("userName").textContent = first;
       $("userEmp").textContent = emp ? `#${emp}` : "";
-      $("marketerName").textContent = emp ? `${first} • #${emp}` : first;
+
+      if(!DELEGATED_MODE){
+        $("marketerName").textContent = emp ? `${first} • #${emp}` : first;
+      }
     }
 
     async function signOut(){
@@ -1067,15 +1078,29 @@
     }
 
     async function loadConfigs(){
-      const { data, error } = await sb.rpc("tp_get_my_eod_configs");
+      const configRpc = DELEGATED_MODE ? "tp_manager_get_eod_configs" : "tp_get_my_eod_configs";
+      const configPayload = DELEGATED_MODE ? { p_target_user_id: TARGET_USER_ID } : {};
+
+      const { data, error } = await sb.rpc(configRpc, configPayload);
 
       if(error){
         console.error(error);
         showNotice(error.message || "Could not load EOD configuration.", true);
+        $("trackerContent").style.display = "none";
+        $("emptyState").style.display = "block";
+        $("emptyState").textContent = "You do not have End of Day access for this marketer.";
         return;
       }
 
       CONFIGS = Array.isArray(data) ? data : [];
+
+      if(DELEGATED_MODE && CONFIGS.length){
+        TARGET_NAME = String(CONFIGS[0].target_first_name || CONFIGS[0].excel_name || "Marketer");
+        TARGET_EMP = String(CONFIGS[0].emp || "");
+        $("marketerName").textContent = TARGET_EMP ? `${TARGET_NAME} • #${TARGET_EMP}` : TARGET_NAME;
+        $("launchTitle").textContent = `Enter End of Day for ${TARGET_NAME}`;
+        $("launchText").textContent = "You are entering this marketer’s EOD on their behalf. It will save to their TourPulse record and sync to Excel.";
+      }
 
       if(!CONFIGS.length){
         $("trackerContent").style.display = "none";
@@ -1118,10 +1143,19 @@
 
       const reportDate = $("reportDate").value || localDateISO();
 
-      const { data, error } = await sb.rpc("tp_get_my_eod_submission", {
-        p_site_key: ACTIVE_CONFIG.site_key,
-        p_report_date: reportDate
-      });
+      const submissionRpc = DELEGATED_MODE ? "tp_manager_get_eod_submission" : "tp_get_my_eod_submission";
+      const submissionPayload = DELEGATED_MODE
+        ? {
+            p_target_user_id: TARGET_USER_ID,
+            p_site_key: ACTIVE_CONFIG.site_key,
+            p_report_date: reportDate
+          }
+        : {
+            p_site_key: ACTIVE_CONFIG.site_key,
+            p_report_date: reportDate
+          };
+
+      const { data, error } = await sb.rpc(submissionRpc, submissionPayload);
 
       if(error){
         console.error(error);
@@ -1293,7 +1327,9 @@
       showNotice("");
 
       try{
-        const { data: submissionId, error } = await sb.rpc("tp_submit_eod", {
+        const submitRpc = DELEGATED_MODE ? "tp_manager_submit_eod" : "tp_submit_eod";
+        const submitPayload = {
+          ...(DELEGATED_MODE ? { p_target_user_id: TARGET_USER_ID } : {}),
           p_site_key: ACTIVE_CONFIG.site_key,
           p_report_date: $("reportDate").value || localDateISO(),
 
@@ -1311,7 +1347,9 @@
 
           p_renter_seen: VALUES.renter.seen,
           p_renter_booked: VALUES.renter.booked
-        });
+        };
+
+        const { data: submissionId, error } = await sb.rpc(submitRpc, submitPayload);
 
         if(error) throw error;
 
@@ -1341,7 +1379,7 @@
         IS_DIRTY = false;
         refreshSavedSummary();
 
-        showToast("End of Day saved.");
+        showToast(DELEGATED_MODE ? `${TARGET_NAME || "Marketer"} EOD saved.` : "End of Day saved.");
         await loadDateHistory();
         await loadExistingSubmission();
       }catch(err){
