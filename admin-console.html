@@ -478,12 +478,12 @@
       <div class="adminHero" aria-label="Admin Console hero">
         <div class="heroRow">
           <div>
-            <p class="heroTitleSmall">Admin Console</p>
-            <h1 class="heroTitleBig">Usage, Roles &amp; Stats</h1>
+            <p class="heroTitleSmall" id="consoleEyebrow">Admin Console</p>
+            <h1 class="heroTitleBig" id="consoleTitle">Usage, Roles &amp; Stats</h1>
           </div>
-          <div class="pillStatus" title="Admin">
+          <div class="pillStatus" id="consoleAccessPill" title="Console access">
             <span class="dot" aria-hidden="true"></span>
-            Admin Access
+            <span id="consoleAccessText">Admin Access</span>
           </div>
         </div>
       </div>
@@ -491,8 +491,8 @@
       <div class="grid2">
         <div class="card">
           <h1 style="margin-bottom:6px;">Accounts</h1>
-          <p class="muted" style="margin-top:0;">
-            Select a user to view stats, assign a manager, toggle manager access, or remove the account from the admin list.
+          <p class="muted" style="margin-top:0;" id="accountsIntro">
+            Select a user to view stats, assign a manager, toggle manager access, or open End of Day entry.
           </p>
 
           <div class="rowBar">
@@ -517,17 +517,17 @@
             <p class="muted" style="margin-top:0;">Live from Supabase user list.</p>
 
             <div class="miniCard" style="margin-top:10px;">
-              <div class="miniLabel">Total Users</div>
+              <div class="miniLabel">Visible Accounts</div>
               <div class="miniValue mono" id="totalUsers">0</div>
-              <div class="miniHint">Visible admin accounts</div>
+              <div class="miniHint" id="visibleAccountsHint">Accounts available in this console</div>
             </div>
 
             <div style="height:12px;"></div>
 
             <div class="miniCard">
-              <div class="miniLabel">Managers</div>
+              <div class="miniLabel" id="secondMetricLabel">Managers</div>
               <div class="miniValue mono" id="totalManagers">0</div>
-              <div class="miniHint">Accounts marked as manager</div>
+              <div class="miniHint" id="secondMetricHint">Accounts marked as manager</div>
             </div>
 
             <div style="height:12px;"></div>
@@ -559,11 +559,21 @@
             </div>
             <div class="pillStatus" style="padding:8px 12px;">
               <span class="dot" aria-hidden="true"></span>
-              Admin Tools
+              <span id="snapToolLabel">Admin Tools</span>
             </div>
           </div>
 
-          <div class="rolePanel">
+          <div class="rolePanel" id="eodAccessPanel">
+            <div class="roleRow">
+              <div>
+                <div class="roleLabel">End of Day Entry</div>
+                <div class="roleHint" id="eodAccessHint">Open this marketer’s EOD form and enter or correct their numbers.</div>
+              </div>
+              <button class="toggleBtn on" type="button" id="btnEnterEod">Enter EOD</button>
+            </div>
+          </div>
+
+          <div class="rolePanel" id="adminRolePanel">
             <div class="roleRow">
               <div>
                 <div class="roleLabel">Manager Role</div>
@@ -591,6 +601,7 @@
             </div>
           </div>
 
+          <div id="calcDetailsBlock">
           <div class="snapGrid">
             <div class="snapBox">
               <h4>Site Calculator</h4>
@@ -629,6 +640,7 @@
               <tr><td colspan="4" class="muted" style="font-weight:1000;">—</td></tr>
             </tbody>
           </table>
+          </div>
 
         </div>
       </div>
@@ -654,6 +666,8 @@
     let AUTHUSERID = "";
     let AUTHEMP = "";
     let AUTHNAME = "";
+    let IS_ADMIN = false;
+    let IS_MANAGER = false;
     let ALL_USERS = [];
     let ACTIVE_USER = null;
 
@@ -776,9 +790,39 @@
       AUTHNAME = user.user_metadata?.first_name || "";
       AUTHEMP = getEmpFromEmail(user.email);
 
+      const { data: accessData, error: accessError } = await sb.rpc("tp_get_my_console_access");
+      const accessRow = Array.isArray(accessData) ? accessData[0] : accessData;
+
+      if(accessError || !accessRow){
+        console.warn("tp_get_my_console_access:", accessError);
+        IS_ADMIN = isAdminEmpFallback(AUTHEMP);
+        IS_MANAGER = false;
+      }else{
+        IS_ADMIN = !!accessRow.is_admin;
+        IS_MANAGER = !!accessRow.is_manager;
+      }
+
+      if(!IS_ADMIN && !IS_MANAGER){
+        window.location.replace(BACK_PAGE);
+        return;
+      }
+
       $("userName").textContent = AUTHNAME || "Signed In";
       $("userEmp").textContent = AUTHEMP ? `#${AUTHEMP}` : "";
       $("welcomeLine").textContent = "Powered by F8";
+
+      $("consoleEyebrow").textContent = IS_ADMIN ? "Admin Console" : "Manager Console";
+      $("consoleTitle").textContent = IS_ADMIN ? "Usage, Roles & Stats" : "Marketer EOD Access";
+      $("consoleAccessText").textContent = IS_ADMIN ? "Admin Access" : "Manager Access";
+      $("accountsIntro").textContent = IS_ADMIN
+        ? "Select a user to view stats, manage roles, or open End of Day entry."
+        : "Select one of your assigned marketers to enter or correct their End of Day numbers.";
+      $("visibleAccountsHint").textContent = IS_ADMIN
+        ? "TourPulse accounts available in the admin console"
+        : "Marketers currently assigned to you";
+      $("snapToolLabel").textContent = IS_ADMIN ? "Admin Tools" : "Manager Tools";
+      $("adminRolePanel").style.display = IS_ADMIN ? "" : "none";
+      $("calcDetailsBlock").style.display = IS_ADMIN ? "" : "none";
     }
 
     async function rpcTry(names, payloads){
@@ -807,28 +851,16 @@
     async function fetchUsers(){
       $("userList").innerHTML = `<div class="muted" style="padding:10px 8px; font-weight:1000;">Loading…</div>`;
 
-      if(!isAdminEmpFallback(AUTHEMP)){
-        $("userList").innerHTML = `<div class="muted" style="padding:10px 8px; font-weight:1100;">Admin access is not enabled for this account.</div>`;
-        showToast("Admin access not enabled.");
-        return;
-      }
-
-      const { data, error } = await sb.rpc("tp_admin_list_users", {
-        p_search: "",
-        p_limit: 250,
-        p_offset: 0
-      });
+      const { data, error } = await sb.rpc("tp_console_list_users");
 
       if(error){
-        console.warn("tp_admin_list_users error:", error);
-
+        console.warn("tp_console_list_users error:", error);
         $("userList").innerHTML = `
           <div class="muted" style="padding:10px 8px; font-weight:1100;">
-            Admin page loaded, but users could not be pulled. Check the browser console for the RPC error.
+            Console loaded, but accounts could not be pulled.
           </div>
         `;
-
-        showToast("Admin loaded, but users did not pull.");
+        showToast("Accounts did not load.");
         return;
       }
 
@@ -838,13 +870,22 @@
       paintOverview();
 
       if(ALL_USERS.length === 0){
-        showToast("Admin loaded, but no users returned.");
+        showToast(IS_ADMIN ? "No TourPulse users returned." : "No marketers are assigned to you.");
       }
     }
 
     function paintOverview(){
       $("totalUsers").textContent = num(ALL_USERS.length);
-      $("totalManagers").textContent = num(ALL_USERS.filter(isManagerUser).length);
+
+      if(IS_ADMIN){
+        $("secondMetricLabel").textContent = "Managers";
+        $("secondMetricHint").textContent = "Accounts marked as manager";
+        $("totalManagers").textContent = num(ALL_USERS.filter(isManagerUser).length);
+      }else{
+        $("secondMetricLabel").textContent = "EOD Ready";
+        $("secondMetricHint").textContent = "Assigned marketers configured for EOD entry";
+        $("totalManagers").textContent = num(ALL_USERS.filter(u => !!u.eod_enabled).length);
+      }
 
       const latest = [...ALL_USERS]
         .filter(u => !!u.last_seen_at)
@@ -884,6 +925,7 @@
         const emp = empOf(u) ? `#${empOf(u)}` : "#—";
         const email = emailOf(u);
         const managerBadge = isManagerUser(u) ? `<span class="pillManager">Manager</span>` : ``;
+        const eodBadge = u.eod_enabled ? `<span class="pillMini">EOD Ready</span>` : ``;
 
         btn.innerHTML = `
           <div class="uLeft">
@@ -892,6 +934,7 @@
           </div>
           <div class="uRight">
             ${managerBadge}
+            ${eodBadge}
             <span class="pillMini">View</span>
             <span class="openMini">${escapeHtml(u.last_seen_at ? prettyTs(u.last_seen_at) : "Never")}</span>
           </div>
@@ -972,7 +1015,18 @@
       const isMgr = isManagerUser(userRow);
       $("btnToggleManager").classList.toggle("on", isMgr);
       $("btnToggleManager").textContent = isMgr ? "Manager: On" : "Manager: Off";
-      buildManagerOptions(userRow);
+
+      if(IS_ADMIN){
+        buildManagerOptions(userRow);
+      }
+
+      const canEnterEod = !isMgr && !!userRow?.eod_enabled;
+      $("btnEnterEod").disabled = !canEnterEod;
+      $("btnEnterEod").classList.toggle("on", canEnterEod);
+      $("btnEnterEod").textContent = canEnterEod ? "Enter EOD" : "EOD Not Configured";
+      $("eodAccessHint").textContent = canEnterEod
+        ? `Open ${displayNameOf(userRow)}’s EOD form. Entries save to their TourPulse record and sync to Excel.`
+        : "This account does not have an active EOD workbook mapping yet.";
     }
 
     async function openSnapshot(userRow){
@@ -984,6 +1038,10 @@
       resetSnapshotFields();
       paintRoleControls(userRow);
       openSnap();
+
+      if(!IS_ADMIN){
+        return;
+      }
 
       const { data, error } = await sb
         .from("tp_calc_state")
@@ -1224,6 +1282,13 @@
 
       showToast("User removed.");
     }
+
+    $("btnEnterEod").addEventListener("click", () => {
+      if(!ACTIVE_USER || $("btnEnterEod").disabled) return;
+      const targetId = userIdOf(ACTIVE_USER);
+      if(!targetId) return;
+      window.location.href = `eod-tracker.html?target_user_id=${encodeURIComponent(targetId)}&from=console`;
+    });
 
     $("btnToggleManager").addEventListener("click", toggleManagerRole);
     $("managerSelect").addEventListener("change", assignManager);
