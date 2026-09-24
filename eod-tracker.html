@@ -782,7 +782,7 @@
             inputmode="numeric"
             min="0"
             step="1"
-            value="0"
+            placeholder="0"
             autocomplete="off"
           />
         </div>
@@ -1232,7 +1232,9 @@
       $("wizardHint").textContent = q.hint;
 
       $("wizardInputWrap").style.display = "";
-      $("wizardInput").value = String(safeInt(VALUES[q.type][q.field]));
+      const currentValue = safeInt(VALUES[q.type][q.field]);
+      $("wizardInput").value = currentValue > 0 ? String(currentValue) : "";
+      $("wizardInput").placeholder = "0";
 
       $("btnWizardNext").textContent =
         CURRENT_STEP === count - 1 ? "Finish" : "Next";
