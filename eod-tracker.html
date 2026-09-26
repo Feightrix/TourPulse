@@ -952,19 +952,19 @@
 
     const QUESTIONS = [
       { type:"vip", field:"seen", label:"VIP", text:"How many VIP arrivals did you see?", hint:"Enter 0 if you did not see any VIP arrivals." },
-      { type:"vip", field:"booked", label:"VIP", text:"How many VIP arrivals did you book?", hint:"This cannot be greater than the VIP arrivals you saw." },
+      { type:"vip", field:"booked", label:"VIP", text:"How many VIP arrivals did you book?", hint:"Include any incremental tours pulled from units." },
 
       { type:"ga", field:"seen", label:"GA", text:"How many GA arrivals did you see?", hint:"Enter 0 if you did not see any GA arrivals." },
-      { type:"ga", field:"booked", label:"GA", text:"How many GA arrivals did you book?", hint:"This cannot be greater than the GA arrivals you saw." },
+      { type:"ga", field:"booked", label:"GA", text:"How many GA arrivals did you book?", hint:"Include any incremental tours pulled from units." },
 
       { type:"goo", field:"seen", label:"GOO", text:"How many GOO arrivals did you see?", hint:"Enter 0 if you did not see any GOO arrivals." },
-      { type:"goo", field:"booked", label:"GOO", text:"How many GOO arrivals did you book?", hint:"This cannot be greater than the GOO arrivals you saw." },
+      { type:"goo", field:"booked", label:"GOO", text:"How many GOO arrivals did you book?", hint:"Include any incremental tours pulled from units." },
 
       { type:"rci", field:"seen", label:"RCI", text:"How many RCI arrivals did you see?", hint:"Enter 0 if you did not see any RCI arrivals." },
-      { type:"rci", field:"booked", label:"RCI", text:"How many RCI arrivals did you book?", hint:"This cannot be greater than the RCI arrivals you saw." },
+      { type:"rci", field:"booked", label:"RCI", text:"How many RCI arrivals did you book?", hint:"Include any incremental tours pulled from units." },
 
       { type:"renter", field:"seen", label:"Renter", text:"How many Renter arrivals did you see?", hint:"Enter 0 if you did not see any Renter arrivals." },
-      { type:"renter", field:"booked", label:"Renter", text:"How many Renter arrivals did you book?", hint:"This cannot be greater than the Renter arrivals you saw." }
+      { type:"renter", field:"booked", label:"Renter", text:"How many Renter arrivals did you book?", hint:"Include any incremental tours pulled from units." }
     ];
 
     function showToast(msg, ms = 2200){
@@ -1348,12 +1348,6 @@
       const q = ACTIVE_QUESTIONS[CURRENT_STEP];
       const value = safeInt($("wizardInput").value);
 
-      if(q.field === "booked" && value > safeInt(VALUES[q.type].seen)){
-        $("wizardError").textContent =
-          `Booked cannot be greater than seen (${VALUES[q.type].seen}).`;
-        return false;
-      }
-
       VALUES[q.type][q.field] = value;
       $("wizardError").textContent = "";
       return true;
@@ -1528,16 +1522,6 @@
 
       const current = safeInt(VALUES[t][f]);
       const next = Math.max(0, current + d);
-
-      if(f === "booked" && next > safeInt(VALUES[t].seen)){
-        showToast("Booked cannot be greater than seen.");
-        return;
-      }
-
-      if(f === "seen" && next < safeInt(VALUES[t].booked)){
-        showToast("Seen cannot be lower than booked.");
-        return;
-      }
 
       if(next === current) return;
 
