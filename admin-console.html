@@ -522,6 +522,78 @@
       body.tp-admin .roleRow{ flex-direction:column; align-items:flex-start; }
       body.tp-admin .roleSelect{ width:100%; }
     }
+
+    /* Mobile account rows: keep marketer identity visible above actions */
+    @media (max-width: 620px){
+      body.tp-admin .userList{
+        padding:8px;
+        overflow:hidden;
+      }
+
+      body.tp-admin .uRow{
+        flex-direction:column;
+        align-items:stretch;
+        justify-content:flex-start;
+        gap:10px;
+        padding:13px 12px;
+        overflow:hidden;
+      }
+
+      body.tp-admin .uLeft{
+        width:100%;
+        flex:1 1 auto;
+        min-width:0;
+      }
+
+      body.tp-admin .uName{
+        max-width:100%;
+        white-space:normal;
+        overflow:visible;
+        text-overflow:clip;
+        font-size:16px;
+        line-height:1.25;
+      }
+
+      body.tp-admin .uMeta{
+        max-width:100%;
+        white-space:normal;
+        overflow-wrap:anywhere;
+        text-overflow:clip;
+        font-size:12px;
+        line-height:1.35;
+      }
+
+      body.tp-admin .uRight{
+        width:100%;
+        min-width:0;
+        flex:1 1 auto;
+        justify-content:flex-start;
+        gap:6px;
+      }
+
+      body.tp-admin .pillMini,
+      body.tp-admin .pillManager,
+      body.tp-admin .openMini{
+        padding:7px 9px;
+        font-size:10px;
+      }
+
+      body.tp-admin .openMini{
+        max-width:145px;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+
+      body.tp-admin .userSectionHeader{
+        padding-left:4px;
+        padding-right:4px;
+      }
+
+      body.tp-admin .userSectionHeaderLeft{
+        flex:1 1 auto;
+        min-width:0;
+      }
+    }
   </style>
 </head>
 
