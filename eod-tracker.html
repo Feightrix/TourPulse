@@ -1266,8 +1266,7 @@
       $("wizardHint").textContent = q.hint;
 
       $("wizardInputWrap").style.display = "";
-      const currentValue = safeInt(VALUES[q.type][q.field]);
-      $("wizardInput").value = currentValue > 0 ? String(currentValue) : "";
+      $("wizardInput").value = "";
       $("wizardInput").placeholder = "0";
 
       $("btnWizardNext").textContent =
