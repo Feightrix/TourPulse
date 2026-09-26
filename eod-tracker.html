@@ -187,7 +187,7 @@
 
     body.tp-eod .breakdownCard{
       margin-top:16px;
-      display:none;
+      display:block;
       border:1px solid rgba(15,23,42,.11);
       border-radius:18px;
       overflow:hidden;
@@ -200,7 +200,7 @@
     body.tp-eod .breakdownHeader,
     body.tp-eod .breakdownRow{
       display:grid;
-      grid-template-columns:1fr 92px 92px 78px;
+      grid-template-columns:1fr 110px 110px;
       gap:10px;
       align-items:center;
       padding:11px 14px;
@@ -315,7 +315,7 @@
 
     body.tp-eod .savedSummary{
       margin-top:12px;
-      display:none;
+      display:grid;
       grid-template-columns:repeat(3,minmax(0,1fr));
       gap:10px;
     }
@@ -347,7 +347,7 @@
 
     body.tp-eod .pageActions{
       margin-top:16px;
-      display:none;
+      display:flex;
       align-items:center;
       justify-content:center;
       gap:10px;
@@ -356,7 +356,6 @@
 
     body.tp-eod .pageActions.show{ display:flex; }
 
-    body.tp-eod .editBtn,
     body.tp-eod .submitPageBtn{
       appearance:none;
       border-radius:16px;
@@ -622,12 +621,12 @@
 
       body.tp-eod .breakdownHeader,
       body.tp-eod .breakdownRow{
-        grid-template-columns:1fr 58px 58px 54px;
+        grid-template-columns:1fr 82px 82px;
+        gap:8px;
         padding-left:12px;
         padding-right:12px;
       }
 
-      body.tp-eod .editBtn,
       body.tp-eod .submitPageBtn{
         width:100%;
         min-width:0;
@@ -699,7 +698,7 @@
         <div class="eodHeroTop">
           <div>
             <h1>End of Day Tracker</h1>
-            <p>A quick guided check-in. You’ll answer one question at a time, then review the full breakdown on this page.</p>
+            <p>Enter Seen and Booked directly below. Use the arrows to make adjustments, then submit the report when it is ready.</p>
           </div>
           <span class="statusPill" id="syncStatus">Not submitted</span>
         </div>
@@ -731,15 +730,14 @@
 
       <div id="trackerContent">
         <div class="launchCard">
-          <h2 id="launchTitle">Ready to finish your day?</h2>
-          <p id="launchText">TourPulse will walk you through VIP, GA, GOO, RCI, and Renter one question at a time.</p>
+          <h2 id="launchTitle">Enter Your End of Day</h2>
+          <p id="launchText">Use the arrows beside Seen and Booked for each arrival type. You can make changes here at any time before submitting.</p>
 
           <div class="breakdownCard" id="breakdownCard">
             <div class="breakdownHeader">
               <div>Arrival Type</div>
               <div style="text-align:right;">Seen</div>
               <div style="text-align:right;">Booked</div>
-              <div style="text-align:right;">Edit</div>
             </div>
 
             <div class="breakdownRow">
@@ -758,7 +756,6 @@
                   <button class="stepperBtn" type="button" data-step-type="vip" data-step-field="booked" data-step-delta="-1" aria-label="Decrease VIP booked">▼</button>
                 </div>
               </div>
-              <button class="lineEditBtn" type="button" data-edit-type="vip">Edit</button>
             </div>
 
             <div class="breakdownRow">
@@ -777,7 +774,6 @@
                   <button class="stepperBtn" type="button" data-step-type="ga" data-step-field="booked" data-step-delta="-1" aria-label="Decrease GA booked">▼</button>
                 </div>
               </div>
-              <button class="lineEditBtn" type="button" data-edit-type="ga">Edit</button>
             </div>
 
             <div class="breakdownRow">
@@ -796,7 +792,6 @@
                   <button class="stepperBtn" type="button" data-step-type="goo" data-step-field="booked" data-step-delta="-1" aria-label="Decrease GOO booked">▼</button>
                 </div>
               </div>
-              <button class="lineEditBtn" type="button" data-edit-type="goo">Edit</button>
             </div>
 
             <div class="breakdownRow">
@@ -815,7 +810,6 @@
                   <button class="stepperBtn" type="button" data-step-type="rci" data-step-field="booked" data-step-delta="-1" aria-label="Decrease RCI booked">▼</button>
                 </div>
               </div>
-              <button class="lineEditBtn" type="button" data-edit-type="rci">Edit</button>
             </div>
 
             <div class="breakdownRow">
@@ -834,7 +828,6 @@
                   <button class="stepperBtn" type="button" data-step-type="renter" data-step-field="booked" data-step-delta="-1" aria-label="Decrease Renter booked">▼</button>
                 </div>
               </div>
-              <button class="lineEditBtn" type="button" data-edit-type="renter">Edit</button>
             </div>
           </div>
 
@@ -853,10 +846,7 @@
             </div>
           </div>
 
-          <button class="launchBtn" type="button" id="btnStart">Start End of Day</button>
-
           <div class="pageActions" id="pageActions">
-            <button class="editBtn" type="button" id="btnEditResponses">Edit All Responses</button>
             <button class="submitPageBtn" type="button" id="btnSubmitPage">Submit End of Day</button>
           </div>
         </div>
@@ -868,48 +858,6 @@
         End of Day Tracker is not configured for this account yet. Contact your TourPulse administrator.
       </div>
     </section>
-  </div>
-
-  <!-- ONE-QUESTION-AT-A-TIME WIZARD -->
-  <div class="wizardOverlay" id="wizardOverlay" role="dialog" aria-modal="true" aria-labelledby="wizardQuestion">
-    <div class="wizardModal">
-      <div class="wizardTop">
-        <div>
-          <div class="wizardStepLabel" id="wizardStepLabel">Question 1 of 10</div>
-        </div>
-        <button class="wizardClose" id="wizardClose" type="button" aria-label="Close">×</button>
-      </div>
-
-      <div class="progressTrack" aria-hidden="true">
-        <div class="progressFill" id="progressFill"></div>
-      </div>
-
-      <div class="questionStage" id="questionStage">
-        <span class="arrivalTag" id="arrivalTag">VIP</span>
-        <h2 class="wizardQuestion" id="wizardQuestion">How many VIP arrivals did you see?</h2>
-        <p class="wizardHint" id="wizardHint">Enter 0 if you did not see any.</p>
-
-        <div class="wizardInputWrap">
-          <input
-            class="wizardInput"
-            id="wizardInput"
-            type="number"
-            inputmode="numeric"
-            min="0"
-            step="1"
-            placeholder="0"
-            autocomplete="off"
-          />
-        </div>
-
-        <div class="wizardError" id="wizardError"></div>
-      </div>
-
-      <div class="wizardActions">
-        <button class="wizardBtn back" type="button" id="btnWizardBack">Back</button>
-        <button class="wizardBtn next" type="button" id="btnWizardNext">Next</button>
-      </div>
-    </div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -936,11 +884,7 @@
     let ACTIVE_CONFIG = null;
     let IS_SUBMITTING = false;
     let HAS_EXISTING = false;
-    let HAS_COMPLETED_FORM = false;
     let IS_DIRTY = false;
-    let CURRENT_STEP = 0;
-    let ACTIVE_QUESTIONS = [];
-    let WIZARD_SCOPE = "all";
 
     const VALUES = {
       vip: { seen:0, booked:0 },
@@ -950,22 +894,7 @@
       renter: { seen:0, booked:0 }
     };
 
-    const QUESTIONS = [
-      { type:"vip", field:"seen", label:"VIP", text:"How many VIP arrivals did you see?", hint:"Enter 0 if you did not see any VIP arrivals." },
-      { type:"vip", field:"booked", label:"VIP", text:"How many VIP arrivals did you book?", hint:"Include any incremental tours pulled from units." },
-
-      { type:"ga", field:"seen", label:"GA", text:"How many GA arrivals did you see?", hint:"Enter 0 if you did not see any GA arrivals." },
-      { type:"ga", field:"booked", label:"GA", text:"How many GA arrivals did you book?", hint:"Include any incremental tours pulled from units." },
-
-      { type:"goo", field:"seen", label:"GOO", text:"How many GOO arrivals did you see?", hint:"Enter 0 if you did not see any GOO arrivals." },
-      { type:"goo", field:"booked", label:"GOO", text:"How many GOO arrivals did you book?", hint:"Include any incremental tours pulled from units." },
-
-      { type:"rci", field:"seen", label:"RCI", text:"How many RCI arrivals did you see?", hint:"Enter 0 if you did not see any RCI arrivals." },
-      { type:"rci", field:"booked", label:"RCI", text:"How many RCI arrivals did you book?", hint:"Include any incremental tours pulled from units." },
-
-      { type:"renter", field:"seen", label:"Renter", text:"How many Renter arrivals did you see?", hint:"Enter 0 if you did not see any Renter arrivals." },
-      { type:"renter", field:"booked", label:"Renter", text:"How many Renter arrivals did you book?", hint:"Include any incremental tours pulled from units." }
-    ];
+    const ARRIVAL_LABELS = { vip:"VIP", ga:"GA", goo:"GOO", rci:"RCI", renter:"Renter" };
 
     function showToast(msg, ms = 2200){
       const t = $("toast");
@@ -1099,20 +1028,16 @@
 
     function refreshSavedSummary(){
       const t = totals();
-      const showBreakdown = HAS_EXISTING || HAS_COMPLETED_FORM;
+      const ready = !!ACTIVE_CONFIG;
 
       $("bdVipSeen").textContent = String(VALUES.vip.seen);
       $("bdVipBooked").textContent = String(VALUES.vip.booked);
-
       $("bdGaSeen").textContent = String(VALUES.ga.seen);
       $("bdGaBooked").textContent = String(VALUES.ga.booked);
-
       $("bdGooSeen").textContent = String(VALUES.goo.seen);
       $("bdGooBooked").textContent = String(VALUES.goo.booked);
-
       $("bdRciSeen").textContent = String(VALUES.rci.seen);
       $("bdRciBooked").textContent = String(VALUES.rci.booked);
-
       $("bdRenterSeen").textContent = String(VALUES.renter.seen);
       $("bdRenterBooked").textContent = String(VALUES.renter.booked);
 
@@ -1120,24 +1045,29 @@
       $("savedBooked").textContent = String(t.booked);
       $("savedConversion").textContent = `${(t.conversion * 100).toFixed(t.seen ? 1 : 0)}%`;
 
-      $("breakdownCard").classList.toggle("show", showBreakdown);
-      $("savedSummary").classList.toggle("show", showBreakdown);
-      $("pageActions").classList.toggle("show", showBreakdown);
-      $("btnStart").style.display = showBreakdown ? "none" : "";
+      $("breakdownCard").classList.toggle("show", ready);
+      $("savedSummary").classList.toggle("show", ready);
+      $("pageActions").classList.toggle("show", ready);
+
+      if(!ready){
+        $("btnSubmitPage").style.display = "none";
+        return;
+      }
 
       if(HAS_EXISTING && !IS_DIRTY){
         $("launchTitle").textContent = "Your End of Day is saved.";
-        $("launchText").textContent = "Here is your full arrival breakdown for this date.";
+        $("launchText").textContent = "Use the arrows to make any correction. Submit Updates will appear as soon as you change a number.";
         $("btnSubmitPage").style.display = "none";
-      }else if(showBreakdown){
-        $("launchTitle").textContent = HAS_EXISTING ? "Review your updates." : "Review your End of Day.";
-        $("launchText").textContent = "Check the breakdown below. Edit anything you need, then submit from this page.";
+      }else if(HAS_EXISTING){
+        $("launchTitle").textContent = "Review your updates.";
+        $("launchText").textContent = "Your changes are ready. Submit them when the numbers are correct.";
         $("btnSubmitPage").style.display = "";
-        $("btnSubmitPage").textContent = HAS_EXISTING ? "Submit Updates" : "Submit End of Day";
+        $("btnSubmitPage").textContent = "Submit Updates";
       }else{
-        $("launchTitle").textContent = "Ready to finish your day?";
-        $("launchText").textContent = "TourPulse will walk you through VIP, GA, GOO, RCI, and Renter one question at a time.";
-        $("btnSubmitPage").style.display = "none";
+        $("launchTitle").textContent = DELEGATED_MODE && TARGET_NAME ? `Enter End of Day for ${TARGET_NAME}` : "Enter Your End of Day";
+        $("launchText").textContent = "Use the arrows beside Seen and Booked for each arrival type, then submit the report.";
+        $("btnSubmitPage").style.display = "";
+        $("btnSubmitPage").textContent = "Submit End of Day";
       }
     }
 
@@ -1253,7 +1183,6 @@
       showNotice("");
       resetValues();
       HAS_EXISTING = false;
-      HAS_COMPLETED_FORM = false;
       IS_DIRTY = false;
 
       const reportDate = $("reportDate").value || localDateISO();
@@ -1283,7 +1212,6 @@
 
       if(row){
         HAS_EXISTING = true;
-        HAS_COMPLETED_FORM = true;
         IS_DIRTY = false;
 
         VALUES.vip.seen = safeInt(row.vip_seen);
@@ -1316,121 +1244,13 @@
       syncHistorySelection();
     }
 
-    function openWizard(type = null){
-      if(!ACTIVE_CONFIG) return;
-
-      WIZARD_SCOPE = type ? String(type) : "all";
-      ACTIVE_QUESTIONS = WIZARD_SCOPE === "all"
-        ? [...QUESTIONS]
-        : QUESTIONS.filter(q => q.type === WIZARD_SCOPE);
-
-      if(!ACTIVE_QUESTIONS.length) return;
-
-      CURRENT_STEP = 0;
-      $("wizardOverlay").classList.add("show");
-      renderWizardStep();
-
-      setTimeout(() => {
-        $("wizardInput").focus();
-        $("wizardInput").select();
-      }, 60);
-    }
-
-    function closeWizard(){
-      if(IS_SUBMITTING) return;
-      $("wizardOverlay").classList.remove("show");
-      $("wizardError").textContent = "";
-    }
-
-    function saveCurrentQuestion(){
-      if(CURRENT_STEP >= ACTIVE_QUESTIONS.length) return true;
-
-      const q = ACTIVE_QUESTIONS[CURRENT_STEP];
-      const value = safeInt($("wizardInput").value);
-
-      VALUES[q.type][q.field] = value;
-      $("wizardError").textContent = "";
-      return true;
-    }
-
-    function renderWizardStep(){
-      $("wizardError").textContent = "";
-      $("btnWizardBack").disabled = CURRENT_STEP === 0 || IS_SUBMITTING;
-      $("wizardClose").disabled = IS_SUBMITTING;
-
-      const q = ACTIVE_QUESTIONS[CURRENT_STEP];
-      const count = ACTIVE_QUESTIONS.length;
-      const progress = ((CURRENT_STEP + 1) / count) * 100;
-
-      $("progressFill").style.width = `${progress}%`;
-
-      $("wizardStepLabel").textContent =
-        WIZARD_SCOPE === "all"
-          ? `Question ${CURRENT_STEP + 1} of ${count}`
-          : `${q.label} • ${CURRENT_STEP + 1} of ${count}`;
-
-      $("arrivalTag").style.display = "inline-flex";
-      $("arrivalTag").textContent = q.label;
-      $("wizardQuestion").textContent = q.text;
-      $("wizardHint").textContent = q.hint;
-
-      $("wizardInputWrap").style.display = "";
-      $("wizardInput").value = "";
-      $("wizardInput").placeholder = "0";
-
-      $("btnWizardNext").textContent =
-        CURRENT_STEP === count - 1 ? "Finish" : "Next";
-
-      $("btnWizardNext").disabled = IS_SUBMITTING;
-
-      setTimeout(() => {
-        $("wizardInput").focus();
-        $("wizardInput").select();
-      }, 40);
-    }
-
-    async function wizardNext(){
-      if(IS_SUBMITTING) return;
-
-      if(!saveCurrentQuestion()) return;
-
-      if(CURRENT_STEP === ACTIVE_QUESTIONS.length - 1){
-        HAS_COMPLETED_FORM = true;
-        IS_DIRTY = true;
-
-        $("wizardOverlay").classList.remove("show");
-        refreshSavedSummary();
-
-        if(WIZARD_SCOPE === "all"){
-          showNotice("Review the full breakdown below, then submit when everything looks right.");
-          showToast("Responses ready to review.");
-        }else{
-          const label = ACTIVE_QUESTIONS[0]?.label || "Arrival";
-          showNotice(`${label} updated. Review the breakdown below, then submit your updates.`);
-          showToast(`${label} updated.`);
-        }
-        return;
-      }
-
-      CURRENT_STEP += 1;
-      renderWizardStep();
-    }
-
-    function wizardBack(){
-      if(IS_SUBMITTING || CURRENT_STEP <= 0) return;
-
-      CURRENT_STEP -= 1;
-      renderWizardStep();
-    }
-
     async function submitEod(){
       if(IS_SUBMITTING || !ACTIVE_CONFIG) return;
 
       IS_SUBMITTING = true;
 
       $("btnSubmitPage").disabled = true;
-      $("btnEditResponses").disabled = true;
-      document.querySelectorAll(".lineEditBtn, .stepperBtn").forEach(btn => btn.disabled = true);
+      document.querySelectorAll(".stepperBtn").forEach(btn => btn.disabled = true);
       $("btnSubmitPage").textContent = "Saving…";
       showNotice("");
 
@@ -1483,7 +1303,6 @@
         }
 
         HAS_EXISTING = true;
-        HAS_COMPLETED_FORM = true;
         IS_DIRTY = false;
         refreshSavedSummary();
 
@@ -1499,14 +1318,11 @@
       }finally{
         IS_SUBMITTING = false;
         $("btnSubmitPage").disabled = false;
-        $("btnEditResponses").disabled = false;
-        document.querySelectorAll(".lineEditBtn, .stepperBtn").forEach(btn => btn.disabled = false);
+        document.querySelectorAll(".stepperBtn").forEach(btn => btn.disabled = false);
         refreshSavedSummary();
       }
     }
 
-    $("btnStart").addEventListener("click", () => openWizard());
-    $("btnEditResponses").addEventListener("click", () => openWizard());
     $("btnSubmitPage").addEventListener("click", submitEod);
 
     function adjustBreakdownValue(type, field, delta){
@@ -1526,45 +1342,23 @@
       if(next === current) return;
 
       VALUES[t][f] = next;
-      HAS_COMPLETED_FORM = true;
       IS_DIRTY = true;
 
       refreshSavedSummary();
 
-      const label = QUESTIONS.find(q => q.type === t)?.label || "Arrival";
+      const label = ARRIVAL_LABELS[t] || "Arrival";
       showNotice(`${label} updated. Submit your updates when everything looks right.`);
     }
 
     $("breakdownCard").addEventListener("click", e => {
       const stepBtn = e.target?.closest?.("[data-step-type]");
-      if(stepBtn){
-        e.preventDefault();
-        adjustBreakdownValue(
-          stepBtn.getAttribute("data-step-type"),
-          stepBtn.getAttribute("data-step-field"),
-          stepBtn.getAttribute("data-step-delta")
-        );
-        return;
-      }
-
-      const editBtn = e.target?.closest?.("[data-edit-type]");
-      if(!editBtn) return;
-      openWizard(editBtn.getAttribute("data-edit-type"));
-    });
-
-    $("wizardClose").addEventListener("click", closeWizard);
-    $("btnWizardNext").addEventListener("click", wizardNext);
-    $("btnWizardBack").addEventListener("click", wizardBack);
-
-    $("wizardInput").addEventListener("keydown", e => {
-      if(e.key === "Enter"){
-        e.preventDefault();
-        wizardNext();
-      }
-    });
-
-    $("wizardOverlay").addEventListener("click", e => {
-      if(e.target === $("wizardOverlay")) closeWizard();
+      if(!stepBtn) return;
+      e.preventDefault();
+      adjustBreakdownValue(
+        stepBtn.getAttribute("data-step-type"),
+        stepBtn.getAttribute("data-step-field"),
+        stepBtn.getAttribute("data-step-delta")
+      );
     });
 
     $("siteSelect").addEventListener("change", async () => {
