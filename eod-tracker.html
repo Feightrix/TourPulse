@@ -82,6 +82,13 @@
     body.tp-eod .contextSelect,
     body.tp-eod .contextDate{
       width:100%;
+      max-width:100%;
+      min-width:0;
+      inline-size:100%;
+      max-inline-size:100%;
+      min-inline-size:0;
+      box-sizing:border-box;
+      display:block;
       border:1px solid rgba(15,23,42,.12);
       border-radius:12px;
       background:#fff;
@@ -134,6 +141,17 @@
     body.tp-eod .statusPill.pending::before{
       background:#f59e0b;
       box-shadow:0 0 0 4px rgba(245,158,11,.12);
+    }
+
+    body.tp-eod .statusPill.queued{
+      background:rgba(10,166,181,.10);
+      border-color:rgba(10,166,181,.24);
+      color:rgba(10,126,140,.98);
+    }
+
+    body.tp-eod .statusPill.queued::before{
+      background:#0aa6b5;
+      box-shadow:0 0 0 4px rgba(10,166,181,.12);
     }
 
     body.tp-eod .statusPill.error{
@@ -1078,6 +1096,9 @@
       if(status === "synced"){
         pill.classList.add("synced");
         pill.textContent = "Synced to Excel";
+      }else if(status === "queued"){
+        pill.classList.add("queued");
+        pill.textContent = "Sent to Excel Queue";
       }else if(status === "pending" || status === "syncing"){
         pill.classList.add("pending");
         pill.textContent = status === "syncing" ? "Syncing to Excel…" : "Saved • Sync Pending";
@@ -1232,9 +1253,11 @@
         setStatus(row.sync_status, row.sync_error || "");
 
         if(row.sync_status === "synced"){
-          showNotice("Today's EOD is already submitted. You can reopen it if anything needs to be corrected.");
+          showNotice("Today's EOD is already submitted and synced to Excel. You can reopen it if anything needs to be corrected.");
+        }else if(row.sync_status === "queued"){
+          showNotice("Today's EOD is saved and has been sent to the Excel sync queue.");
         }else{
-          showNotice("Today's EOD is saved. You can reopen it if anything needs to be corrected.");
+          showNotice("Today's EOD is saved. Excel sync is still pending.");
         }
       }else{
         setStatus("");
@@ -1295,8 +1318,8 @@
           setStatus("synced");
           showNotice("Your EOD was saved and synced to the Excel report.");
         }else if(syncData?.queued){
-          setStatus("pending");
-          showNotice(syncData.message || "Your EOD was saved. Excel sync is pending.");
+          setStatus("queued");
+          showNotice(syncData.message || "Your EOD was saved and sent to the Excel sync queue.");
         }else{
           setStatus("pending");
           showNotice("Your EOD was saved. Excel sync is pending.");
