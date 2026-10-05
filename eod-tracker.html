@@ -847,6 +847,20 @@
                 </div>
               </div>
             </div>
+
+            <div class="breakdownRow">
+              <div class="breakdownType">Bounce Back</div>
+              <div class="breakdownValueControl" aria-label="Bounce Back seen not applicable">
+                <div class="breakdownNumber" style="opacity:.45;">—</div>
+              </div>
+              <div class="breakdownValueControl">
+                <div class="breakdownNumber" id="bdBounceBackBooked">0</div>
+                <div class="stepperBtns" aria-label="Bounce Back booked controls">
+                  <button class="stepperBtn" type="button" data-step-type="bounceback" data-step-field="booked" data-step-delta="1" aria-label="Increase Bounce Back booked">▲</button>
+                  <button class="stepperBtn" type="button" data-step-type="bounceback" data-step-field="booked" data-step-delta="-1" aria-label="Decrease Bounce Back booked">▼</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="savedSummary" id="savedSummary">
@@ -909,10 +923,11 @@
       ga: { seen:0, booked:0 },
       goo: { seen:0, booked:0 },
       rci: { seen:0, booked:0 },
-      renter: { seen:0, booked:0 }
+      renter: { seen:0, booked:0 },
+      bounceback: { seen:0, booked:0 }
     };
 
-    const ARRIVAL_LABELS = { vip:"VIP", ga:"GA", goo:"GOO", rci:"RCI", renter:"Renter" };
+    const ARRIVAL_LABELS = { vip:"VIP", ga:"GA", goo:"GOO", rci:"RCI", renter:"Renter", bounceback:"Bounce Back" };
 
     function showToast(msg, ms = 2200){
       const t = $("toast");
@@ -970,7 +985,7 @@
       const sel = $("historySelect");
       if(!sel) return;
 
-      const historyRpc = DELEGATED_MODE ? "tp_manager_list_eod_dates" : "tp_list_my_eod_dates";
+      const historyRpc = DELEGATED_MODE ? "tp_manager_list_eod_dates_v2" : "tp_list_my_eod_dates_v2";
       const historyPayload = DELEGATED_MODE
         ? { p_target_user_id: TARGET_USER_ID, p_site_key: ACTIVE_CONFIG.site_key }
         : { p_site_key: ACTIVE_CONFIG.site_key };
@@ -1058,6 +1073,7 @@
       $("bdRciBooked").textContent = String(VALUES.rci.booked);
       $("bdRenterSeen").textContent = String(VALUES.renter.seen);
       $("bdRenterBooked").textContent = String(VALUES.renter.booked);
+      $("bdBounceBackBooked").textContent = String(VALUES.bounceback.booked);
 
       $("savedSeen").textContent = String(t.seen);
       $("savedBooked").textContent = String(t.booked);
@@ -1208,7 +1224,7 @@
 
       const reportDate = $("reportDate").value || localDateISO();
 
-      const submissionRpc = DELEGATED_MODE ? "tp_manager_get_eod_submission" : "tp_get_my_eod_submission";
+      const submissionRpc = DELEGATED_MODE ? "tp_manager_get_eod_submission_v2" : "tp_get_my_eod_submission_v2";
       const submissionPayload = DELEGATED_MODE
         ? {
             p_target_user_id: TARGET_USER_ID,
@@ -1249,6 +1265,7 @@
 
         VALUES.renter.seen = safeInt(row.renter_seen);
         VALUES.renter.booked = safeInt(row.renter_booked);
+        VALUES.bounceback.booked = safeInt(row.bounce_back_booked);
 
         setStatus(row.sync_status, row.sync_error || "");
 
@@ -1278,7 +1295,7 @@
       showNotice("");
 
       try{
-        const submitRpc = DELEGATED_MODE ? "tp_manager_submit_eod" : "tp_submit_eod";
+        const submitRpc = DELEGATED_MODE ? "tp_manager_submit_eod_v2" : "tp_submit_eod_v2";
         const submitPayload = {
           ...(DELEGATED_MODE ? { p_target_user_id: TARGET_USER_ID } : {}),
           p_site_key: ACTIVE_CONFIG.site_key,
@@ -1297,7 +1314,9 @@
           p_rci_booked: VALUES.rci.booked,
 
           p_renter_seen: VALUES.renter.seen,
-          p_renter_booked: VALUES.renter.booked
+          p_renter_booked: VALUES.renter.booked,
+
+          p_bounce_back_booked: VALUES.bounceback.booked
         };
 
         const { data: submissionId, error } = await sb.rpc(submitRpc, submitPayload);
