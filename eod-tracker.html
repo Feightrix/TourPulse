@@ -1236,7 +1236,7 @@
         </div>
       </div>
 
-      <div class="quickEntryFoot">Updates the current EOD</div>
+      <div class="quickEntryFoot">Auto-saved on this device</div>
     </div>
   </div>
 
@@ -1277,6 +1277,74 @@
 
     const ARRIVAL_LABELS = { vip:"VIP", ga:"GA", goo:"GOO", rci:"RCI", renter:"Renter", bounceback:"Bounce Back" };
 
+
+
+    function quickDraftKey(){
+      if(!ACTIVE_CONFIG) return "";
+      const who = DELEGATED_MODE
+        ? TARGET_USER_ID
+        : String(AUTHUSER?.id || empFromEmail(AUTHUSER?.email) || "self");
+      const date = $("reportDate")?.value || localDateISO();
+      return `tp_eod_draft|${who}|${ACTIVE_CONFIG.site_key}|${date}`;
+    }
+
+    function persistQuickDraft(){
+      const key = quickDraftKey();
+      if(!key) return;
+
+      try{
+        const payload = {
+          updatedAt: new Date().toISOString(),
+          values: {
+            vip: { ...VALUES.vip },
+            ga: { ...VALUES.ga },
+            goo: { ...VALUES.goo },
+            rci: { ...VALUES.rci },
+            renter: { ...VALUES.renter },
+            bounceback: { ...VALUES.bounceback }
+          }
+        };
+        localStorage.setItem(key, JSON.stringify(payload));
+      }catch(_){}
+    }
+
+    function clearQuickDraft(){
+      const key = quickDraftKey();
+      if(!key) return;
+      try{ localStorage.removeItem(key); }catch(_){}
+    }
+
+    function restoreQuickDraft(serverUpdatedAt = ""){
+      const key = quickDraftKey();
+      if(!key) return false;
+
+      try{
+        const raw = localStorage.getItem(key);
+        if(!raw) return false;
+
+        const draft = JSON.parse(raw);
+        const draftMs = Date.parse(String(draft?.updatedAt || ""));
+        const serverMs = Date.parse(String(serverUpdatedAt || ""));
+
+        if(Number.isFinite(serverMs) && Number.isFinite(draftMs) && draftMs <= serverMs){
+          localStorage.removeItem(key);
+          return false;
+        }
+
+        const v = draft?.values || {};
+        for(const type of Object.keys(VALUES)){
+          if(v[type]){
+            VALUES[type].seen = safeInt(v[type].seen);
+            VALUES[type].booked = safeInt(v[type].booked);
+          }
+        }
+
+        IS_DIRTY = true;
+        return true;
+      }catch(_){
+        return false;
+      }
+    }
 
     function setQuickEntryOpen(open){
       const dock = $("quickEntryDock");
@@ -1671,6 +1739,7 @@
         setStatus("");
       }
 
+      restoreQuickDraft(row?.updated_at || "");
       refreshSavedSummary();
       syncHistorySelection();
     }
@@ -1737,6 +1806,7 @@
 
         HAS_EXISTING = true;
         IS_DIRTY = false;
+        clearQuickDraft();
         refreshSavedSummary();
 
         showToast(DELEGATED_MODE ? `${TARGET_NAME || "Marketer"} EOD saved.` : "End of Day saved.");
@@ -1776,6 +1846,7 @@
 
       VALUES[t][f] = next;
       IS_DIRTY = true;
+      persistQuickDraft();
 
       refreshSavedSummary();
 
