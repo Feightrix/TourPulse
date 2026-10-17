@@ -618,6 +618,229 @@
       cursor:not-allowed;
     }
 
+
+    /* ===== Floating Quick EOD ===== */
+    body.tp-eod .quickEntryDock{
+      position:fixed;
+      right:0;
+      top:50%;
+      transform:translateY(-50%);
+      z-index:2147483000;
+      display:none;
+      font-family:inherit;
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    body.tp-eod .quickEntryDock.ready{ display:block; }
+
+    body.tp-eod .quickEntryTab{
+      width:34px;
+      height:98px;
+      border:1px solid rgba(10,166,181,.28);
+      border-right:0;
+      border-radius:13px 0 0 13px;
+      background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(236,250,252,.98));
+      box-shadow:-8px 10px 26px rgba(2,6,23,.14);
+      color:rgba(10,126,140,.98);
+      font-size:9px;
+      font-weight:1100;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      writing-mode:vertical-rl;
+      transform:rotate(180deg);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:5px;
+      cursor:pointer;
+      padding:6px 0;
+    }
+
+    body.tp-eod .quickEntryTab::before{
+      content:"+";
+      width:16px;
+      height:16px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      writing-mode:horizontal-tb;
+      transform:rotate(180deg);
+      background:rgba(10,166,181,.13);
+      font-size:14px;
+      line-height:1;
+    }
+
+    body.tp-eod .quickEntryPanel{
+      width:158px;
+      max-width:calc(100vw - 10px);
+      height:198px;
+      border:1px solid rgba(15,23,42,.14);
+      border-right:0;
+      border-radius:15px 0 0 15px;
+      background:rgba(255,255,255,.985);
+      box-shadow:-14px 18px 42px rgba(2,6,23,.20);
+      overflow:hidden;
+      display:none;
+      backdrop-filter:blur(12px);
+    }
+
+    body.tp-eod .quickEntryDock.open .quickEntryTab{ display:none; }
+    body.tp-eod .quickEntryDock.open .quickEntryPanel{ display:block; }
+
+    body.tp-eod .quickEntryTop{
+      height:25px;
+      padding:0 6px 0 8px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      border-bottom:1px solid rgba(15,23,42,.08);
+      background:rgba(10,166,181,.08);
+    }
+
+    body.tp-eod .quickEntryTitle{
+      display:flex;
+      align-items:center;
+      gap:5px;
+      min-width:0;
+      font-size:9px;
+      font-weight:1150;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      color:rgba(15,23,42,.80);
+    }
+
+    body.tp-eod .quickEntryDirty{
+      width:6px;
+      height:6px;
+      border-radius:50%;
+      background:rgba(15,23,42,.18);
+      flex:0 0 auto;
+    }
+
+    body.tp-eod .quickEntryDirty.on{
+      background:#f59e0b;
+      box-shadow:0 0 0 2px rgba(245,158,11,.15);
+    }
+
+    body.tp-eod .quickEntryClose{
+      width:19px;
+      height:19px;
+      border:0;
+      border-radius:6px;
+      background:transparent;
+      color:rgba(15,23,42,.55);
+      font-size:15px;
+      line-height:18px;
+      cursor:pointer;
+      padding:0;
+    }
+
+    body.tp-eod .quickEntryClose:hover{ background:rgba(15,23,42,.06); }
+
+    body.tp-eod .quickEntryHead,
+    body.tp-eod .quickEntryRow{
+      display:grid;
+      grid-template-columns:54px 48px 48px;
+      align-items:center;
+    }
+
+    body.tp-eod .quickEntryHead{
+      height:18px;
+      padding:0 3px;
+      background:rgba(15,23,42,.025);
+      border-bottom:1px solid rgba(15,23,42,.07);
+      font-size:7px;
+      font-weight:1100;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:rgba(15,23,42,.46);
+    }
+
+    body.tp-eod .quickEntryHead div:nth-child(2),
+    body.tp-eod .quickEntryHead div:nth-child(3){
+      text-align:center;
+    }
+
+    body.tp-eod .quickEntryRow{
+      height:24px;
+      padding:0 3px;
+      border-bottom:1px solid rgba(15,23,42,.055);
+      font-size:9px;
+    }
+
+    body.tp-eod .quickEntryRow:last-child{ border-bottom:0; }
+
+    body.tp-eod .quickEntryType{
+      padding-left:4px;
+      font-weight:1050;
+      color:rgba(15,23,42,.84);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    body.tp-eod .quickEntryCell{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:2px;
+      min-width:0;
+    }
+
+    body.tp-eod .quickEntryValue{
+      width:18px;
+      text-align:center;
+      font-size:10px;
+      font-weight:1150;
+      color:rgba(15,23,42,.90);
+      font-variant-numeric:tabular-nums;
+    }
+
+    body.tp-eod .quickEntryNA{
+      width:100%;
+      text-align:center;
+      color:rgba(15,23,42,.30);
+      font-size:11px;
+    }
+
+    body.tp-eod .quickMiniSteps{
+      display:flex;
+      flex-direction:column;
+      gap:1px;
+    }
+
+    body.tp-eod .quickEntryPanel .stepperBtn.quickStepBtn{
+      width:17px;
+      height:10px;
+      min-width:17px;
+      min-height:10px;
+      border-radius:4px;
+      font-size:7px;
+      line-height:8px;
+      padding:0;
+      box-shadow:none;
+    }
+
+    body.tp-eod .quickEntryFoot{
+      height:11px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-top:1px solid rgba(15,23,42,.06);
+      background:rgba(10,166,181,.035);
+      color:rgba(15,23,42,.43);
+      font-size:6px;
+      font-weight:900;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+    }
+
+    @media (max-width:520px){
+      body.tp-eod .quickEntryDock{ right:0; top:48%; }
+      body.tp-eod .quickEntryPanel{ width:158px; height:198px; }
+    }
+
     @media (max-width:700px){
       body.tp-eod .contextGrid{ grid-template-columns:1fr; }
       body.tp-eod .savedSummary{ grid-template-columns:repeat(3,1fr); }
@@ -892,6 +1115,131 @@
     </section>
   </div>
 
+
+  <div class="quickEntryDock" id="quickEntryDock" aria-label="Quick EOD entry">
+    <button class="quickEntryTab" id="quickEntryToggle" type="button" aria-expanded="false" aria-controls="quickEntryPanel">Quick EOD</button>
+
+    <div class="quickEntryPanel" id="quickEntryPanel">
+      <div class="quickEntryTop">
+        <div class="quickEntryTitle">
+          <span class="quickEntryDirty" id="quickEntryDirty" aria-hidden="true"></span>
+          <span>Quick EOD</span>
+        </div>
+        <button class="quickEntryClose" id="quickEntryClose" type="button" aria-label="Collapse Quick EOD">×</button>
+      </div>
+
+      <div class="quickEntryHead">
+        <div>Type</div>
+        <div>Seen</div>
+        <div>Booked</div>
+      </div>
+
+      <div class="quickEntryRow">
+        <div class="quickEntryType">VIP</div>
+        <div class="quickEntryCell">
+          <span class="quickEntryValue" id="qVipSeen">0</span>
+          <span class="quickMiniSteps">
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="vip" data-step-field="seen" data-step-delta="1" aria-label="Increase VIP seen">▲</button>
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="vip" data-step-field="seen" data-step-delta="-1" aria-label="Decrease VIP seen">▼</button>
+          </span>
+        </div>
+        <div class="quickEntryCell">
+          <span class="quickEntryValue" id="qVipBooked">0</span>
+          <span class="quickMiniSteps">
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="vip" data-step-field="booked" data-step-delta="1" aria-label="Increase VIP booked">▲</button>
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="vip" data-step-field="booked" data-step-delta="-1" aria-label="Decrease VIP booked">▼</button>
+          </span>
+        </div>
+      </div>
+
+      <div class="quickEntryRow">
+        <div class="quickEntryType">GA</div>
+        <div class="quickEntryCell">
+          <span class="quickEntryValue" id="qGaSeen">0</span>
+          <span class="quickMiniSteps">
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="ga" data-step-field="seen" data-step-delta="1" aria-label="Increase GA seen">▲</button>
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="ga" data-step-field="seen" data-step-delta="-1" aria-label="Decrease GA seen">▼</button>
+          </span>
+        </div>
+        <div class="quickEntryCell">
+          <span class="quickEntryValue" id="qGaBooked">0</span>
+          <span class="quickMiniSteps">
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="ga" data-step-field="booked" data-step-delta="1" aria-label="Increase GA booked">▲</button>
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="ga" data-step-field="booked" data-step-delta="-1" aria-label="Decrease GA booked">▼</button>
+          </span>
+        </div>
+      </div>
+
+      <div class="quickEntryRow">
+        <div class="quickEntryType">GOO</div>
+        <div class="quickEntryCell">
+          <span class="quickEntryValue" id="qGooSeen">0</span>
+          <span class="quickMiniSteps">
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="goo" data-step-field="seen" data-step-delta="1" aria-label="Increase GOO seen">▲</button>
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="goo" data-step-field="seen" data-step-delta="-1" aria-label="Decrease GOO seen">▼</button>
+          </span>
+        </div>
+        <div class="quickEntryCell">
+          <span class="quickEntryValue" id="qGooBooked">0</span>
+          <span class="quickMiniSteps">
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="goo" data-step-field="booked" data-step-delta="1" aria-label="Increase GOO booked">▲</button>
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="goo" data-step-field="booked" data-step-delta="-1" aria-label="Decrease GOO booked">▼</button>
+          </span>
+        </div>
+      </div>
+
+      <div class="quickEntryRow">
+        <div class="quickEntryType">RCI</div>
+        <div class="quickEntryCell">
+          <span class="quickEntryValue" id="qRciSeen">0</span>
+          <span class="quickMiniSteps">
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="rci" data-step-field="seen" data-step-delta="1" aria-label="Increase RCI seen">▲</button>
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="rci" data-step-field="seen" data-step-delta="-1" aria-label="Decrease RCI seen">▼</button>
+          </span>
+        </div>
+        <div class="quickEntryCell">
+          <span class="quickEntryValue" id="qRciBooked">0</span>
+          <span class="quickMiniSteps">
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="rci" data-step-field="booked" data-step-delta="1" aria-label="Increase RCI booked">▲</button>
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="rci" data-step-field="booked" data-step-delta="-1" aria-label="Decrease RCI booked">▼</button>
+          </span>
+        </div>
+      </div>
+
+      <div class="quickEntryRow">
+        <div class="quickEntryType">Renter</div>
+        <div class="quickEntryCell">
+          <span class="quickEntryValue" id="qRenterSeen">0</span>
+          <span class="quickMiniSteps">
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="renter" data-step-field="seen" data-step-delta="1" aria-label="Increase Renter seen">▲</button>
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="renter" data-step-field="seen" data-step-delta="-1" aria-label="Decrease Renter seen">▼</button>
+          </span>
+        </div>
+        <div class="quickEntryCell">
+          <span class="quickEntryValue" id="qRenterBooked">0</span>
+          <span class="quickMiniSteps">
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="renter" data-step-field="booked" data-step-delta="1" aria-label="Increase Renter booked">▲</button>
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="renter" data-step-field="booked" data-step-delta="-1" aria-label="Decrease Renter booked">▼</button>
+          </span>
+        </div>
+      </div>
+
+      <div class="quickEntryRow">
+        <div class="quickEntryType">Bounce Back</div>
+        <div class="quickEntryCell"><span class="quickEntryNA">—</span></div>
+        <div class="quickEntryCell">
+          <span class="quickEntryValue" id="qBounceBackBooked">0</span>
+          <span class="quickMiniSteps">
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="bounceback" data-step-field="booked" data-step-delta="1" aria-label="Increase Bounce Back booked">▲</button>
+            <button class="stepperBtn quickStepBtn" type="button" data-step-type="bounceback" data-step-field="booked" data-step-delta="-1" aria-label="Decrease Bounce Back booked">▼</button>
+          </span>
+        </div>
+      </div>
+
+      <div class="quickEntryFoot">Updates the current EOD</div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script>
@@ -928,6 +1276,47 @@
     };
 
     const ARRIVAL_LABELS = { vip:"VIP", ga:"GA", goo:"GOO", rci:"RCI", renter:"Renter", bounceback:"Bounce Back" };
+
+
+    function setQuickEntryOpen(open){
+      const dock = $("quickEntryDock");
+      const toggle = $("quickEntryToggle");
+      if(!dock || !toggle) return;
+      dock.classList.toggle("open", !!open);
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      try{ localStorage.setItem("tp_eod_quick_open", open ? "1" : "0"); }catch(_){}
+    }
+
+    function refreshQuickEntry(){
+      const dock = $("quickEntryDock");
+      if(!dock) return;
+
+      const ready = !!ACTIVE_CONFIG;
+      dock.classList.toggle("ready", ready);
+      if(!ready) return;
+
+      const map = {
+        qVipSeen: VALUES.vip.seen,
+        qVipBooked: VALUES.vip.booked,
+        qGaSeen: VALUES.ga.seen,
+        qGaBooked: VALUES.ga.booked,
+        qGooSeen: VALUES.goo.seen,
+        qGooBooked: VALUES.goo.booked,
+        qRciSeen: VALUES.rci.seen,
+        qRciBooked: VALUES.rci.booked,
+        qRenterSeen: VALUES.renter.seen,
+        qRenterBooked: VALUES.renter.booked,
+        qBounceBackBooked: VALUES.bounceback.booked
+      };
+
+      Object.entries(map).forEach(([id,value]) => {
+        const el = $(id);
+        if(el) el.textContent = String(safeInt(value));
+      });
+
+      const dirty = $("quickEntryDirty");
+      if(dirty) dirty.classList.toggle("on", !!IS_DIRTY);
+    }
 
     function showToast(msg, ms = 2200){
       const t = $("toast");
@@ -1078,6 +1467,8 @@
       $("savedSeen").textContent = String(t.seen);
       $("savedBooked").textContent = String(t.booked);
       $("savedConversion").textContent = `${(t.conversion * 100).toFixed(t.seen ? 1 : 0)}%`;
+
+      refreshQuickEntry();
 
       $("breakdownCard").classList.toggle("show", ready);
       $("savedSummary").classList.toggle("show", ready);
@@ -1402,6 +1793,27 @@
         stepBtn.getAttribute("data-step-delta")
       );
     });
+
+
+    $("quickEntryToggle").addEventListener("click", () => setQuickEntryOpen(true));
+    $("quickEntryClose").addEventListener("click", () => setQuickEntryOpen(false));
+
+    $("quickEntryPanel").addEventListener("click", e => {
+      const stepBtn = e.target?.closest?.("[data-step-type]");
+      if(!stepBtn) return;
+      e.preventDefault();
+      adjustBreakdownValue(
+        stepBtn.getAttribute("data-step-type"),
+        stepBtn.getAttribute("data-step-field"),
+        stepBtn.getAttribute("data-step-delta")
+      );
+    });
+
+    try{
+      if(localStorage.getItem("tp_eod_quick_open") === "1"){
+        setQuickEntryOpen(true);
+      }
+    }catch(_){}
 
     $("siteSelect").addEventListener("change", async () => {
       ACTIVE_CONFIG =
