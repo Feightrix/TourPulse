@@ -544,6 +544,8 @@
     el.className = "status" + (mode ? " " + mode : "");
   }
 
+  const EOD_ALLOWED_SITES = new Set(["myrtle-beach-oceanfront","south-beach"]);
+
   function siteTitle(key){
     const map = {
       "myrtle-beach-oceanfront":"Myrtle Beach",
@@ -792,7 +794,7 @@
     const {data,error}=await sb.rpc("tp_get_my_eod_configs");
     if(error) throw error;
 
-    CONFIGS=Array.isArray(data)?data:[];
+    CONFIGS=(Array.isArray(data)?data:[]).filter(c=>EOD_ALLOWED_SITES.has(String(c.site_key||"")));
     if(!CONFIGS.length) throw new Error("End of Day is not configured for this account.");
 
     const sel=$("siteSelect");
