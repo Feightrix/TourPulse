@@ -429,7 +429,7 @@
         <p>Use the same employee number and PIN you use for TourPulse.</p>
 
         <div class="field">
-          <label for="emp">Employee Number</label>
+          <label for="emp">Employee ID</label>
           <input id="emp" inputmode="numeric" maxlength="6" autocomplete="username">
         </div>
 
@@ -819,17 +819,25 @@
     const first=USER.user_metadata?.first_name || "Marketer";
     const emp=String(USER.email||"").split("@")[0] || "";
     $("userLine").textContent=first+(emp?" • #"+emp:"");
-    $("authView").classList.add("hidden");
-    $("entryView").classList.remove("hidden");
     $("reportDate").value=localDateISO();
-    setStatus("Connecting…","saving");
+    setStatus("Verifying access…","saving");
 
     try{
       await loadConfigs();
+      $("authView").classList.add("hidden");
+      $("entryView").classList.remove("hidden");
     }catch(err){
       console.error(err);
-      setStatus("Not configured","error");
-      $("userLine").textContent=(err?.message || "EOD configuration unavailable");
+      USER=null;
+      CONFIGS=[];
+      ACTIVE_CONFIG=null;
+      try{ await sb.auth.signOut(); }catch(_){}
+      $("entryView").classList.add("hidden");
+      $("authView").classList.remove("hidden");
+      $("pin").value="";
+      $("authError").textContent=err?.message || "This account does not have MBO or SBR EOD access.";
+      setStatus("Access denied","error");
+      $("emp").focus();
     }
   }
 
@@ -839,7 +847,7 @@
     $("authError").textContent="";
 
     if(!/^\d{6}$/.test(emp)){
-      $("authError").textContent="Employee number must be 6 digits.";
+      $("authError").textContent="Employee ID must be 6 digits.";
       return;
     }
     if(!/^\d{4}$/.test(pin)){
