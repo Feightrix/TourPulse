@@ -6,7 +6,6 @@ on:
     branches: [main]
     paths:
       - "desktop/**"
-      - "quick-eod.html"
       - ".github/workflows/build-quick-eod-desktop.yml"
 
 jobs:
@@ -28,18 +27,35 @@ jobs:
         working-directory: desktop
         run: npm install
 
+      - name: Syntax check
+        working-directory: desktop
+        run: npm run check
+
       - name: Build Windows app
         working-directory: desktop
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: npm run dist
 
-      - name: Upload Windows builds
+      - name: Smoke test unpacked Windows app
+        shell: powershell
+        run: |
+          $exe = Join-Path $PWD "desktop\dist\win-unpacked\TourPulse Quick EOD.exe"
+          if (!(Test-Path $exe)) { throw "Unpacked executable not found: $exe" }
+          $p = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 8
+          $p.Refresh()
+          if ($p.HasExited) {
+            throw "Quick EOD exited during smoke test with code $($p.ExitCode)"
+          }
+          Stop-Process -Id $p.Id -Force
+
+      - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
           name: TourPulse-Quick-EOD-Windows
           path: |
-            desktop/dist/*.exe
+            desktop/dist/TourPulse-Quick-EOD-*.exe
             desktop/dist/*.yml
           if-no-files-found: error
           retention-days: 30
