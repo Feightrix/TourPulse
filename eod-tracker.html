@@ -62,7 +62,7 @@
     }
 
     body.tp-eod .contextLabel{
-      font-size:12px;
+      font-size:10px;
       font-weight:1100;
       letter-spacing:.13em;
       text-transform:uppercase;
@@ -284,7 +284,7 @@
       cursor:pointer;
       font-size:13px;
       font-weight:1200;
-      line-height:36px;
+      line-height:18px;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -642,7 +642,7 @@
       background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(236,250,252,.98));
       box-shadow:-8px 10px 26px rgba(2,6,23,.14);
       color:rgba(10,126,140,.98);
-      font-size:10px;
+      font-size:9px;
       font-weight:1100;
       letter-spacing:.10em;
       text-transform:uppercase;
@@ -746,11 +746,11 @@
     }
 
     body.tp-eod .quickEntryHead{
-      height:18px;
+      height:24px;
       padding:0 3px;
       background:rgba(15,23,42,.025);
       border-bottom:1px solid rgba(15,23,42,.07);
-      font-size:8px;
+      font-size:7px;
       font-weight:1100;
       letter-spacing:.08em;
       text-transform:uppercase;
@@ -763,7 +763,7 @@
     }
 
     body.tp-eod .quickEntryRow{
-      height:24px;
+      height:36px;
       padding:0 3px;
       border-bottom:1px solid rgba(15,23,42,.055);
       font-size:9px;
@@ -791,7 +791,7 @@
     body.tp-eod .quickEntryValue{
       width:24px;
       text-align:center;
-      font-size:10px;
+      font-size:12px;
       font-weight:1150;
       color:rgba(15,23,42,.90);
       font-variant-numeric:tabular-nums;
@@ -815,7 +815,7 @@
       height:14px;
       min-width:22px;
       min-height:14px;
-      border-radius:4px;
+      border-radius:5px;
       font-size:8px;
       line-height:8px;
       padding:0;
@@ -838,7 +838,7 @@
 
     @media (max-width:520px){
       body.tp-eod .quickEntryDock{ right:0; top:48%; }
-      body.tp-eod .quickEntryPanel{ width:158px; height:198px; }
+      body.tp-eod .quickEntryPanel{ width:190px; height:248px; }
     }
 
     @media (max-width:700px){
@@ -1482,6 +1482,8 @@
       syncHistorySelection();
     }
 
+    const EOD_ALLOWED_SITES = new Set(["myrtle-beach-oceanfront","south-beach"]);
+
     function siteTitle(key){
       if(key === "myrtle-beach-oceanfront") return "Myrtle Beach Oceanfront";
       if(key === "south-beach") return "South Beach Resort";
@@ -1633,7 +1635,7 @@
         return;
       }
 
-      CONFIGS = Array.isArray(data) ? data : [];
+      CONFIGS = (Array.isArray(data) ? data : []).filter(c => EOD_ALLOWED_SITES.has(String(c.site_key || "")));
 
       if(DELEGATED_MODE && CONFIGS.length){
         TARGET_NAME = String(CONFIGS[0].excel_name || CONFIGS[0].target_first_name || "Marketer");
