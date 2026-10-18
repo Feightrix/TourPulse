@@ -1,6 +1,6 @@
 {
   "name": "tourpulse-quick-eod",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Secure local Windows desktop Quick EOD app for TourPulse",
   "main": "main.js",
   "author": "F8",
@@ -49,6 +49,7 @@
     }
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.57.4"
+    "@supabase/supabase-js": "^2.57.4",
+    "ws": "^8.18.0"
   }
 }
