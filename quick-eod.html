@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TourPulse Quick EOD</title>
+  <link rel="icon" href="favicon.ico">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root{
+      --ink:#0f172a;
+      --muted:#64748b;
+      --line:rgba(15,23,42,.10);
+      --teal:#0aa6b5;
+      --teal-dark:#087e8c;
+      --bg:#f4f8fa;
+      --card:#ffffff;
+      --good:#16a34a;
+      --warn:#f59e0b;
+      --bad:#dc2626;
+    }
+
+    *{ box-sizing:border-box; }
+
+    html,body{
+      margin:0;
+      width:100%;
+      min-height:100%;
+      background:
+        radial-gradient(420px 180px at 15% -5%, rgba(10,166,181,.16), transparent 62%),
+        var(--bg);
+      color:var(--ink);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    }
+
+    body{
+      padding:10px;
+      overflow-x:hidden;
+    }
+
+    button,input,select{ font:inherit; }
+
+    .app{
+      width:min(100%,390px);
+      margin:0 auto;
+    }
+
+    .shell{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.96);
+      border-radius:18px;
+      box-shadow:0 18px 48px rgba(2,6,23,.13);
+      overflow:hidden;
+    }
+
+    .top{
+      min-height:48px;
+      padding:8px 10px;
+      display:flex;
+      align-items:center;
+      gap:9px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg,rgba(255,255,255,.99),rgba(245,252,253,.98));
+      -webkit-app-region:drag;
+      user-select:none;
+    }
+
+    .mark{
+      width:31px;
+      height:31px;
+      border-radius:9px;
+      display:grid;
+      place-items:center;
+      background:rgba(10,166,181,.10);
+      border:1px solid rgba(10,166,181,.17);
+      overflow:hidden;
+      flex:0 0 auto;
+    }
+
+    .mark img{
+      width:27px;
+      height:27px;
+      object-fit:contain;
+    }
+
+    .brand{
+      min-width:0;
+      flex:1 1 auto;
+    }
+
+    .brandTitle{
+      font-size:13px;
+      line-height:1.05;
+      font-weight:900;
+      letter-spacing:.01em;
+    }
+
+    .brandSub{
+      margin-top:2px;
+      font-size:9px;
+      font-weight:750;
+      color:var(--muted);
+    }
+
+    .status{
+      -webkit-app-region:no-drag;
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      max-width:145px;
+      padding:5px 7px;
+      border-radius:999px;
+      background:rgba(15,23,42,.05);
+      color:rgba(15,23,42,.63);
+      border:1px solid rgba(15,23,42,.08);
+      font-size:8px;
+      font-weight:850;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .status::before{
+      content:"";
+      width:6px;
+      height:6px;
+      border-radius:50%;
+      background:#94a3b8;
+      flex:0 0 auto;
+    }
+
+    .status.saving::before{ background:var(--warn); }
+    .status.saved::before{ background:var(--good); }
+    .status.queued::before{ background:var(--teal); }
+    .status.error::before{ background:var(--bad); }
+
+    .body{ padding:10px; }
+
+    .auth{
+      padding:12px;
+    }
+
+    .auth h1{
+      margin:0;
+      font-size:18px;
+      font-weight:900;
+    }
+
+    .auth p{
+      margin:5px 0 12px;
+      color:var(--muted);
+      font-size:11px;
+      line-height:1.4;
+    }
+
+    .field{
+      display:grid;
+      gap:4px;
+      margin-top:8px;
+    }
+
+    .field label{
+      font-size:9px;
+      font-weight:850;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:rgba(15,23,42,.56);
+    }
+
+    .field input,
+    .field select{
+      width:100%;
+      min-height:38px;
+      border-radius:10px;
+      border:1px solid rgba(15,23,42,.13);
+      background:#fff;
+      outline:none;
+      padding:8px 10px;
+      color:var(--ink);
+      font-weight:800;
+    }
+
+    .field input:focus,
+    .field select:focus{
+      border-color:rgba(10,166,181,.50);
+      box-shadow:0 0 0 3px rgba(10,166,181,.09);
+    }
+
+    .primary{
+      width:100%;
+      margin-top:11px;
+      min-height:40px;
+      border:1px solid rgba(10,166,181,.28);
+      border-radius:11px;
+      background:linear-gradient(135deg,rgba(10,166,181,.18),rgba(8,126,140,.10));
+      color:var(--ink);
+      font-weight:900;
+      cursor:pointer;
+    }
+
+    .error{
+      min-height:15px;
+      margin-top:7px;
+      color:#b91c1c;
+      font-size:10px;
+      font-weight:750;
+    }
+
+    .controls{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 104px;
+      gap:7px;
+      margin-bottom:8px;
+    }
+
+    .miniField{
+      min-width:0;
+      display:grid;
+      gap:3px;
+    }
+
+    .miniField label{
+      font-size:7px;
+      font-weight:900;
+      letter-spacing:.09em;
+      text-transform:uppercase;
+      color:rgba(15,23,42,.50);
+    }
+
+    .miniField select,
+    .miniField input{
+      min-width:0;
+      width:100%;
+      height:31px;
+      padding:5px 7px;
+      border:1px solid rgba(15,23,42,.11);
+      border-radius:9px;
+      background:#fff;
+      color:var(--ink);
+      font-size:10px;
+      font-weight:850;
+      outline:none;
+    }
+
+    .grid{
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:13px;
+      overflow:hidden;
+      background:#fff;
+    }
+
+    .head,
+    .row{
+      display:grid;
+      grid-template-columns:minmax(82px,1fr) 82px 82px;
+      align-items:center;
+    }
+
+    .head{
+      height:25px;
+      padding:0 6px;
+      background:rgba(10,166,181,.075);
+      color:rgba(15,23,42,.48);
+      font-size:7px;
+      font-weight:950;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      border-bottom:1px solid rgba(15,23,42,.08);
+    }
+
+    .head div:nth-child(2),
+    .head div:nth-child(3){ text-align:center; }
+
+    .row{
+      min-height:45px;
+      padding:3px 6px;
+      border-bottom:1px solid rgba(15,23,42,.065);
+    }
+
+    .row:last-child{ border-bottom:0; }
+
+    .type{
+      font-size:11px;
+      font-weight:900;
+      color:rgba(15,23,42,.87);
+    }
+
+    .cell{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+    }
+
+    .value{
+      width:26px;
+      text-align:center;
+      font-size:15px;
+      font-weight:950;
+      font-variant-numeric:tabular-nums;
+    }
+
+    .steps{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+    }
+
+    .step{
+      width:27px;
+      height:17px;
+      padding:0;
+      display:grid;
+      place-items:center;
+      border:1px solid rgba(15,23,42,.12);
+      border-radius:6px;
+      background:#fff;
+      color:rgba(15,23,42,.67);
+      font-size:9px;
+      line-height:1;
+      cursor:pointer;
+      box-shadow:0 1px 3px rgba(2,6,23,.05);
+    }
+
+    .step:hover{
+      background:rgba(10,166,181,.09);
+      color:var(--teal-dark);
+      border-color:rgba(10,166,181,.24);
+    }
+
+    .step:active{ transform:translateY(1px); }
+    .step:disabled{ opacity:.4; cursor:not-allowed; }
+
+    .na{
+      color:rgba(15,23,42,.30);
+      font-size:15px;
+    }
+
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:6px;
+      margin-top:8px;
+    }
+
+    .sum{
+      padding:7px 4px;
+      border-radius:10px;
+      background:rgba(10,166,181,.055);
+      border:1px solid rgba(10,166,181,.10);
+      text-align:center;
+    }
+
+    .sumLabel{
+      font-size:6px;
+      font-weight:950;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:rgba(15,23,42,.46);
+    }
+
+    .sumValue{
+      margin-top:2px;
+      font-size:15px;
+      font-weight:950;
+    }
+
+    .foot{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+      margin-top:8px;
+    }
+
+    .user{
+      min-width:0;
+      font-size:9px;
+      font-weight:800;
+      color:rgba(15,23,42,.56);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .actions{
+      display:flex;
+      gap:5px;
+      flex:0 0 auto;
+    }
+
+    .smallBtn{
+      min-height:27px;
+      padding:4px 8px;
+      border:1px solid rgba(15,23,42,.10);
+      border-radius:8px;
+      background:#fff;
+      color:rgba(15,23,42,.68);
+      font-size:8px;
+      font-weight:850;
+      cursor:pointer;
+    }
+
+    .smallBtn:hover{ background:rgba(15,23,42,.035); }
+
+    .hidden{ display:none !important; }
+
+    @media (max-width:350px){
+      body{ padding:6px; }
+      .head,.row{ grid-template-columns:minmax(72px,1fr) 76px 76px; }
+      .row{ min-height:43px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="shell">
+      <div class="top">
+        <div class="mark"><img src="images/MTK-logo.png" alt=""></div>
+        <div class="brand">
+          <div class="brandTitle">TourPulse Quick EOD</div>
+          <div class="brandSub">Live desktop entry • Powered by F8</div>
+        </div>
+        <div class="status" id="status">Waiting</div>
+      </div>
+
+      <div class="auth" id="authView">
+        <h1>Sign in</h1>
+        <p>Use the same employee number and PIN you use for TourPulse.</p>
+
+        <div class="field">
+          <label for="emp">Employee Number</label>
+          <input id="emp" inputmode="numeric" maxlength="6" autocomplete="username">
+        </div>
+
+        <div class="field">
+          <label for="pin">PIN</label>
+          <input id="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password">
+        </div>
+
+        <button class="primary" id="signInBtn" type="button">Sign In</button>
+        <div class="error" id="authError"></div>
+      </div>
+
+      <div class="body hidden" id="entryView">
+        <div class="controls">
+          <div class="miniField">
+            <label for="siteSelect">Site</label>
+            <select id="siteSelect"></select>
+          </div>
+          <div class="miniField">
+            <label for="reportDate">Date</label>
+            <input id="reportDate" type="date">
+          </div>
+        </div>
+
+        <div class="grid" id="entryGrid">
+          <div class="head">
+            <div>Arrival Type</div>
+            <div>Seen</div>
+            <div>Booked</div>
+          </div>
+        </div>
+
+        <div class="summary">
+          <div class="sum">
+            <div class="sumLabel">Seen</div>
+            <div class="sumValue" id="totalSeen">0</div>
+          </div>
+          <div class="sum">
+            <div class="sumLabel">Booked</div>
+            <div class="sumValue" id="totalBooked">0</div>
+          </div>
+          <div class="sum">
+            <div class="sumLabel">Conv.</div>
+            <div class="sumValue" id="conversion">0%</div>
+          </div>
+        </div>
+
+        <div class="foot">
+          <div class="user" id="userLine">—</div>
+          <div class="actions">
+            <button class="smallBtn" id="fullEodBtn" type="button">Full EOD</button>
+            <button class="smallBtn" id="signOutBtn" type="button">Sign Out</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const $ = id => document.getElementById(id);
+
+  const TYPES = [
+    ["vip","VIP",true],
+    ["ga","GA",true],
+    ["goo","GOO",true],
+    ["rci","RCI",true],
+    ["renter","Renter",true],
+    ["bounceback","Bounce Back",false]
+  ];
+
+  const VALUES = {
+    vip:{seen:0,booked:0},
+    ga:{seen:0,booked:0},
+    goo:{seen:0,booked:0},
+    rci:{seen:0,booked:0},
+    renter:{seen:0,booked:0},
+    bounceback:{seen:0,booked:0}
+  };
+
+  let USER = null;
+  let CONFIGS = [];
+  let ACTIVE_CONFIG = null;
+  let SAVE_TIMER = null;
+  let SAVING = false;
+  let SAVE_AGAIN = false;
+  let LOADING = false;
+  let CURRENT_SUBMISSION_ID = null;
+  const SAVE_DELAY_MS = 2200;
+
+  function safeInt(v){
+    const n = parseInt(String(v ?? "0"),10);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  }
+
+  function localDateISO(){
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,"0");
+    const day = String(d.getDate()).padStart(2,"0");
+    return y + "-" + m + "-" + day;
+  }
+
+  function derivedEmail(emp){ return String(emp || "").trim() + "@f8.local"; }
+  function derivedPassword(emp,pin){ return "F8-" + String(emp||"").trim() + "-" + String(pin||"").trim(); }
+
+  function setStatus(text, mode=""){
+    const el = $("status");
+    el.textContent = text;
+    el.className = "status" + (mode ? " " + mode : "");
+  }
+
+  function siteTitle(key){
+    const map = {
+      "myrtle-beach-oceanfront":"Myrtle Beach",
+      "south-beach":"South Beach",
+      "williamsburg":"Williamsburg",
+      "holiday-hills":"Holiday Hills",
+      "gatlinburg":"Gatlinburg",
+      "smoky-mountain":"Smoky Mountain"
+    };
+    return map[key] || String(key || "Site").replaceAll("-"," ").replace(/\b\w/g,m=>m.toUpperCase());
+  }
+
+  function draftKey(){
+    if(!USER || !ACTIVE_CONFIG) return "";
+    return "tp_quick_eod|" + USER.id + "|" + ACTIVE_CONFIG.site_key + "|" + ($("reportDate").value || localDateISO());
+  }
+
+  function saveDraft(){
+    const key = draftKey();
+    if(!key) return;
+    try{
+      localStorage.setItem(key, JSON.stringify({
+        updatedAt:new Date().toISOString(),
+        values:VALUES
+      }));
+    }catch(_){}
+  }
+
+  function clearDraft(){
+    const key = draftKey();
+    if(!key) return;
+    try{ localStorage.removeItem(key); }catch(_){}
+  }
+
+  function restoreDraft(serverUpdatedAt=""){
+    const key = draftKey();
+    if(!key) return false;
+    try{
+      const raw = localStorage.getItem(key);
+      if(!raw) return false;
+      const draft = JSON.parse(raw);
+      const draftMs = Date.parse(String(draft.updatedAt || ""));
+      const serverMs = Date.parse(String(serverUpdatedAt || ""));
+      if(Number.isFinite(serverMs) && Number.isFinite(draftMs) && draftMs <= serverMs){
+        localStorage.removeItem(key);
+        return false;
+      }
+      const v = draft.values || {};
+      for(const [key] of TYPES){
+        VALUES[key].seen = safeInt(v[key]?.seen);
+        VALUES[key].booked = safeInt(v[key]?.booked);
+      }
+      return true;
+    }catch(_){
+      return false;
+    }
+  }
+
+  function resetValues(){
+    for(const [key] of TYPES){
+      VALUES[key].seen = 0;
+      VALUES[key].booked = 0;
+    }
+  }
+
+  function totals(){
+    let seen=0, booked=0;
+    for(const [key,,hasSeen] of TYPES){
+      if(hasSeen) seen += safeInt(VALUES[key].seen);
+      booked += safeInt(VALUES[key].booked);
+    }
+    return {seen,booked,conversion:seen>0?booked/seen:0};
+  }
+
+  function buildGrid(){
+    const grid = $("entryGrid");
+    grid.querySelectorAll(".row").forEach(n=>n.remove());
+
+    for(const [key,label,hasSeen] of TYPES){
+      const row = document.createElement("div");
+      row.className = "row";
+      row.innerHTML = `
+        <div class="type">${label}</div>
+        <div class="cell">
+          ${hasSeen ? `
+            <span class="value" id="v-${key}-seen">0</span>
+            <span class="steps">
+              <button class="step" type="button" data-type="${key}" data-field="seen" data-delta="1" aria-label="Increase ${label} seen">▲</button>
+              <button class="step" type="button" data-type="${key}" data-field="seen" data-delta="-1" aria-label="Decrease ${label} seen">▼</button>
+            </span>` : '<span class="na">—</span>'}
+        </div>
+        <div class="cell">
+          <span class="value" id="v-${key}-booked">0</span>
+          <span class="steps">
+            <button class="step" type="button" data-type="${key}" data-field="booked" data-delta="1" aria-label="Increase ${label} booked">▲</button>
+            <button class="step" type="button" data-type="${key}" data-field="booked" data-delta="-1" aria-label="Decrease ${label} booked">▼</button>
+          </span>
+        </div>
+      `;
+      grid.appendChild(row);
+    }
+  }
+
+  function refresh(){
+    for(const [key,,hasSeen] of TYPES){
+      if(hasSeen){
+        const seenEl = $("v-"+key+"-seen");
+        if(seenEl) seenEl.textContent = VALUES[key].seen;
+      }
+      const bookedEl = $("v-"+key+"-booked");
+      if(bookedEl) bookedEl.textContent = VALUES[key].booked;
+    }
+    const t=totals();
+    $("totalSeen").textContent=t.seen;
+    $("totalBooked").textContent=t.booked;
+    $("conversion").textContent=(t.conversion*100).toFixed(t.seen?1:0)+"%";
+  }
+
+  function scheduleSave(){
+    if(LOADING || !ACTIVE_CONFIG || !USER) return;
+    saveDraft();
+    setStatus("Changes pending","saving");
+    clearTimeout(SAVE_TIMER);
+    SAVE_TIMER=setTimeout(saveNow,SAVE_DELAY_MS);
+  }
+
+  async function saveNow(){
+    if(LOADING || !ACTIVE_CONFIG || !USER) return;
+    if(SAVING){
+      SAVE_AGAIN=true;
+      return;
+    }
+
+    SAVING=true;
+    SAVE_AGAIN=false;
+    document.querySelectorAll(".step").forEach(b=>b.disabled=true);
+    setStatus("Saving to TourPulse…","saving");
+
+    try{
+      const payload={
+        p_site_key:ACTIVE_CONFIG.site_key,
+        p_report_date:$("reportDate").value || localDateISO(),
+        p_vip_seen:VALUES.vip.seen,
+        p_vip_booked:VALUES.vip.booked,
+        p_ga_seen:VALUES.ga.seen,
+        p_ga_booked:VALUES.ga.booked,
+        p_goo_seen:VALUES.goo.seen,
+        p_goo_booked:VALUES.goo.booked,
+        p_rci_seen:VALUES.rci.seen,
+        p_rci_booked:VALUES.rci.booked,
+        p_renter_seen:VALUES.renter.seen,
+        p_renter_booked:VALUES.renter.booked,
+        p_bounce_back_booked:VALUES.bounceback.booked
+      };
+
+      const {data:submissionId,error}=await sb.rpc("tp_submit_eod_v2",payload);
+      if(error) throw error;
+
+      CURRENT_SUBMISSION_ID=submissionId;
+      clearDraft();
+      setStatus("TourPulse saved","saved");
+
+      const {data:syncData,error:syncError}=await sb.functions.invoke("eod-sync",{
+        body:{submission_id:submissionId}
+      });
+
+      if(syncError) throw syncError;
+
+      if(syncData?.queued){
+        setStatus("EOD sync queued","queued");
+      }else if(syncData?.synced){
+        setStatus("EOD synced","saved");
+      }else{
+        setStatus("TourPulse saved","saved");
+      }
+    }catch(err){
+      console.error(err);
+      saveDraft();
+      setStatus("Save error","error");
+    }finally{
+      SAVING=false;
+      document.querySelectorAll(".step").forEach(b=>b.disabled=false);
+      if(SAVE_AGAIN){
+        SAVE_AGAIN=false;
+        SAVE_TIMER=setTimeout(saveNow,500);
+      }
+    }
+  }
+
+  async function loadSubmission(){
+    if(!ACTIVE_CONFIG || !USER) return;
+    LOADING=true;
+    clearTimeout(SAVE_TIMER);
+    resetValues();
+    setStatus("Loading…","saving");
+
+    try{
+      const {data,error}=await sb.rpc("tp_get_my_eod_submission_v2",{
+        p_site_key:ACTIVE_CONFIG.site_key,
+        p_report_date:$("reportDate").value || localDateISO()
+      });
+      if(error) throw error;
+
+      const row=Array.isArray(data)?data[0]:data;
+      CURRENT_SUBMISSION_ID=row?.id || null;
+
+      if(row){
+        VALUES.vip.seen=safeInt(row.vip_seen);
+        VALUES.vip.booked=safeInt(row.vip_booked);
+        VALUES.ga.seen=safeInt(row.ga_seen);
+        VALUES.ga.booked=safeInt(row.ga_booked);
+        VALUES.goo.seen=safeInt(row.goo_seen);
+        VALUES.goo.booked=safeInt(row.goo_booked);
+        VALUES.rci.seen=safeInt(row.rci_seen);
+        VALUES.rci.booked=safeInt(row.rci_booked);
+        VALUES.renter.seen=safeInt(row.renter_seen);
+        VALUES.renter.booked=safeInt(row.renter_booked);
+        VALUES.bounceback.booked=safeInt(row.bounce_back_booked);
+      }
+
+      const restored=restoreDraft(row?.updated_at || "");
+      refresh();
+
+      if(restored){
+        setStatus("Draft restored","saving");
+        scheduleSave();
+      }else if(row?.sync_status==="queued"){
+        setStatus("EOD sync queued","queued");
+      }else if(row?.sync_status==="synced"){
+        setStatus("EOD synced","saved");
+      }else if(row){
+        setStatus("TourPulse saved","saved");
+      }else{
+        setStatus("Ready");
+      }
+    }catch(err){
+      console.error(err);
+      setStatus("Load error","error");
+    }finally{
+      LOADING=false;
+      refresh();
+    }
+  }
+
+  async function loadConfigs(){
+    const {data,error}=await sb.rpc("tp_get_my_eod_configs");
+    if(error) throw error;
+
+    CONFIGS=Array.isArray(data)?data:[];
+    if(!CONFIGS.length) throw new Error("End of Day is not configured for this account.");
+
+    const sel=$("siteSelect");
+    sel.innerHTML="";
+    for(const cfg of CONFIGS){
+      const opt=document.createElement("option");
+      opt.value=cfg.site_key;
+      opt.textContent=siteTitle(cfg.site_key);
+      sel.appendChild(opt);
+    }
+
+    ACTIVE_CONFIG=CONFIGS[0];
+    sel.value=ACTIVE_CONFIG.site_key;
+    sel.disabled=CONFIGS.length===1;
+
+    await loadSubmission();
+  }
+
+  async function showEntry(user){
+    USER=user;
+    const first=USER.user_metadata?.first_name || "Marketer";
+    const emp=String(USER.email||"").split("@")[0] || "";
+    $("userLine").textContent=first+(emp?" • #"+emp:"");
+    $("authView").classList.add("hidden");
+    $("entryView").classList.remove("hidden");
+    $("reportDate").value=localDateISO();
+    setStatus("Connecting…","saving");
+
+    try{
+      await loadConfigs();
+    }catch(err){
+      console.error(err);
+      setStatus("Not configured","error");
+      $("userLine").textContent=(err?.message || "EOD configuration unavailable");
+    }
+  }
+
+  async function signIn(){
+    const emp=String($("emp").value||"").trim();
+    const pin=String($("pin").value||"").trim();
+    $("authError").textContent="";
+
+    if(!/^\d{6}$/.test(emp)){
+      $("authError").textContent="Employee number must be 6 digits.";
+      return;
+    }
+    if(!/^\d{4}$/.test(pin)){
+      $("authError").textContent="PIN must be 4 digits.";
+      return;
+    }
+
+    $("signInBtn").disabled=true;
+    setStatus("Signing in…","saving");
+
+    try{
+      const {data,error}=await sb.auth.signInWithPassword({
+        email:derivedEmail(emp),
+        password:derivedPassword(emp,pin)
+      });
+      if(error) throw error;
+      await showEntry(data.user);
+    }catch(err){
+      $("authError").textContent=err?.message || "Sign in failed.";
+      setStatus("Sign in failed","error");
+    }finally{
+      $("signInBtn").disabled=false;
+    }
+  }
+
+  async function signOut(){
+    clearTimeout(SAVE_TIMER);
+    await sb.auth.signOut();
+    USER=null;
+    CONFIGS=[];
+    ACTIVE_CONFIG=null;
+    $("entryView").classList.add("hidden");
+    $("authView").classList.remove("hidden");
+    $("pin").value="";
+    setStatus("Waiting");
+  }
+
+  buildGrid();
+
+  $("entryGrid").addEventListener("click",e=>{
+    const btn=e.target.closest("[data-type]");
+    if(!btn || SAVING) return;
+
+    const key=btn.dataset.type;
+    const field=btn.dataset.field;
+    const delta=Number(btn.dataset.delta||0);
+    if(!VALUES[key] || !["seen","booked"].includes(field) || !Number.isFinite(delta)) return;
+
+    const next=Math.max(0,safeInt(VALUES[key][field])+delta);
+    if(next===VALUES[key][field]) return;
+
+    VALUES[key][field]=next;
+    refresh();
+    scheduleSave();
+  });
+
+  $("siteSelect").addEventListener("change",async()=>{
+    ACTIVE_CONFIG=CONFIGS.find(c=>c.site_key===$("siteSelect").value) || CONFIGS[0] || null;
+    await loadSubmission();
+  });
+
+  $("reportDate").addEventListener("change",loadSubmission);
+  $("signInBtn").addEventListener("click",signIn);
+  $("pin").addEventListener("keydown",e=>{ if(e.key==="Enter") signIn(); });
+  $("signOutBtn").addEventListener("click",signOut);
+  $("fullEodBtn").addEventListener("click",()=>window.open("eod-tracker.html","_blank","noopener"));
+
+  sb.auth.onAuthStateChange((event,session)=>{
+    if(event==="SIGNED_OUT"){
+      USER=null;
+    }
+  });
+
+  (async()=>{
+    const {data:{session}}=await sb.auth.getSession();
+    if(session?.user){
+      await showEntry(session.user);
+    }else{
+      setStatus("Waiting");
+      $("emp").focus();
+    }
+  })();
+</script>
+</body>
+</html>
