@@ -492,6 +492,7 @@
   const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const FORCE_REAUTH = new URLSearchParams(window.location.search).get("reauth") === "1";
   const $ = id => document.getElementById(id);
 
   const TYPES = [
@@ -913,11 +914,15 @@
   });
 
   (async()=>{
+    if(FORCE_REAUTH){
+      try{ await sb.auth.signOut(); }catch(_){}
+    }
+
     const {data:{session}}=await sb.auth.getSession();
     if(session?.user){
       await showEntry(session.user);
     }else{
-      setStatus("Waiting");
+      setStatus("Sign in required");
       $("emp").focus();
     }
   })();
