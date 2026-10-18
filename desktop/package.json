@@ -1,7 +1,7 @@
 {
   "name": "tourpulse-quick-eod",
-  "version": "1.1.0",
-  "description": "Secure always-on-top desktop Quick EOD app for TourPulse",
+  "version": "1.2.0",
+  "description": "Secure local Windows desktop Quick EOD app for TourPulse",
   "main": "main.js",
   "author": "F8",
   "license": "UNLICENSED",
@@ -19,7 +19,10 @@
     "productName": "TourPulse Quick EOD",
     "artifactName": "TourPulse-Quick-EOD-${version}-${arch}.${ext}",
     "files": [
-      "main.js"
+      "main.js",
+      "preload.js",
+      "index.html",
+      "renderer.js"
     ],
     "win": {
       "target": [
@@ -44,5 +47,8 @@
       "createStartMenuShortcut": true,
       "shortcutName": "TourPulse Quick EOD"
     }
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.4"
   }
 }
