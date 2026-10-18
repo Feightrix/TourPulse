@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self' data:;">
+  <title>TourPulse Quick EOD</title>
+  <style>
+    :root{
+      --ink:#0f172a;
+      --muted:#64748b;
+      --line:rgba(15,23,42,.11);
+      --teal:#0aa6b5;
+      --teal-dark:#087e8c;
+      --bg:#f3f7f9;
+      --good:#15803d;
+      --warn:#d97706;
+      --bad:#b91c1c;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;min-height:100%;background:var(--bg);color:var(--ink);font-family:Segoe UI,Arial,sans-serif}
+    body{padding:10px}
+    button,input,select{font:inherit}
+    .shell{width:100%;max-width:410px;margin:0 auto;background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 16px 42px rgba(2,6,23,.14);overflow:hidden}
+    .top{height:54px;padding:8px 11px;display:flex;align-items:center;gap:9px;background:linear-gradient(180deg,#fff,#f4fcfd);border-bottom:1px solid var(--line)}
+    .logo{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:rgba(10,166,181,.12);color:var(--teal-dark);font-weight:1000;font-size:13px}
+    .brand{min-width:0;flex:1}
+    .brandTitle{font-size:14px;font-weight:900}
+    .brandSub{margin-top:2px;color:var(--muted);font-size:9px;font-weight:700}
+    .status{max-width:150px;padding:5px 8px;border-radius:999px;border:1px solid var(--line);background:rgba(15,23,42,.04);font-size:8px;font-weight:800;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .status.good{color:var(--good);background:rgba(21,128,61,.06)}
+    .status.warn{color:var(--warn);background:rgba(217,119,6,.07)}
+    .status.bad{color:var(--bad);background:rgba(185,28,28,.06)}
+    .content{padding:12px}
+    .hidden{display:none!important}
+    h1{margin:0;font-size:19px}
+    .lead{margin:5px 0 12px;color:var(--muted);font-size:11px;line-height:1.45}
+    .field{display:grid;gap:4px;margin-top:9px}
+    .field label,.mini label{font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:rgba(15,23,42,.52)}
+    .field input,.mini input,.mini select{width:100%;border:1px solid rgba(15,23,42,.14);border-radius:10px;background:#fff;outline:none;color:var(--ink);font-weight:800}
+    .field input{height:40px;padding:8px 10px;font-size:13px}
+    .mini input,.mini select{height:32px;padding:5px 7px;font-size:10px}
+    .field input:focus,.mini input:focus,.mini select:focus{border-color:rgba(10,166,181,.48);box-shadow:0 0 0 3px rgba(10,166,181,.09)}
+    .primary{width:100%;height:42px;margin-top:12px;border:1px solid rgba(10,166,181,.30);border-radius:11px;background:linear-gradient(135deg,rgba(10,166,181,.20),rgba(8,126,140,.10));color:var(--ink);font-weight:900;cursor:pointer}
+    .primary:disabled{opacity:.55;cursor:not-allowed}
+    .error{min-height:16px;margin-top:7px;font-size:10px;font-weight:750;color:var(--bad)}
+    .controls{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:7px;margin-bottom:8px}
+    .mini{display:grid;gap:3px;min-width:0}
+    .grid{border:1px solid var(--line);border-radius:13px;overflow:hidden}
+    .head,.row{display:grid;grid-template-columns:minmax(86px,1fr) 86px 86px;align-items:center}
+    .head{height:27px;padding:0 6px;background:rgba(10,166,181,.075);border-bottom:1px solid var(--line);font-size:7px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:rgba(15,23,42,.48)}
+    .head div:nth-child(2),.head div:nth-child(3){text-align:center}
+    .row{min-height:48px;padding:4px 6px;border-bottom:1px solid rgba(15,23,42,.065)}
+    .row:last-child{border-bottom:0}
+    .type{font-size:11px;font-weight:900}
+    .cell{display:flex;align-items:center;justify-content:center;gap:5px}
+    .value{width:28px;text-align:center;font-size:16px;font-weight:950;font-variant-numeric:tabular-nums}
+    .steps{display:flex;flex-direction:column;gap:2px}
+    .step{width:29px;height:18px;padding:0;border:1px solid rgba(15,23,42,.13);border-radius:6px;background:#fff;color:rgba(15,23,42,.68);font-size:9px;line-height:1;cursor:pointer}
+    .step:hover{background:rgba(10,166,181,.09);color:var(--teal-dark)}
+    .step:disabled{opacity:.4;cursor:not-allowed}
+    .na{color:rgba(15,23,42,.30);font-size:15px}
+    .summary{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+    .sum{padding:7px 4px;border-radius:10px;background:rgba(10,166,181,.055);border:1px solid rgba(10,166,181,.10);text-align:center}
+    .sumK{font-size:6px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:rgba(15,23,42,.46)}
+    .sumV{margin-top:2px;font-size:16px;font-weight:950}
+    .footer{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-top:9px}
+    .user{min-width:0;font-size:9px;font-weight:800;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .actions{display:flex;gap:5px}
+    .small{height:29px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:rgba(15,23,42,.68);font-size:8px;font-weight:850;cursor:pointer}
+    .note{margin-top:7px;font-size:8px;line-height:1.35;color:var(--muted);text-align:center}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="top">
+      <div class="logo">TP</div>
+      <div class="brand">
+        <div class="brandTitle">TourPulse Quick EOD</div>
+        <div class="brandSub">MBO + SBR • Always on top</div>
+      </div>
+      <div class="status" id="status">Sign in required</div>
+    </div>
+
+    <div class="content" id="loginView">
+      <h1>Secure Sign In</h1>
+      <p class="lead">Enter the same Employee ID and 4-digit PIN used for TourPulse. Quick EOD requires a fresh sign-in each time the app opens.</p>
+      <div class="field">
+        <label for="emp">Employee ID</label>
+        <input id="emp" inputmode="numeric" maxlength="6" autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="pin">4-Digit PIN</label>
+        <input id="pin" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password">
+      </div>
+      <button class="primary" id="signInBtn" type="button">Sign In to TourPulse</button>
+      <div class="error" id="loginError"></div>
+    </div>
+
+    <div class="content hidden" id="entryView">
+      <div class="controls">
+        <div class="mini">
+          <label for="siteSelect">Site</label>
+          <select id="siteSelect"></select>
+        </div>
+        <div class="mini">
+          <label for="reportDate">EOD Date</label>
+          <input id="reportDate" type="date">
+        </div>
+      </div>
+
+      <div class="grid" id="grid">
+        <div class="head">
+          <div>Arrival Type</div>
+          <div>Seen</div>
+          <div>Booked</div>
+        </div>
+      </div>
+
+      <div class="summary">
+        <div class="sum"><div class="sumK">Seen</div><div class="sumV" id="totalSeen">0</div></div>
+        <div class="sum"><div class="sumK">Booked</div><div class="sumV" id="totalBooked">0</div></div>
+        <div class="sum"><div class="sumK">Conversion</div><div class="sumV" id="conversion">0%</div></div>
+      </div>
+
+      <div class="footer">
+        <div class="user" id="userLine">—</div>
+        <div class="actions">
+          <button class="small" id="fullEodBtn" type="button">Full EOD</button>
+          <button class="small" id="signOutBtn" type="button">Sign Out</button>
+        </div>
+      </div>
+      <div class="note">Changes save to TourPulse automatically and are then sent to the EOD report sync.</div>
+    </div>
+  </div>
+  <script src="renderer.js"></script>
+</body>
+</html>
