@@ -1,0 +1,44 @@
+{
+  "name": "tourpulse-quick-eod",
+  "version": "1.0.0",
+  "description": "Always-on-top desktop Quick EOD app for TourPulse",
+  "main": "main.js",
+  "author": "F8",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable nsis"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.f8.tourpulse.quickeod",
+    "productName": "TourPulse Quick EOD",
+    "artifactName": "TourPulse-Quick-EOD-${version}-${arch}.${ext}",
+    "files": [
+      "main.js"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TourPulse Quick EOD"
+    }
+  }
+}
