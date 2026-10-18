@@ -1,29 +1,27 @@
-const { app, BrowserWindow, ipcMain, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const WebSocket = require("ws");
-
-if (!globalThis.WebSocket) {
-  globalThis.WebSocket = WebSocket;
-}
-
-const { createClient } = require("@supabase/supabase-js");
+const os = require("os");
 
 const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
 const ALLOWED_SITES = new Set(["myrtle-beach-oceanfront", "south-beach"]);
 
 let win = null;
-let logFile = null;
-let rendererRestarted = false;
+let userDataLog = "";
+let accessToken = "";
+let refreshToken = "";
+let expiresAtMs = 0;
+let signedInUser = null;
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: true,
-    detectSessionInUrl: false
+const bootLog = path.join(os.tmpdir(), "TourPulse-Quick-EOD-startup.log");
+
+function writeLogLine(line) {
+  try { fs.appendFileSync(bootLog, line, "utf8"); } catch (_) {}
+  if (userDataLog) {
+    try { fs.appendFileSync(userDataLog, line, "utf8"); } catch (_) {}
   }
-});
+}
 
 function log(...parts) {
   const line = `[${new Date().toISOString()}] ${parts.map(v => {
@@ -31,12 +29,24 @@ function log(...parts) {
     if (typeof v === "string") return v;
     try { return JSON.stringify(v); } catch (_) { return String(v); }
   }).join(" ")}\n`;
-
   try { process.stdout.write(line); } catch (_) {}
-  if (logFile) {
-    try { fs.appendFileSync(logFile, line, "utf8"); } catch (_) {}
-  }
+  writeLogLine(line);
 }
+
+function fatal(title, err) {
+  const message = err instanceof Error ? (err.stack || err.message) : String(err || "Unknown error");
+  log(title, message);
+  try { dialog.showErrorBox(title, message); } catch (_) {}
+}
+
+process.on("uncaughtException", err => fatal("TourPulse Quick EOD — Main Process Error", err));
+process.on("unhandledRejection", err => fatal("TourPulse Quick EOD — Unhandled Error", err));
+
+log("bootstrap", {
+  node: process.versions.node,
+  electron: process.versions.electron,
+  chrome: process.versions.chrome
+});
 
 function cleanEmp(value) {
   const emp = String(value || "").trim();
@@ -64,21 +74,98 @@ function cleanDate(value) {
 
 function cleanCount(value) {
   const n = Number.parseInt(String(value ?? "0"), 10);
-  if (!Number.isFinite(n) || n < 0) return 0;
-  return n;
+  return Number.isFinite(n) && n >= 0 ? n : 0;
 }
 
-async function requireUser() {
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data?.user) throw new Error("Your TourPulse session is not signed in.");
-  return data.user;
+function clearSession() {
+  accessToken = "";
+  refreshToken = "";
+  expiresAtMs = 0;
+  signedInUser = null;
+}
+
+async function parseResponse(res) {
+  const text = await res.text();
+  let body = null;
+  if (text) {
+    try { body = JSON.parse(text); }
+    catch (_) { body = text; }
+  }
+
+  if (!res.ok) {
+    const message =
+      body?.msg ||
+      body?.message ||
+      body?.error_description ||
+      body?.error ||
+      (typeof body === "string" ? body : "") ||
+      `Request failed with status ${res.status}`;
+    throw new Error(String(message));
+  }
+
+  return body;
+}
+
+async function http(url, options = {}) {
+  if (typeof fetch !== "function") {
+    throw new Error("This Windows runtime does not provide the required network API.");
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+  } catch (err) {
+    if (err?.name === "AbortError") throw new Error("TourPulse connection timed out.");
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function refreshSessionIfNeeded() {
+  if (!accessToken || !refreshToken) throw new Error("Sign in is required.");
+  if (Date.now() < expiresAtMs - 120000) return;
+
+  const res = await http(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ refresh_token: refreshToken })
+  });
+
+  const data = await parseResponse(res);
+  accessToken = String(data?.access_token || "");
+  refreshToken = String(data?.refresh_token || refreshToken);
+  expiresAtMs = Date.now() + Number(data?.expires_in || 3600) * 1000;
+
+  if (!accessToken) throw new Error("TourPulse could not refresh the signed-in session.");
+}
+
+async function rpc(name, payload = {}) {
+  await refreshSessionIfNeeded();
+
+  const res = await http(`${SUPABASE_URL}/rest/v1/rpc/${encodeURIComponent(name)}`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${accessToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  return await parseResponse(res);
 }
 
 async function getConfigs() {
-  await requireUser();
-  const { data, error } = await supabase.rpc("tp_get_my_eod_configs");
-  if (error) throw error;
-
+  const data = await rpc("tp_get_my_eod_configs", {});
   return (Array.isArray(data) ? data : [])
     .filter(row => ALLOWED_SITES.has(String(row.site_key || "")))
     .map(row => ({
@@ -91,60 +178,74 @@ async function getConfigs() {
 
 ipcMain.handle("auth:sign-in", async (_event, args = {}) => {
   try {
+    clearSession();
+
     const emp = cleanEmp(args.emp);
     const pin = cleanPin(args.pin);
 
-    try { await supabase.auth.signOut(); } catch (_) {}
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: `${emp}@f8.local`,
-      password: `F8-${emp}-${pin}`
+    const res = await http(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        email: `${emp}@f8.local`,
+        password: `F8-${emp}-${pin}`
+      })
     });
-    if (error) throw error;
-    if (!data?.user) throw new Error("Sign in failed.");
+
+    const data = await parseResponse(res);
+
+    accessToken = String(data?.access_token || "");
+    refreshToken = String(data?.refresh_token || "");
+    expiresAtMs = Date.now() + Number(data?.expires_in || 3600) * 1000;
+    signedInUser = data?.user || null;
+
+    if (!accessToken || !refreshToken || !signedInUser) {
+      clearSession();
+      throw new Error("TourPulse sign in did not return a valid session.");
+    }
 
     const configs = await getConfigs();
+
     if (!configs.length) {
-      await supabase.auth.signOut();
+      clearSession();
       throw new Error("This employee is not configured for MBO or SBR End of Day.");
     }
+
+    log("sign-in success", { emp, sites: configs.map(x => x.site_key) });
 
     return {
       ok: true,
       user: {
-        id: data.user.id,
+        id: String(signedInUser.id || ""),
         emp,
-        first_name: String(data.user.user_metadata?.first_name || "Marketer")
+        first_name: String(signedInUser.user_metadata?.first_name || "Marketer")
       },
       configs
     };
   } catch (err) {
+    clearSession();
     log("sign-in error", err);
     return { ok: false, error: err?.message || "Sign in failed." };
   }
 });
 
 ipcMain.handle("auth:sign-out", async () => {
-  try {
-    await supabase.auth.signOut();
-    return { ok: true };
-  } catch (err) {
-    log("sign-out error", err);
-    return { ok: false, error: err?.message || "Sign out failed." };
-  }
+  clearSession();
+  return { ok: true };
 });
 
 ipcMain.handle("eod:get", async (_event, args = {}) => {
   try {
-    await requireUser();
     const site = cleanSite(args.site_key);
     const reportDate = cleanDate(args.report_date);
 
-    const { data, error } = await supabase.rpc("tp_get_my_eod_submission_v2", {
+    const data = await rpc("tp_get_my_eod_submission_v2", {
       p_site_key: site,
       p_report_date: reportDate
     });
-    if (error) throw error;
 
     const row = Array.isArray(data) ? data[0] : data;
     return { ok: true, row: row || null };
@@ -156,11 +257,10 @@ ipcMain.handle("eod:get", async (_event, args = {}) => {
 
 ipcMain.handle("eod:save", async (_event, args = {}) => {
   try {
-    await requireUser();
     const site = cleanSite(args.site_key);
     const reportDate = cleanDate(args.report_date);
 
-    const payload = {
+    const submissionId = await rpc("tp_submit_eod_v2", {
       p_site_key: site,
       p_report_date: reportDate,
       p_vip_seen: cleanCount(args.vip_seen),
@@ -174,30 +274,38 @@ ipcMain.handle("eod:save", async (_event, args = {}) => {
       p_renter_seen: cleanCount(args.renter_seen),
       p_renter_booked: cleanCount(args.renter_booked),
       p_bounce_back_booked: cleanCount(args.bounce_back_booked)
+    });
+
+    await refreshSessionIfNeeded();
+
+    let sync = {
+      queued: false,
+      synced: false,
+      message: "Saved to TourPulse. EOD report sync is pending."
     };
 
-    const { data: submissionId, error } = await supabase.rpc("tp_submit_eod_v2", payload);
-    if (error) throw error;
-
-    let sync = { queued: false, synced: false, message: "Saved to TourPulse. Excel sync is pending." };
-
     try {
-      const { data: syncData, error: syncError } = await supabase.functions.invoke("eod-sync", {
-        body: { submission_id: submissionId }
+      const res = await http(`${SUPABASE_URL}/functions/v1/eod-sync`, {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ submission_id: submissionId })
       });
 
-      if (syncError) {
-        log("eod-sync invoke warning", syncError);
-      } else if (syncData) {
-        sync = {
-          queued: !!syncData.queued,
-          synced: !!syncData.synced,
-          message: String(syncData.message || (syncData.queued ? "Sent to the EOD report sync queue." : "Saved to TourPulse."))
-        };
-      }
+      const data = await parseResponse(res);
+      sync = {
+        queued: !!data?.queued,
+        synced: !!data?.synced,
+        message: String(data?.message || (data?.queued ? "Sent to the EOD report sync queue." : "Saved to TourPulse."))
+      };
     } catch (syncErr) {
-      log("eod-sync warning", syncErr);
+      log("eod sync warning", syncErr);
     }
+
+    log("eod saved", { site, reportDate, submissionId });
 
     return {
       ok: true,
@@ -215,7 +323,11 @@ ipcMain.handle("app:open-full-eod", async () => {
   return { ok: true };
 });
 
-ipcMain.handle("app:get-log-path", async () => ({ ok: true, path: logFile || "" }));
+ipcMain.handle("app:get-log-path", async () => ({
+  ok: true,
+  userDataLog,
+  bootLog
+}));
 
 function createWindow() {
   win = new BrowserWindow({
@@ -251,15 +363,16 @@ function createWindow() {
   win.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
   win.webContents.on("will-navigate", event => event.preventDefault());
 
+  win.webContents.on("did-finish-load", () => log("desktop UI loaded"));
   win.webContents.on("render-process-gone", (_event, details) => {
     log("renderer process gone", details);
-    if (!rendererRestarted && win && !win.isDestroyed()) {
-      rendererRestarted = true;
-      setTimeout(() => {
-        if (win && !win.isDestroyed()) {
-          win.loadFile(path.join(__dirname, "index.html")).catch(err => log("renderer reload failed", err));
-        }
-      }, 400);
+    if (win && !win.isDestroyed()) {
+      try {
+        dialog.showErrorBox(
+          "TourPulse Quick EOD",
+          "The display process stopped unexpectedly. Close the app and reopen it. A startup log was written to your TEMP folder."
+        );
+      } catch (_) {}
     }
   });
 
@@ -271,16 +384,16 @@ function createWindow() {
   });
 
   win.loadFile(path.join(__dirname, "index.html"))
-    .then(() => log("local desktop UI loaded"))
-    .catch(err => log("loadFile failed", err));
+    .catch(err => fatal("TourPulse Quick EOD — Display Error", err));
 }
 
-process.on("uncaughtException", err => log("uncaughtException", err));
-process.on("unhandledRejection", err => log("unhandledRejection", err));
-
 app.whenReady().then(() => {
-  logFile = path.join(app.getPath("userData"), "quick-eod.log");
-  log("app ready", { version: app.getVersion(), userData: app.getPath("userData") });
+  userDataLog = path.join(app.getPath("userData"), "quick-eod.log");
+  log("app ready", {
+    version: app.getVersion(),
+    userData: app.getPath("userData")
+  });
+
   app.setAppUserModelId("com.f8.tourpulse.quickeod");
   createWindow();
 
@@ -291,7 +404,7 @@ app.whenReady().then(() => {
       win.focus();
     }
   });
-});
+}).catch(err => fatal("TourPulse Quick EOD — Startup Error", err));
 
 app.on("window-all-closed", () => {
   app.quit();
