@@ -1,6 +1,12 @@
 const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const WebSocket = require("ws");
+
+if (!globalThis.WebSocket) {
+  globalThis.WebSocket = WebSocket;
+}
+
 const { createClient } = require("@supabase/supabase-js");
 
 const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
