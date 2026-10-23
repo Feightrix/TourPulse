@@ -179,10 +179,6 @@ async function loadEod(){
   if(restored){
     setStatus("Draft restored","warn");
     scheduleSave();
-  }else if(row?.sync_status==="queued"){
-    setStatus("EOD sync queued","good");
-  }else if(row?.sync_status==="synced"){
-    setStatus("EOD synced","good");
   }else if(row){
     setStatus("TourPulse saved","good");
   }else{
@@ -232,9 +228,7 @@ async function saveNow(){
 
   if(res?.ok){
     clearLocalDraft();
-    if(res.sync?.queued) setStatus("EOD sync queued","good");
-    else if(res.sync?.synced) setStatus("EOD synced","good");
-    else setStatus("TourPulse saved","good");
+    setStatus("TourPulse saved","good");
   }else{
     saveLocalDraft();
     setStatus("Save error","bad");
@@ -247,6 +241,27 @@ async function saveNow(){
     SAVE_AGAIN=false;
     SAVE_TIMER=setTimeout(saveNow,350);
   }
+}
+
+async function clearAll(){
+  if(!ACTIVE || !USER || LOADING || SAVING) return;
+
+  const reportDate = $("reportDate").value || today();
+  const confirmation = await api.confirmClear(ACTIVE.site_key, reportDate);
+
+  if(!confirmation?.ok){
+    setStatus("Clear cancelled","warn");
+    return;
+  }
+  if(!confirmation.confirmed) return;
+
+  clearTimeout(SAVE_TIMER);
+  reset();
+  refresh();
+  saveLocalDraft();
+  setStatus("Clearing day…","warn");
+
+  await saveNow();
 }
 
 async function signIn(){
@@ -342,6 +357,7 @@ $("grid").addEventListener("click",e=>{
 $("signInBtn").addEventListener("click",signIn);
 $("pin").addEventListener("keydown",e=>{ if(e.key==="Enter") signIn(); });
 $("emp").addEventListener("keydown",e=>{ if(e.key==="Enter") $("pin").focus(); });
+$("clearAllBtn").addEventListener("click",clearAll);
 $("signOutBtn").addEventListener("click",signOut);
 $("fullEodBtn").addEventListener("click",()=>api.openFullEod());
 

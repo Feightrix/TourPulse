@@ -68,6 +68,8 @@
     .user{min-width:0;font-size:9px;font-weight:800;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .actions{display:flex;gap:5px}
     .small{height:29px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:rgba(15,23,42,.68);font-size:8px;font-weight:850;cursor:pointer}
+    .small.danger{border-color:rgba(185,28,28,.20);background:rgba(185,28,28,.045);color:#a61b1b}
+    .small.danger:hover{background:rgba(185,28,28,.09)}
     .note{margin-top:7px;font-size:8px;line-height:1.35;color:var(--muted);text-align:center}
   </style>
 </head>
@@ -127,10 +129,11 @@
         <div class="user" id="userLine">—</div>
         <div class="actions">
           <button class="small" id="fullEodBtn" type="button">Full EOD</button>
+          <button class="small danger" id="clearAllBtn" type="button">Clear All</button>
           <button class="small" id="signOutBtn" type="button">Sign Out</button>
         </div>
       </div>
-      <div class="note">Changes save to TourPulse automatically and are then sent to the EOD report sync.</div>
+      <div class="note">Changes save directly to TourPulse and feed the EOD Dashboard automatically.</div>
     </div>
   </div>
   <script src="renderer.js"></script>

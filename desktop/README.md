@@ -1,16 +1,16 @@
 # TourPulse Quick EOD Desktop
 
-This desktop wrapper opens the live TourPulse Quick EOD page in its own Windows application window.
+The Windows Quick EOD app is a compact TourPulse entry client for MBO and SBR.
 
 ## Behavior
 
 - Always on top
-- Opens near the right side of the primary monitor
 - Uses the same TourPulse employee number + PIN
-- Saves changes to TourPulse automatically after a short pause
-- Sends the saved EOD submission through the existing TourPulse EOD sync function
-- The existing Power Automate flow then updates the EOD Excel report for configured site branches
-- Session is retained by Electron between launches
+- Saves Seen, Booked, and Bounce Back values directly to TourPulse
+- Feeds the native TourPulse EOD Dashboard from the same saved record
+- No Excel or Power Automate sync is required
+- Clear All requires a native confirmation and then saves zeros for every EOD value on the selected site/date
+- Opens the full TourPulse EOD page when needed
 
 ## Local development
 
@@ -30,4 +30,4 @@ npm run dist
 
 Build outputs are written to `desktop/dist`.
 
-The GitHub Actions workflow also builds both a portable EXE and an NSIS installer.
+The GitHub Actions workflow builds the portable Windows EXE whenever desktop files are merged to `main`.

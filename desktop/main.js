@@ -170,8 +170,6 @@ async function getConfigs() {
     .filter(row => ALLOWED_SITES.has(String(row.site_key || "")))
     .map(row => ({
       site_key: String(row.site_key || ""),
-      sheet_name: String(row.sheet_name || ""),
-      excel_name: String(row.excel_name || ""),
       emp: String(row.emp || "")
     }));
 }
@@ -276,45 +274,47 @@ ipcMain.handle("eod:save", async (_event, args = {}) => {
       p_bounce_back_booked: cleanCount(args.bounce_back_booked)
     });
 
-    await refreshSessionIfNeeded();
-
-    let sync = {
-      queued: false,
-      synced: false,
-      message: "Saved to TourPulse. EOD report sync is pending."
-    };
-
-    try {
-      const res = await http(`${SUPABASE_URL}/functions/v1/eod-sync`, {
-        method: "POST",
-        headers: {
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${accessToken}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ submission_id: submissionId })
-      });
-
-      const data = await parseResponse(res);
-      sync = {
-        queued: !!data?.queued,
-        synced: !!data?.synced,
-        message: String(data?.message || (data?.queued ? "Sent to the EOD report sync queue." : "Saved to TourPulse."))
-      };
-    } catch (syncErr) {
-      log("eod sync warning", syncErr);
-    }
-
     log("eod saved", { site, reportDate, submissionId });
 
     return {
       ok: true,
-      submission_id: submissionId,
-      sync
+      submission_id: submissionId
     };
   } catch (err) {
     log("eod:save error", err);
     return { ok: false, error: err?.message || "Could not save the EOD entry." };
+  }
+});
+
+ipcMain.handle("app:confirm-clear", async (_event, args = {}) => {
+  try {
+    const site = cleanSite(args.site_key);
+    const reportDate = cleanDate(args.report_date);
+    const siteLabel = site === "myrtle-beach-oceanfront"
+      ? "MBO — Myrtle Beach Oceanfront"
+      : "SBR — South Beach";
+
+    const options = {
+      type: "warning",
+      title: "Clear this EOD day?",
+      message: "Clear all EOD numbers for this day?",
+      detail:
+        siteLabel + " • " + reportDate +
+        "\n\nThis will set every Seen, Booked, and Bounce Back value to 0 in TourPulse for the selected day. The dashboard will update from those zeros.",
+      buttons: ["Cancel", "Clear All"],
+      defaultId: 0,
+      cancelId: 0,
+      noLink: true
+    };
+
+    const result = win && !win.isDestroyed()
+      ? await dialog.showMessageBox(win, options)
+      : await dialog.showMessageBox(options);
+
+    return { ok: true, confirmed: result.response === 1 };
+  } catch (err) {
+    log("confirm clear error", err);
+    return { ok: false, confirmed: false, error: err?.message || "Could not confirm Clear All." };
   }
 });
 
