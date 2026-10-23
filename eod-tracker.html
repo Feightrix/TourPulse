@@ -1570,18 +1570,15 @@
       const pill = $("syncStatus");
       pill.className = "statusPill";
 
-      if(status === "synced"){
+      if(status === "saved" || status === "synced" || status === "queued" || status === "pending"){
         pill.classList.add("synced");
-        pill.textContent = "Synced to Excel";
-      }else if(status === "queued"){
-        pill.classList.add("queued");
-        pill.textContent = "Sent to Excel Queue";
-      }else if(status === "pending" || status === "syncing"){
+        pill.textContent = "Saved to TourPulse";
+      }else if(status === "saving" || status === "syncing"){
         pill.classList.add("pending");
-        pill.textContent = status === "syncing" ? "Syncing to Excel…" : "Saved • Sync Pending";
+        pill.textContent = "Saving to TourPulse…";
       }else if(status === "error"){
         pill.classList.add("error");
-        pill.textContent = "Excel Sync Error";
+        pill.textContent = "Save Error";
         if(errorText) showNotice(errorText, true);
       }else{
         pill.textContent = "Not submitted";
@@ -1642,7 +1639,7 @@
         TARGET_EMP = String(CONFIGS[0].emp || "");
         $("marketerName").textContent = TARGET_EMP ? `${TARGET_NAME} • #${TARGET_EMP}` : TARGET_NAME;
         $("launchTitle").textContent = `Enter End of Day for ${TARGET_NAME}`;
-        $("launchText").textContent = "You are entering this marketer’s EOD on their behalf. It will save to their TourPulse record and sync to Excel.";
+        $("launchText").textContent = "You are entering this marketer’s EOD on their behalf. It will save directly to their TourPulse record.";
       }
 
       if(!CONFIGS.length){
@@ -1728,15 +1725,8 @@
         VALUES.renter.booked = safeInt(row.renter_booked);
         VALUES.bounceback.booked = safeInt(row.bounce_back_booked);
 
-        setStatus(row.sync_status, row.sync_error || "");
-
-        if(row.sync_status === "synced"){
-          showNotice("Today's EOD is already submitted and synced to Excel. You can reopen it if anything needs to be corrected.");
-        }else if(row.sync_status === "queued"){
-          showNotice("Today's EOD is saved and has been sent to the Excel sync queue.");
-        }else{
-          showNotice("Today's EOD is saved. Excel sync is still pending.");
-        }
+        setStatus("saved");
+        showNotice("Today's EOD is saved in TourPulse. Use the arrows if anything needs to be corrected.");
       }else{
         setStatus("");
       }
@@ -1785,26 +1775,8 @@
 
         if(error) throw error;
 
-        setStatus("pending");
-
-        const { data: syncData, error: syncError } = await sb.functions.invoke("eod-sync", {
-          body: { submission_id: submissionId }
-        });
-
-        if(syncError){
-          console.error("eod-sync:", syncError);
-          setStatus("pending");
-          showNotice("Your EOD was saved in TourPulse. Excel sync is still pending.");
-        }else if(syncData?.synced){
-          setStatus("synced");
-          showNotice("Your EOD was saved and synced to the Excel report.");
-        }else if(syncData?.queued){
-          setStatus("queued");
-          showNotice(syncData.message || "Your EOD was saved and sent to the Excel sync queue.");
-        }else{
-          setStatus("pending");
-          showNotice("Your EOD was saved. Excel sync is pending.");
-        }
+        setStatus("saved");
+        showNotice("Your EOD was saved directly in TourPulse.");
 
         HAS_EXISTING = true;
         IS_DIRTY = false;
