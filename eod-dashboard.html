@@ -1,0 +1,1281 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TourPulse — EOD Dashboard</title>
+  <link rel="icon" href="favicon.ico">
+  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body.tp-eod-dashboard{
+      --dash-teal:#0aa6b5;
+      --dash-teal-dark:#117d8c;
+      --dash-navy:#153a57;
+      --dash-slate:#344754;
+      --dash-green:#16a34a;
+      --dash-gold:#e9b949;
+      --dash-purple:#7c68cc;
+      --dash-red:#dc644e;
+      --dash-ink:rgba(15,23,42,.92);
+      --dash-muted:rgba(15,23,42,.58);
+      --dash-line:rgba(15,23,42,.10);
+      --dash-soft:#f4f8fa;
+    }
+
+    body.tp-eod-dashboard .panel{
+      width:min(1480px,100%);
+      padding:22px;
+    }
+
+    body.tp-eod-dashboard .dashboardHero{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+      margin:8px 0 16px;
+      padding:16px;
+      border:1px solid var(--dash-line);
+      border-radius:20px;
+      background:rgba(255,255,255,.74);
+      box-shadow:0 14px 34px rgba(2,6,23,.06);
+    }
+
+    body.tp-eod-dashboard .dashboardHero h1{
+      margin:0;
+      font-size:20px;
+      font-weight:1050;
+      letter-spacing:.1px;
+    }
+
+    body.tp-eod-dashboard .dashboardHero p{
+      margin:5px 0 0;
+      color:var(--dash-muted);
+      font-size:12px;
+      line-height:1.45;
+    }
+
+    body.tp-eod-dashboard .controlRow{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    body.tp-eod-dashboard .control{
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+      min-width:170px;
+    }
+
+    body.tp-eod-dashboard .control label{
+      font-size:9px;
+      letter-spacing:.11em;
+      text-transform:uppercase;
+      color:rgba(15,23,42,.48);
+      font-weight:1050;
+    }
+
+    body.tp-eod-dashboard .control select,
+    body.tp-eod-dashboard .control input{
+      height:42px;
+      border-radius:13px;
+      border:1px solid rgba(15,23,42,.13);
+      background:#fff;
+      padding:0 11px;
+      font-size:12px;
+      font-weight:900;
+      color:var(--dash-ink);
+      outline:none;
+      box-shadow:0 8px 22px rgba(2,6,23,.04);
+    }
+
+    body.tp-eod-dashboard .dashBtn{
+      appearance:none;
+      height:42px;
+      border-radius:13px;
+      border:1px solid rgba(15,23,42,.12);
+      padding:0 14px;
+      font-size:12px;
+      font-weight:1000;
+      cursor:pointer;
+      white-space:nowrap;
+      background:rgba(255,255,255,.88);
+      color:rgba(15,23,42,.82);
+      box-shadow:0 8px 22px rgba(2,6,23,.05);
+      align-self:flex-end;
+    }
+
+    body.tp-eod-dashboard .dashBtn.primary{
+      border-color:rgba(10,166,181,.28);
+      background:linear-gradient(135deg,rgba(10,166,181,.22),rgba(17,125,140,.12));
+      color:rgba(10,110,122,.98);
+    }
+
+    body.tp-eod-dashboard .dashBtn:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+    }
+
+    body.tp-eod-dashboard .captureSurface{
+      width:100%;
+      padding:24px;
+      border-radius:24px;
+      background:
+        radial-gradient(900px 360px at 0% 0%,rgba(10,166,181,.07),transparent 64%),
+        linear-gradient(180deg,#f7fafb,#f2f6f8);
+      border:1px solid rgba(15,23,42,.08);
+      overflow:hidden;
+    }
+
+    body.tp-eod-dashboard .captureHead{
+      min-height:82px;
+      border-radius:18px;
+      overflow:hidden;
+      display:grid;
+      grid-template-columns:7px 1fr auto;
+      background:var(--dash-slate);
+      color:#fff;
+      margin-bottom:18px;
+      box-shadow:0 14px 30px rgba(2,6,23,.11);
+    }
+
+    body.tp-eod-dashboard .captureAccent{
+      background:linear-gradient(180deg,#63c4ad,var(--dash-teal));
+    }
+
+    body.tp-eod-dashboard .captureTitle{
+      padding:18px 20px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      min-width:0;
+    }
+
+    body.tp-eod-dashboard .captureTitle h2{
+      margin:0;
+      font-size:23px;
+      line-height:1.05;
+      font-weight:850;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+    }
+
+    body.tp-eod-dashboard .captureTitle p{
+      margin:7px 0 0;
+      font-size:11px;
+      color:rgba(255,255,255,.72);
+      font-weight:750;
+    }
+
+    body.tp-eod-dashboard .captureStatus{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:14px 20px;
+      font-size:11px;
+      font-weight:950;
+      white-space:nowrap;
+    }
+
+    body.tp-eod-dashboard .liveDot{
+      width:9px;
+      height:9px;
+      border-radius:999px;
+      background:#67d9b6;
+      box-shadow:0 0 0 5px rgba(103,217,182,.12);
+    }
+
+    body.tp-eod-dashboard .metricGrid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:18px;
+      margin-bottom:18px;
+    }
+
+    body.tp-eod-dashboard .metricCard{
+      position:relative;
+      min-height:172px;
+      padding:18px 18px 15px;
+      border-radius:20px;
+      border:1px solid rgba(15,23,42,.09);
+      background:#fff;
+      box-shadow:0 13px 34px rgba(2,6,23,.07);
+      overflow:hidden;
+    }
+
+    body.tp-eod-dashboard .metricCard::before{
+      content:"";
+      position:absolute;
+      left:0;
+      right:0;
+      top:0;
+      height:5px;
+      background:var(--metric-accent,var(--dash-teal));
+    }
+
+    body.tp-eod-dashboard .metricLabel{
+      margin-top:2px;
+      font-size:11px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      font-weight:950;
+      color:rgba(15,23,42,.59);
+    }
+
+    body.tp-eod-dashboard .metricValue{
+      margin-top:18px;
+      font-size:45px;
+      line-height:.95;
+      font-weight:720;
+      letter-spacing:-.035em;
+      color:var(--dash-ink);
+      font-variant-numeric:tabular-nums;
+    }
+
+    body.tp-eod-dashboard .metricMeta{
+      margin-top:18px;
+      min-height:22px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      color:rgba(15,23,42,.54);
+      font-size:11px;
+      font-weight:850;
+    }
+
+    body.tp-eod-dashboard .metricChip{
+      display:inline-flex;
+      align-items:center;
+      min-height:25px;
+      border-radius:999px;
+      padding:5px 9px;
+      background:rgba(15,23,42,.05);
+      color:rgba(15,23,42,.64);
+      font-size:10px;
+      font-weight:950;
+      white-space:nowrap;
+    }
+
+    body.tp-eod-dashboard .mainGrid{
+      display:grid;
+      grid-template-columns:minmax(0,1.62fr) minmax(320px,.78fr);
+      gap:18px;
+      align-items:start;
+    }
+
+    body.tp-eod-dashboard .sideStack{
+      display:grid;
+      gap:18px;
+    }
+
+    body.tp-eod-dashboard .dashCard{
+      border:1px solid rgba(15,23,42,.09);
+      border-radius:20px;
+      background:#fff;
+      box-shadow:0 13px 34px rgba(2,6,23,.06);
+      overflow:hidden;
+    }
+
+    body.tp-eod-dashboard .dashCardHead{
+      min-height:54px;
+      padding:14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom:1px solid rgba(15,23,42,.075);
+    }
+
+    body.tp-eod-dashboard .dashCardHead h3{
+      margin:0;
+      font-size:12px;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      font-weight:1000;
+      color:rgba(15,23,42,.80);
+    }
+
+    body.tp-eod-dashboard .dashCardHead span{
+      font-size:10px;
+      font-weight:850;
+      color:rgba(15,23,42,.48);
+    }
+
+    body.tp-eod-dashboard .performanceTable{
+      width:100%;
+      border-collapse:collapse;
+      min-width:0;
+    }
+
+    body.tp-eod-dashboard .performanceTable th{
+      position:static;
+      padding:10px 14px;
+      background:#fafcfd;
+      border-bottom:1px solid rgba(15,23,42,.07);
+      color:rgba(15,23,42,.48);
+      font-size:9px;
+      text-transform:uppercase;
+      letter-spacing:.07em;
+      font-weight:1000;
+      text-align:right;
+    }
+
+    body.tp-eod-dashboard .performanceTable th:first-child{
+      text-align:left;
+    }
+
+    body.tp-eod-dashboard .performanceTable td{
+      padding:13px 14px;
+      border-bottom:1px solid rgba(15,23,42,.06);
+      background:#fff;
+      font-size:12px;
+      font-weight:850;
+      color:rgba(15,23,42,.76);
+      text-align:right;
+      font-variant-numeric:tabular-nums;
+    }
+
+    body.tp-eod-dashboard .performanceTable td:first-child{
+      text-align:left;
+    }
+
+    body.tp-eod-dashboard .performanceTable tr:last-child td{
+      border-bottom:0;
+    }
+
+    body.tp-eod-dashboard .performanceTable tr.managerRow td{
+      background:rgba(10,166,181,.065);
+      color:rgba(10,106,118,.95);
+      font-weight:1000;
+    }
+
+    body.tp-eod-dashboard .personCell{
+      display:flex;
+      align-items:center;
+      gap:9px;
+      min-width:0;
+    }
+
+    body.tp-eod-dashboard .personName{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    body.tp-eod-dashboard .submissionDot{
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      flex:0 0 auto;
+      background:#cbd5e1;
+    }
+
+    body.tp-eod-dashboard .submissionDot.on{
+      background:#19a96d;
+      box-shadow:0 0 0 3px rgba(25,169,109,.10);
+    }
+
+    body.tp-eod-dashboard .managerBadge{
+      display:inline-flex;
+      margin-left:7px;
+      padding:3px 7px;
+      border-radius:999px;
+      background:rgba(10,166,181,.10);
+      color:rgba(10,116,129,.98);
+      font-size:8px;
+      font-weight:1000;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      vertical-align:middle;
+    }
+
+    body.tp-eod-dashboard .mtdHero{
+      padding:20px 18px 16px;
+      text-align:center;
+    }
+
+    body.tp-eod-dashboard .mtdValue{
+      font-size:43px;
+      line-height:1;
+      font-weight:740;
+      color:var(--dash-teal-dark);
+      letter-spacing:-.035em;
+      font-variant-numeric:tabular-nums;
+    }
+
+    body.tp-eod-dashboard .mtdLabel{
+      margin-top:8px;
+      color:rgba(15,23,42,.48);
+      font-size:10px;
+      font-weight:950;
+      letter-spacing:.07em;
+      text-transform:uppercase;
+    }
+
+    body.tp-eod-dashboard .mtdGrid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      border-top:1px solid rgba(15,23,42,.07);
+    }
+
+    body.tp-eod-dashboard .mtdItem{
+      padding:14px 8px;
+      text-align:center;
+      border-right:1px solid rgba(15,23,42,.07);
+    }
+
+    body.tp-eod-dashboard .mtdItem:last-child{
+      border-right:0;
+    }
+
+    body.tp-eod-dashboard .mtdItem strong{
+      display:block;
+      font-size:18px;
+      color:rgba(15,23,42,.82);
+      font-weight:1000;
+      font-variant-numeric:tabular-nums;
+    }
+
+    body.tp-eod-dashboard .mtdItem span{
+      display:block;
+      margin-top:4px;
+      font-size:8px;
+      color:rgba(15,23,42,.47);
+      font-weight:1000;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+
+    body.tp-eod-dashboard .campaignBody{
+      padding:14px 16px 16px;
+      display:grid;
+      gap:12px;
+    }
+
+    body.tp-eod-dashboard .campaignRow{
+      display:grid;
+      grid-template-columns:60px 1fr 68px;
+      gap:10px;
+      align-items:center;
+    }
+
+    body.tp-eod-dashboard .campaignName{
+      font-size:11px;
+      font-weight:1000;
+      color:rgba(15,23,42,.72);
+    }
+
+    body.tp-eod-dashboard .campaignTrack{
+      position:relative;
+      height:9px;
+      border-radius:999px;
+      background:rgba(15,23,42,.07);
+      overflow:hidden;
+    }
+
+    body.tp-eod-dashboard .campaignFill{
+      position:absolute;
+      inset:0 auto 0 0;
+      width:0%;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--dash-teal),var(--dash-teal-dark));
+    }
+
+    body.tp-eod-dashboard .campaignNumbers{
+      font-size:10px;
+      font-weight:950;
+      color:rgba(15,23,42,.57);
+      text-align:right;
+      white-space:nowrap;
+    }
+
+    body.tp-eod-dashboard .trendCard{
+      margin-top:18px;
+    }
+
+    body.tp-eod-dashboard .trendBody{
+      padding:16px 16px 12px;
+    }
+
+    body.tp-eod-dashboard .trendLegend{
+      display:flex;
+      gap:16px;
+      align-items:center;
+      justify-content:flex-end;
+      margin-bottom:8px;
+      color:rgba(15,23,42,.50);
+      font-size:9px;
+      font-weight:950;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+
+    body.tp-eod-dashboard .legendKey{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    body.tp-eod-dashboard .legendLine{
+      width:20px;
+      height:3px;
+      border-radius:999px;
+      background:var(--legend-color);
+    }
+
+    body.tp-eod-dashboard .trendSvg{
+      display:block;
+      width:100%;
+      height:auto;
+      min-height:220px;
+    }
+
+    body.tp-eod-dashboard .emptyMessage{
+      padding:28px 16px;
+      text-align:center;
+      color:rgba(15,23,42,.50);
+      font-size:11px;
+      line-height:1.5;
+    }
+
+    body.tp-eod-dashboard .captureFoot{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:14px;
+      padding:0 3px;
+      color:rgba(15,23,42,.42);
+      font-size:9px;
+      font-weight:800;
+    }
+
+    body.tp-eod-dashboard .notice{
+      margin-top:12px;
+      padding:11px 13px;
+      border-radius:14px;
+      border:1px solid rgba(15,23,42,.10);
+      background:rgba(255,255,255,.75);
+      color:rgba(15,23,42,.60);
+      font-size:11px;
+      display:none;
+    }
+
+    body.tp-eod-dashboard .notice.show{display:block;}
+    body.tp-eod-dashboard .notice.bad{
+      background:rgba(220,38,38,.06);
+      border-color:rgba(220,38,38,.16);
+      color:#991b1b;
+    }
+
+    body.tp-eod-dashboard .loadingMask{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(247,250,252,.70);
+      backdrop-filter:blur(2px);
+      z-index:20;
+      border-radius:24px;
+      color:rgba(15,23,42,.62);
+      font-size:12px;
+      font-weight:1000;
+    }
+
+    body.tp-eod-dashboard .loadingMask.show{display:flex;}
+    body.tp-eod-dashboard .captureWrap{position:relative;}
+
+    @media(max-width:1050px){
+      body.tp-eod-dashboard .metricGrid{grid-template-columns:repeat(2,minmax(0,1fr));}
+      body.tp-eod-dashboard .mainGrid{grid-template-columns:1fr;}
+    }
+
+    @media(max-width:720px){
+      body.tp-eod-dashboard .panel{padding:14px;}
+      body.tp-eod-dashboard .dashboardHero{align-items:stretch;}
+      body.tp-eod-dashboard .controlRow{width:100%;justify-content:stretch;}
+      body.tp-eod-dashboard .control{flex:1 1 180px;}
+      body.tp-eod-dashboard .dashBtn{flex:1 1 auto;}
+      body.tp-eod-dashboard .captureSurface{padding:14px;}
+      body.tp-eod-dashboard .captureHead{grid-template-columns:5px 1fr;}
+      body.tp-eod-dashboard .captureStatus{grid-column:2;padding-top:0;justify-content:flex-start;}
+      body.tp-eod-dashboard .metricGrid{grid-template-columns:1fr;gap:12px;}
+      body.tp-eod-dashboard .metricCard{min-height:145px;}
+      body.tp-eod-dashboard .metricValue{font-size:39px;}
+      body.tp-eod-dashboard .performanceTable th,
+      body.tp-eod-dashboard .performanceTable td{padding:10px 8px;font-size:10px;}
+      body.tp-eod-dashboard .performanceTable th{font-size:8px;}
+      body.tp-eod-dashboard .campaignRow{grid-template-columns:52px 1fr 60px;}
+    }
+  </style>
+</head>
+
+<body class="tp-eod-dashboard">
+  <div class="wrap">
+    <section class="panel" aria-label="TourPulse EOD Dashboard">
+      <div class="topbar">
+        <div class="brand">
+          <div class="logoBox" aria-hidden="true">
+            <img src="images/MTK-logo.png" alt="TourPulse Logo" />
+          </div>
+          <div class="brandText">
+            <p class="title">TourPulse</p>
+            <p class="sub">Powered by F8</p>
+          </div>
+        </div>
+
+        <div class="rightStack">
+          <div class="userPill" title="Signed-in account">
+            <div class="name" id="userName">—</div>
+            <div class="emp" id="userEmp">—</div>
+          </div>
+          <button class="btnGhost" type="button" id="btnBack">← Back</button>
+          <button class="btnGhost" type="button" id="btnSignOut">Sign Out</button>
+        </div>
+      </div>
+
+      <div class="dashboardHero">
+        <div>
+          <h1>End of Day Dashboard</h1>
+          <p>Live TourPulse reporting by site and date. No Excel report is required.</p>
+        </div>
+
+        <div class="controlRow">
+          <div class="control">
+            <label for="siteSelect">Site</label>
+            <select id="siteSelect" aria-label="Dashboard site"></select>
+          </div>
+
+          <div class="control">
+            <label for="reportDate">Report date</label>
+            <input id="reportDate" type="date" />
+          </div>
+
+          <button class="dashBtn" id="btnRefresh" type="button">Refresh</button>
+          <button class="dashBtn primary" id="btnSnapshot" type="button">Save Snapshot</button>
+        </div>
+      </div>
+
+      <div class="captureWrap">
+        <div class="loadingMask" id="loadingMask">Refreshing TourPulse…</div>
+
+        <div class="captureSurface" id="dashboardCapture">
+          <div class="captureHead">
+            <div class="captureAccent"></div>
+            <div class="captureTitle">
+              <h2 id="captureSite">End of Day Dashboard</h2>
+              <p id="captureDate">—</p>
+            </div>
+            <div class="captureStatus">
+              <span class="liveDot"></span>
+              <span id="captureCompletion">TourPulse Live</span>
+            </div>
+          </div>
+
+          <div class="metricGrid">
+            <article class="metricCard" style="--metric-accent:#0aa6b5;">
+              <div class="metricLabel">Arrivals Seen</div>
+              <div class="metricValue" id="kpiSeen">0</div>
+              <div class="metricMeta">
+                <span id="seenMeta">Today</span>
+                <span class="metricChip" id="seenMtd">MTD 0</span>
+              </div>
+            </article>
+
+            <article class="metricCard" style="--metric-accent:#153a57;">
+              <div class="metricLabel">Tours Booked</div>
+              <div class="metricValue" id="kpiBooked">0</div>
+              <div class="metricMeta">
+                <span>Core bookings</span>
+                <span class="metricChip" id="bookedMtd">MTD 0</span>
+              </div>
+            </article>
+
+            <article class="metricCard" style="--metric-accent:#7c68cc;">
+              <div class="metricLabel">Conversion Rate</div>
+              <div class="metricValue" id="kpiConversion">0%</div>
+              <div class="metricMeta">
+                <span>Booked ÷ seen</span>
+                <span class="metricChip" id="conversionMtd">MTD 0%</span>
+              </div>
+            </article>
+
+            <article class="metricCard" style="--metric-accent:#e9b949;">
+              <div class="metricLabel">Bounce Backs</div>
+              <div class="metricValue" id="kpiBounce">0</div>
+              <div class="metricMeta">
+                <span>Booked today</span>
+                <span class="metricChip" id="bounceMtd">MTD 0</span>
+              </div>
+            </article>
+          </div>
+
+          <div class="mainGrid">
+            <section class="dashCard">
+              <div class="dashCardHead">
+                <h3>Marketer Performance</h3>
+                <span id="submissionSummary">0 of 0 submitted</span>
+              </div>
+              <div id="performanceWrap"></div>
+            </section>
+
+            <div class="sideStack">
+              <section class="dashCard">
+                <div class="dashCardHead">
+                  <h3>Month to Date</h3>
+                  <span id="mtdMonthLabel">—</span>
+                </div>
+                <div class="mtdHero">
+                  <div class="mtdValue" id="mtdConversion">0%</div>
+                  <div class="mtdLabel">Conversion</div>
+                </div>
+                <div class="mtdGrid">
+                  <div class="mtdItem">
+                    <strong id="mtdSeen">0</strong>
+                    <span>Seen</span>
+                  </div>
+                  <div class="mtdItem">
+                    <strong id="mtdBooked">0</strong>
+                    <span>Booked</span>
+                  </div>
+                  <div class="mtdItem">
+                    <strong id="mtdBounce">0</strong>
+                    <span>Bounce Backs</span>
+                  </div>
+                </div>
+              </section>
+
+              <section class="dashCard">
+                <div class="dashCardHead">
+                  <h3>Booking Mix</h3>
+                  <span>Today by campaign</span>
+                </div>
+                <div class="campaignBody" id="campaignBody"></div>
+              </section>
+            </div>
+          </div>
+
+          <section class="dashCard trendCard">
+            <div class="dashCardHead">
+              <h3>7-Day Trend</h3>
+              <span>TourPulse EOD submissions</span>
+            </div>
+            <div class="trendBody">
+              <div class="trendLegend">
+                <span class="legendKey"><i class="legendLine" style="--legend-color:#0aa6b5;"></i>Seen</span>
+                <span class="legendKey"><i class="legendLine" style="--legend-color:#153a57;"></i>Booked</span>
+              </div>
+              <div id="trendWrap"></div>
+            </div>
+          </section>
+
+          <div class="captureFoot">
+            <span id="lastUpdated">TourPulse • No submissions yet</span>
+            <span>Powered by F8</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="notice" id="notice"></div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const SUPABASE_URL = "https://mqiofvksgipmowyfjqjn.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1xaW9mdmtzZ2lwbW93eWZqcWpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwOTI1NTcsImV4cCI6MjA4MzY2ODU1N30.SRXzBegzmjvXcJHxIwH8sBSlWO6A2tsTC274wR-Ioe8";
+    const SIGNIN_PAGE = "signin.html";
+    const BACK_PAGE = "choose-calc.html";
+
+    const sb = (window.supabase && window.supabase.createClient)
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    const $ = (id) => document.getElementById(id);
+    let AUTHUSER = null;
+    let CURRENT_DATA = null;
+    let IS_LOADING = false;
+    let REFRESH_TIMER = null;
+
+    function showToast(msg, ms){
+      const t = $("toast");
+      if(!t) return;
+      t.textContent = msg || "";
+      t.classList.add("show");
+      clearTimeout(showToast._timer);
+      showToast._timer = setTimeout(function(){ t.classList.remove("show"); }, ms || 2200);
+    }
+
+    function showNotice(msg, bad){
+      const n = $("notice");
+      if(!n) return;
+      n.textContent = msg || "";
+      n.classList.toggle("show", !!msg);
+      n.classList.toggle("bad", !!bad);
+    }
+
+    function goSignin(){
+      window.location.replace(SIGNIN_PAGE);
+    }
+
+    function empFromEmail(email){
+      return String(email || "").split("@")[0] || "";
+    }
+
+    function localDateISO(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const day = String(d.getDate()).padStart(2,"0");
+      return y + "-" + m + "-" + day;
+    }
+
+    function formatDate(iso){
+      const d = new Date(String(iso || "") + "T00:00:00");
+      if(Number.isNaN(d.getTime())) return String(iso || "—");
+      return d.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"});
+    }
+
+    function formatShortDate(iso){
+      const d = new Date(String(iso || "") + "T00:00:00");
+      if(Number.isNaN(d.getTime())) return "";
+      return d.toLocaleDateString(undefined,{month:"numeric",day:"numeric"});
+    }
+
+    function formatTime(iso){
+      const d = new Date(String(iso || ""));
+      if(Number.isNaN(d.getTime())) return "";
+      return d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"});
+    }
+
+    function safeNum(v){
+      const n = Number(v);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function pct(v){
+      return safeNum(v).toFixed(1).replace(".0","") + "%";
+    }
+
+    function escapeHtml(s){
+      return String(s == null ? "" : s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    async function requireManagerAccess(){
+      if(!sb) return goSignin();
+
+      const sessionResult = await sb.auth.getSession();
+      const session = sessionResult && sessionResult.data ? sessionResult.data.session : null;
+      if(!session || !session.user) return goSignin();
+
+      AUTHUSER = session.user;
+      const first = AUTHUSER.user_metadata && AUTHUSER.user_metadata.first_name
+        ? AUTHUSER.user_metadata.first_name
+        : "Signed In";
+      const emp = empFromEmail(AUTHUSER.email);
+
+      $("userName").textContent = first;
+      $("userEmp").textContent = emp ? "#" + emp : "";
+
+      const access = await sb.rpc("tp_get_my_console_access");
+      if(access.error){
+        throw access.error;
+      }
+
+      const row = Array.isArray(access.data) ? access.data[0] : access.data;
+      const allowed = !!(row && (row.is_admin || row.is_manager));
+      if(!allowed){
+        showNotice("The EOD Dashboard is available to TourPulse managers and administrators.",true);
+        $("btnSnapshot").disabled = true;
+        $("btnRefresh").disabled = true;
+        throw new Error("Manager access required.");
+      }
+    }
+
+    async function loadSites(){
+      const result = await sb.rpc("tp_get_eod_dashboard_sites_v1");
+      if(result.error) throw result.error;
+
+      const sites = Array.isArray(result.data) ? result.data : [];
+      const select = $("siteSelect");
+      select.innerHTML = "";
+
+      sites.forEach(function(site){
+        const opt = document.createElement("option");
+        opt.value = site.site_key;
+        opt.textContent = site.site_name;
+        select.appendChild(opt);
+      });
+
+      if(!sites.length){
+        throw new Error("No EOD sites are configured for this account.");
+      }
+
+      let preferred = "";
+      try{ preferred = localStorage.getItem("tp_eod_dashboard_site") || ""; }catch(_){}
+
+      const hasPreferred = sites.some(function(site){ return site.site_key === preferred; });
+      const mbo = sites.find(function(site){ return site.site_key === "myrtle-beach-oceanfront"; });
+      select.value = hasPreferred ? preferred : (mbo ? mbo.site_key : sites[0].site_key);
+    }
+
+    function renderPerformance(rows){
+      const wrap = $("performanceWrap");
+      if(!Array.isArray(rows) || !rows.length){
+        wrap.innerHTML = '<div class="emptyMessage">No marketers are mapped to this site.</div>';
+        return;
+      }
+
+      let html = '<table class="performanceTable"><thead><tr>' +
+        '<th>Team Member</th><th>Seen</th><th>Booked</th><th>Conv.</th><th>BB</th>' +
+        '</tr></thead><tbody>';
+
+      rows.forEach(function(row){
+        const managerClass = row.is_manager ? "managerRow" : "";
+        const managerBadge = row.is_manager ? '<span class="managerBadge">Manager</span>' : "";
+        const submittedClass = row.submitted ? "submissionDot on" : "submissionDot";
+        html += '<tr class="' + managerClass + '">' +
+          '<td><div class="personCell"><span class="' + submittedClass + '"></span><span class="personName">' +
+          escapeHtml(row.name || row.emp || "—") + managerBadge + '</span></div></td>' +
+          '<td>' + safeNum(row.arrivals_seen) + '</td>' +
+          '<td>' + safeNum(row.tours_booked) + '</td>' +
+          '<td>' + pct(row.conversion) + '</td>' +
+          '<td>' + safeNum(row.bounce_backs) + '</td>' +
+          '</tr>';
+      });
+
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    }
+
+    function renderCampaigns(rows){
+      const body = $("campaignBody");
+      if(!Array.isArray(rows) || !rows.length){
+        body.innerHTML = '<div class="emptyMessage">No campaign data for this date.</div>';
+        return;
+      }
+
+      const maxBooked = Math.max.apply(null, rows.map(function(row){ return safeNum(row.booked); }).concat([1]));
+      body.innerHTML = rows.map(function(row){
+        const booked = safeNum(row.booked);
+        const seen = safeNum(row.seen);
+        const width = Math.max(0,Math.min(100,(booked / maxBooked) * 100));
+        return '<div class="campaignRow">' +
+          '<div class="campaignName">' + escapeHtml(row.label) + '</div>' +
+          '<div class="campaignTrack"><div class="campaignFill" style="width:' + width.toFixed(1) + '%"></div></div>' +
+          '<div class="campaignNumbers">' + booked + ' / ' + seen + '</div>' +
+          '</div>';
+      }).join("");
+    }
+
+    function linePath(points,width,height,pad,maxValue,key){
+      if(!points.length) return "";
+      const usableW = width - (pad * 2);
+      const usableH = height - (pad * 2);
+      return points.map(function(point,index){
+        const x = pad + (points.length === 1 ? usableW / 2 : (index * usableW / (points.length - 1)));
+        const value = safeNum(point[key]);
+        const y = pad + usableH - ((value / maxValue) * usableH);
+        return (index === 0 ? "M" : "L") + x.toFixed(1) + " " + y.toFixed(1);
+      }).join(" ");
+    }
+
+    function renderTrend(rows){
+      const wrap = $("trendWrap");
+      if(!Array.isArray(rows) || !rows.length){
+        wrap.innerHTML = '<div class="emptyMessage">No trend data available.</div>';
+        return;
+      }
+
+      const width = 1120;
+      const height = 245;
+      const pad = 34;
+      let maxValue = 1;
+
+      rows.forEach(function(row){
+        maxValue = Math.max(maxValue,safeNum(row.arrivals_seen),safeNum(row.tours_booked));
+      });
+
+      const seenPath = linePath(rows,width,height,pad,maxValue,"arrivals_seen");
+      const bookedPath = linePath(rows,width,height,pad,maxValue,"tours_booked");
+      let grid = "";
+      for(let i=0;i<4;i++){
+        const y = pad + ((height - pad*2) * i / 3);
+        grid += '<line x1="' + pad + '" y1="' + y.toFixed(1) + '" x2="' + (width-pad) + '" y2="' + y.toFixed(1) + '" stroke="rgba(15,23,42,.08)" stroke-width="1"/>';
+      }
+
+      let labels = "";
+      rows.forEach(function(row,index){
+        const x = pad + (rows.length === 1 ? (width-pad*2)/2 : index * (width-pad*2) / (rows.length-1));
+        labels += '<text x="' + x.toFixed(1) + '" y="' + (height-8) + '" text-anchor="middle" fill="rgba(15,23,42,.46)" font-size="10" font-weight="700">' +
+          escapeHtml(formatShortDate(row.date)) + '</text>';
+      });
+
+      wrap.innerHTML =
+        '<svg class="trendSvg" viewBox="0 0 ' + width + ' ' + height + '" role="img" aria-label="Seven day arrivals seen and tours booked trend">' +
+        grid +
+        '<path d="' + seenPath + '" fill="none" stroke="#0aa6b5" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>' +
+        '<path d="' + bookedPath + '" fill="none" stroke="#153a57" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>' +
+        labels +
+        '</svg>';
+    }
+
+    function renderDashboard(data){
+      CURRENT_DATA = data || {};
+      const k = CURRENT_DATA.kpis || {};
+      const mtd = CURRENT_DATA.mtd || {};
+      const reportDate = CURRENT_DATA.report_date || $("reportDate").value;
+
+      $("captureSite").textContent = (CURRENT_DATA.site_name || "TourPulse") + "  |  End of Day";
+      $("captureDate").textContent = formatDate(reportDate);
+
+      const submitted = safeNum(k.submitted_count);
+      const mapped = safeNum(k.mapped_count);
+      $("captureCompletion").textContent = submitted + " of " + mapped + " submitted";
+      $("submissionSummary").textContent = submitted + " of " + mapped + " submitted";
+
+      $("kpiSeen").textContent = safeNum(k.arrivals_seen);
+      $("kpiBooked").textContent = safeNum(k.tours_booked);
+      $("kpiConversion").textContent = pct(k.conversion);
+      $("kpiBounce").textContent = safeNum(k.bounce_backs);
+
+      $("seenMtd").textContent = "MTD " + safeNum(mtd.arrivals_seen);
+      $("bookedMtd").textContent = "MTD " + safeNum(mtd.tours_booked);
+      $("conversionMtd").textContent = "MTD " + pct(mtd.conversion);
+      $("bounceMtd").textContent = "MTD " + safeNum(mtd.bounce_backs);
+
+      $("mtdConversion").textContent = pct(mtd.conversion);
+      $("mtdSeen").textContent = safeNum(mtd.arrivals_seen);
+      $("mtdBooked").textContent = safeNum(mtd.tours_booked);
+      $("mtdBounce").textContent = safeNum(mtd.bounce_backs);
+
+      const d = new Date(String(reportDate) + "T00:00:00");
+      $("mtdMonthLabel").textContent = Number.isNaN(d.getTime())
+        ? "Month to date"
+        : d.toLocaleDateString(undefined,{month:"long",year:"numeric"});
+
+      const updated = k.last_updated ? formatTime(k.last_updated) : "";
+      $("lastUpdated").textContent = updated
+        ? "TourPulse • Last submission update " + updated
+        : "TourPulse • No submissions yet";
+
+      renderPerformance(CURRENT_DATA.marketers || []);
+      renderCampaigns(CURRENT_DATA.campaigns || []);
+      renderTrend(CURRENT_DATA.trend || []);
+    }
+
+    async function loadDashboard(options){
+      if(IS_LOADING || !sb) return;
+      IS_LOADING = true;
+      $("loadingMask").classList.add("show");
+      $("btnRefresh").disabled = true;
+      showNotice("");
+
+      try{
+        const siteKey = $("siteSelect").value;
+        const reportDate = $("reportDate").value || localDateISO();
+        if(!siteKey) throw new Error("Choose a site.");
+
+        try{ localStorage.setItem("tp_eod_dashboard_site",siteKey); }catch(_){}
+
+        const result = await sb.rpc("tp_get_eod_dashboard_v1",{
+          p_site_key:siteKey,
+          p_report_date:reportDate
+        });
+
+        if(result.error) throw result.error;
+        renderDashboard(result.data || {});
+
+        if(options && options.toast){
+          showToast("Dashboard refreshed.");
+        }
+      }catch(err){
+        console.error(err);
+        showNotice(err && err.message ? err.message : "Could not load the dashboard.",true);
+      }finally{
+        IS_LOADING = false;
+        $("loadingMask").classList.remove("show");
+        $("btnRefresh").disabled = false;
+      }
+    }
+
+    function blobToDataUrl(blob){
+      return new Promise(function(resolve,reject){
+        const reader = new FileReader();
+        reader.onload = function(){ resolve(reader.result); };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function inlineImages(sourceRoot,cloneRoot){
+      const sourceImages = Array.from(sourceRoot.querySelectorAll("img"));
+      const cloneImages = Array.from(cloneRoot.querySelectorAll("img"));
+
+      for(let i=0;i<sourceImages.length;i++){
+        try{
+          const response = await fetch(sourceImages[i].src,{cache:"force-cache"});
+          const blob = await response.blob();
+          cloneImages[i].src = await blobToDataUrl(blob);
+        }catch(_){}
+      }
+    }
+
+    function inlineComputedStyles(sourceRoot,cloneRoot){
+      const sourceNodes = [sourceRoot].concat(Array.from(sourceRoot.querySelectorAll("*")));
+      const cloneNodes = [cloneRoot].concat(Array.from(cloneRoot.querySelectorAll("*")));
+
+      sourceNodes.forEach(function(source,index){
+        const clone = cloneNodes[index];
+        if(!clone || clone.nodeType !== 1) return;
+
+        const computed = getComputedStyle(source);
+        let cssText = "";
+        for(let i=0;i<computed.length;i++){
+          const prop = computed[i];
+          if(prop === "animation" || prop === "transition") continue;
+          cssText += prop + ":" + computed.getPropertyValue(prop) + ";";
+        }
+        clone.setAttribute("style",cssText);
+      });
+    }
+
+    function triggerDownload(blob,fileName){
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); },1500);
+    }
+
+    async function saveSnapshot(){
+      const source = $("dashboardCapture");
+      if(!source || !CURRENT_DATA || IS_LOADING) return;
+
+      $("btnSnapshot").disabled = true;
+      $("btnSnapshot").textContent = "Saving…";
+
+      try{
+        const clone = source.cloneNode(true);
+        inlineComputedStyles(source,clone);
+        await inlineImages(source,clone);
+
+        const width = Math.ceil(source.scrollWidth);
+        const height = Math.ceil(source.scrollHeight);
+        clone.setAttribute("xmlns","http://www.w3.org/1999/xhtml");
+        clone.style.width = width + "px";
+        clone.style.height = height + "px";
+        clone.style.margin = "0";
+
+        const serialized = new XMLSerializer().serializeToString(clone);
+        const svg =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '">' +
+          '<foreignObject x="0" y="0" width="100%" height="100%">' +
+          serialized +
+          '</foreignObject></svg>';
+
+        const svgBlob = new Blob([svg],{type:"image/svg+xml;charset=utf-8"});
+        const svgUrl = URL.createObjectURL(svgBlob);
+        const image = new Image();
+
+        await new Promise(function(resolve,reject){
+          image.onload = resolve;
+          image.onerror = reject;
+          image.src = svgUrl;
+        });
+
+        const scale = 2;
+        const canvas = document.createElement("canvas");
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.scale(scale,scale);
+        ctx.drawImage(image,0,0,width,height);
+        URL.revokeObjectURL(svgUrl);
+
+        const pngBlob = await new Promise(function(resolve,reject){
+          canvas.toBlob(function(blob){
+            if(blob) resolve(blob);
+            else reject(new Error("Could not create PNG."));
+          },"image/png",1);
+        });
+
+        const sitePart = String(CURRENT_DATA.site_key || "site").replaceAll(/[^a-z0-9]+/gi,"-");
+        const datePart = String(CURRENT_DATA.report_date || $("reportDate").value || localDateISO());
+        triggerDownload(pngBlob,"TourPulse-EOD-" + sitePart + "-" + datePart + ".png");
+        showToast("Dashboard snapshot saved.");
+      }catch(err){
+        console.error(err);
+        showNotice("Snapshot could not be created in this browser. Refresh the page and try again.",true);
+      }finally{
+        $("btnSnapshot").disabled = false;
+        $("btnSnapshot").textContent = "Save Snapshot";
+      }
+    }
+
+    async function signOut(){
+      if(!sb) return goSignin();
+      const result = await sb.auth.signOut();
+      if(result.error){
+        showToast(result.error.message || "Sign out failed.");
+        return;
+      }
+      goSignin();
+    }
+
+    $("btnBack").addEventListener("click",function(){ window.location.href = BACK_PAGE; });
+    $("btnSignOut").addEventListener("click",signOut);
+    $("btnRefresh").addEventListener("click",function(){ loadDashboard({toast:true}); });
+    $("btnSnapshot").addEventListener("click",saveSnapshot);
+
+    $("siteSelect").addEventListener("change",function(){ loadDashboard(); });
+    $("reportDate").addEventListener("change",function(){ loadDashboard(); });
+
+    document.addEventListener("visibilitychange",function(){
+      if(!document.hidden) loadDashboard();
+    });
+
+    if(sb){
+      sb.auth.onAuthStateChange(function(event,session){
+        if(event === "SIGNED_OUT" || !session || !session.user) goSignin();
+      });
+    }
+
+    (async function init(){
+      $("reportDate").value = localDateISO();
+
+      try{
+        await requireManagerAccess();
+        await loadSites();
+        await loadDashboard();
+        REFRESH_TIMER = setInterval(function(){
+          if(!document.hidden) loadDashboard();
+        },30000);
+      }catch(err){
+        console.error(err);
+        showNotice(err && err.message ? err.message : "Could not start the dashboard.",true);
+      }
+    })();
+
+    window.addEventListener("beforeunload",function(){
+      if(REFRESH_TIMER) clearInterval(REFRESH_TIMER);
+    });
+  </script>
+</body>
+</html>
