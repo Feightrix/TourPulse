@@ -170,8 +170,6 @@ async function getConfigs() {
     .filter(row => ALLOWED_SITES.has(String(row.site_key || "")))
     .map(row => ({
       site_key: String(row.site_key || ""),
-      sheet_name: String(row.sheet_name || ""),
-      excel_name: String(row.excel_name || ""),
       emp: String(row.emp || "")
     }));
 }
@@ -296,7 +294,7 @@ ipcMain.handle("app:confirm-clear", async (_event, args = {}) => {
       ? "MBO — Myrtle Beach Oceanfront"
       : "SBR — South Beach";
 
-    const result = await dialog.showMessageBox(win || undefined, {
+    const options = {
       type: "warning",
       title: "Clear this EOD day?",
       message: "Clear all EOD numbers for this day?",
@@ -307,7 +305,11 @@ ipcMain.handle("app:confirm-clear", async (_event, args = {}) => {
       defaultId: 0,
       cancelId: 0,
       noLink: true
-    });
+    };
+
+    const result = win && !win.isDestroyed()
+      ? await dialog.showMessageBox(win, options)
+      : await dialog.showMessageBox(options);
 
     return { ok: true, confirmed: result.response === 1 };
   } catch (err) {
