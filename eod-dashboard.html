@@ -804,6 +804,8 @@
     let CURRENT_DATA = null;
     let IS_LOADING = false;
     let REFRESH_TIMER = null;
+    let LIVE_CHANNEL = null;
+    let LIVE_RELOAD_TIMER = null;
 
     function showToast(msg, ms){
       const t = $("toast");
@@ -1112,6 +1114,56 @@
       }
     }
 
+    async function stopLiveUpdates(){
+      if(LIVE_RELOAD_TIMER){
+        clearTimeout(LIVE_RELOAD_TIMER);
+        LIVE_RELOAD_TIMER = null;
+      }
+
+      if(LIVE_CHANNEL && sb){
+        try{ await sb.removeChannel(LIVE_CHANNEL); }catch(_){}
+        LIVE_CHANNEL = null;
+      }
+    }
+
+    async function startLiveUpdates(){
+      if(!sb) return;
+
+      await stopLiveUpdates();
+
+      const siteKey = $("siteSelect").value;
+      const reportDate = $("reportDate").value || localDateISO();
+      if(!siteKey || !reportDate) return;
+
+      const channelName = "tp-eod-live-" + siteKey + "-" + reportDate + "-" + Date.now();
+
+      LIVE_CHANNEL = sb
+        .channel(channelName)
+        .on(
+          "postgres_changes",
+          {
+            event:"*",
+            schema:"public",
+            table:"tp_eod_dashboard_events",
+            filter:"site_key=eq." + siteKey
+          },
+          function(payload){
+            const row = payload && (payload.new || payload.old) ? (payload.new || payload.old) : {};
+            if(String(row.report_date || "") !== reportDate) return;
+
+            clearTimeout(LIVE_RELOAD_TIMER);
+            LIVE_RELOAD_TIMER = setTimeout(function(){
+              if(!document.hidden) loadDashboard();
+            },180);
+          }
+        )
+        .subscribe(function(status, err){
+          if(status === "CHANNEL_ERROR" || status === "TIMED_OUT"){
+            console.warn("EOD dashboard realtime:", status, err || "");
+          }
+        });
+    }
+
     function blobToDataUrl(blob){
       return new Promise(function(resolve,reject){
         const reader = new FileReader();
@@ -1244,8 +1296,15 @@
     $("btnRefresh").addEventListener("click",function(){ loadDashboard({toast:true}); });
     $("btnSnapshot").addEventListener("click",saveSnapshot);
 
-    $("siteSelect").addEventListener("change",function(){ loadDashboard(); });
-    $("reportDate").addEventListener("change",function(){ loadDashboard(); });
+    $("siteSelect").addEventListener("change",async function(){
+      await loadDashboard();
+      await startLiveUpdates();
+    });
+
+    $("reportDate").addEventListener("change",async function(){
+      await loadDashboard();
+      await startLiveUpdates();
+    });
 
     document.addEventListener("visibilitychange",function(){
       if(!document.hidden) loadDashboard();
@@ -1264,9 +1323,12 @@
         await requireManagerAccess();
         await loadSites();
         await loadDashboard();
+        await startLiveUpdates();
+
+        // Quiet fallback only. Realtime events are the normal update path.
         REFRESH_TIMER = setInterval(function(){
           if(!document.hidden) loadDashboard();
-        },30000);
+        },60000);
       }catch(err){
         console.error(err);
         showNotice(err && err.message ? err.message : "Could not start the dashboard.",true);
@@ -1275,6 +1337,10 @@
 
     window.addEventListener("beforeunload",function(){
       if(REFRESH_TIMER) clearInterval(REFRESH_TIMER);
+      if(LIVE_RELOAD_TIMER) clearTimeout(LIVE_RELOAD_TIMER);
+      if(LIVE_CHANNEL && sb){
+        try{ sb.removeChannel(LIVE_CHANNEL); }catch(_){}
+      }
     });
   </script>
 </body>
