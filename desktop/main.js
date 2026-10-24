@@ -343,7 +343,7 @@ ipcMain.handle("app:get-log-path", async () => ({
 }));
 
 function configureWindowsStartup() {
-  if (process.platform !== "win32") return;
+  if (process.platform !== "win32" || !app.isPackaged) return;
 
   try {
     const launchPath = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
