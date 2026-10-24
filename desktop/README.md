@@ -5,6 +5,8 @@ The Windows Quick EOD app is a compact TourPulse entry client for MBO and SBR.
 ## Behavior
 
 - Always on top
+- Registers itself to launch automatically when the current Windows user signs in
+- Prevents duplicate app instances if Windows startup and a manual launch happen together
 - Uses the same TourPulse employee number + PIN
 - Saves Seen, Booked, and Bounce Back values directly to TourPulse
 - Feeds the native TourPulse EOD Dashboard from the same saved record
