@@ -16,6 +16,19 @@ let signedInUser = null;
 
 const bootLog = path.join(os.tmpdir(), "TourPulse-Quick-EOD-startup.log");
 
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (!win || win.isDestroyed()) return;
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+  });
+}
+
 function writeLogLine(line) {
   try { fs.appendFileSync(bootLog, line, "utf8"); } catch (_) {}
   if (userDataLog) {
@@ -329,6 +342,33 @@ ipcMain.handle("app:get-log-path", async () => ({
   bootLog
 }));
 
+function configureWindowsStartup() {
+  if (process.platform !== "win32" || !app.isPackaged) return;
+
+  try {
+    const launchPath = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
+    const startupArgs = ["--tourpulse-startup"];
+
+    app.setLoginItemSettings({
+      openAtLogin: true,
+      path: launchPath,
+      args: startupArgs
+    });
+
+    const settings = app.getLoginItemSettings({
+      path: launchPath,
+      args: startupArgs
+    });
+
+    log("windows startup registration", {
+      launchPath,
+      openAtLogin: !!settings.openAtLogin
+    });
+  } catch (err) {
+    log("windows startup registration warning", err);
+  }
+}
+
 function createWindow() {
   win = new BrowserWindow({
     width: 430,
@@ -395,6 +435,7 @@ app.whenReady().then(() => {
   });
 
   app.setAppUserModelId("com.f8.tourpulse.quickeod");
+  configureWindowsStartup();
   createWindow();
 
   app.on("activate", () => {
