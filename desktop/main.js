@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
+const { spawn } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
@@ -13,6 +14,11 @@ let accessToken = "";
 let refreshToken = "";
 let expiresAtMs = 0;
 let signedInUser = null;
+let arrivalProbeProcess = null;
+let arrivalProbeStartedAt = null;
+let arrivalProbeEvents = [];
+let arrivalProbeBuffer = "";
+let arrivalProbeLastSignature = "";
 
 const bootLog = path.join(os.tmpdir(), "TourPulse-Quick-EOD-startup.log");
 
@@ -331,6 +337,177 @@ ipcMain.handle("app:confirm-clear", async (_event, args = {}) => {
   }
 });
 
+
+function redactProbeTitle(value) {
+  return String(value || "")
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email]")
+    .replace(/\b\d{4,}\b/g, "[number]")
+    .slice(0, 220);
+}
+
+function stopArrivalProbeProcess() {
+  if (!arrivalProbeProcess) return;
+  try { arrivalProbeProcess.kill(); } catch (_) {}
+  arrivalProbeProcess = null;
+}
+
+ipcMain.handle("probe:start", async () => {
+  try {
+    if (process.platform !== "win32") {
+      return { ok: false, error: "Arrival Probe is currently available only on Windows." };
+    }
+    if (arrivalProbeProcess) {
+      return { ok: true, already_running: true, started_at: arrivalProbeStartedAt };
+    }
+
+    arrivalProbeStartedAt = new Date().toISOString();
+    arrivalProbeEvents = [];
+    arrivalProbeBuffer = "";
+    arrivalProbeLastSignature = "";
+
+    const script = [
+      "Add-Type -TypeDefinition @'",
+      "using System;",
+      "using System.Runtime.InteropServices;",
+      "using System.Text;",
+      "public static class TPWinProbe {",
+      "  [DllImport(\\\"user32.dll\\\")] public static extern IntPtr GetForegroundWindow();",
+      "  [DllImport(\\\"user32.dll\\\")] public static extern int GetWindowTextLength(IntPtr hWnd);",
+      "  [DllImport(\\\"user32.dll\\\", CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);",
+      "  [DllImport(\\\"user32.dll\\\")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);",
+      "}",
+      "'@",
+      "while ($true) {",
+      "  try {",
+      "    $h = [TPWinProbe]::GetForegroundWindow()",
+      "    if ($h -ne [IntPtr]::Zero) {",
+      "      [uint32]$pid = 0",
+      "      [void][TPWinProbe]::GetWindowThreadProcessId($h, [ref]$pid)",
+      "      $len = [TPWinProbe]::GetWindowTextLength($h)",
+      "      $sb = New-Object System.Text.StringBuilder ($len + 1)",
+      "      [void][TPWinProbe]::GetWindowText($h, $sb, $sb.Capacity)",
+      "      $p = Get-Process -Id $pid -ErrorAction SilentlyContinue",
+      "      if ($p) {",
+      "        [pscustomobject]@{",
+      "          ts = (Get-Date).ToUniversalTime().ToString('o');",
+      "          pid = [int]$pid;",
+      "          process = [string]$p.ProcessName;",
+      "          title = [string]$sb.ToString()",
+      "        } | ConvertTo-Json -Compress",
+      "      }",
+      "    }",
+      "  } catch {}",
+      "  Start-Sleep -Milliseconds 250",
+      "}"
+    ].join("\n");
+
+    arrivalProbeProcess = spawn(
+      "powershell.exe",
+      ["-NoProfile", "-NonInteractive", "-Command", script],
+      { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] }
+    );
+
+    arrivalProbeProcess.stdout.setEncoding("utf8");
+    arrivalProbeProcess.stdout.on("data", chunk => {
+      arrivalProbeBuffer += String(chunk || "");
+      const lines = arrivalProbeBuffer.split(/\r?\n/);
+      arrivalProbeBuffer = lines.pop() || "";
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        try {
+          const row = JSON.parse(trimmed);
+          const evt = {
+            ts: String(row.ts || new Date().toISOString()),
+            pid: Number(row.pid || 0),
+            process: String(row.process || "").slice(0, 120),
+            title: redactProbeTitle(row.title)
+          };
+          const signature = evt.pid + "|" + evt.process + "|" + evt.title;
+          if (signature === arrivalProbeLastSignature) continue;
+          arrivalProbeLastSignature = signature;
+          arrivalProbeEvents.push(evt);
+
+          if (arrivalProbeEvents.length > 1500) {
+            arrivalProbeEvents.splice(0, arrivalProbeEvents.length - 1500);
+          }
+        } catch (_) {}
+      }
+    });
+
+    arrivalProbeProcess.stderr.setEncoding("utf8");
+    arrivalProbeProcess.stderr.on("data", chunk => {
+      const msg = String(chunk || "").trim();
+      if (msg) log("arrival probe stderr", msg.slice(0, 500));
+    });
+
+    arrivalProbeProcess.on("exit", (code, signal) => {
+      log("arrival probe stopped", { code, signal, events: arrivalProbeEvents.length });
+      arrivalProbeProcess = null;
+    });
+
+    log("arrival probe started", { startedAt: arrivalProbeStartedAt });
+    return { ok: true, started_at: arrivalProbeStartedAt };
+  } catch (err) {
+    stopArrivalProbeProcess();
+    log("arrival probe start error", err);
+    return { ok: false, error: err?.message || "Could not start Arrival Probe." };
+  }
+});
+
+ipcMain.handle("probe:stop", async (_event, args = {}) => {
+  try {
+    const site = cleanSite(args.site_key);
+    const reportDate = cleanDate(args.report_date);
+    const startedAt = arrivalProbeStartedAt || new Date().toISOString();
+
+    stopArrivalProbeProcess();
+
+    const endedAt = new Date().toISOString();
+    const safeEmp = signedInUser?.email ? cleanEmp(String(signedInUser.email).split("@")[0]) : "";
+    const payload = {
+      format: "tourpulse-arrival-probe-v1",
+      app_version: app.getVersion(),
+      site_key: site,
+      report_date: reportDate,
+      employee_id: safeEmp,
+      started_at: startedAt,
+      ended_at: endedAt,
+      computer: {
+        platform: process.platform,
+        release: os.release(),
+        arch: process.arch,
+        hostname: os.hostname()
+      },
+      note: "Foreground application transitions only. Window titles are locally redacted for email addresses and long numeric identifiers.",
+      events: arrivalProbeEvents
+    };
+
+    const stamp = endedAt.replace(/[:.]/g, "-");
+    const fileName = "TourPulse-Arrival-Probe-" + site + "-" + stamp + ".json";
+    const filePath = path.join(app.getPath("downloads"), fileName);
+    fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), "utf8");
+
+    log("arrival probe saved", { filePath, events: arrivalProbeEvents.length });
+
+    arrivalProbeStartedAt = null;
+    arrivalProbeEvents = [];
+    arrivalProbeBuffer = "";
+    arrivalProbeLastSignature = "";
+
+    return {
+      ok: true,
+      file_path: filePath,
+      file_name: fileName,
+      event_count: payload.events.length
+    };
+  } catch (err) {
+    log("arrival probe stop error", err);
+    return { ok: false, error: err?.message || "Could not save Arrival Probe." };
+  }
+});
+
 ipcMain.handle("app:open-full-eod", async () => {
   await shell.openExternal("https://feightrix.github.io/TourPulse/eod-tracker.html");
   return { ok: true };
@@ -446,6 +623,10 @@ app.whenReady().then(() => {
     }
   });
 }).catch(err => fatal("TourPulse Quick EOD — Startup Error", err));
+
+app.on("before-quit", () => {
+  stopArrivalProbeProcess();
+});
 
 app.on("window-all-closed", () => {
   app.quit();
