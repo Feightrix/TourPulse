@@ -26,6 +26,7 @@ let SAVE_TIMER = null;
 let SAVING = false;
 let SAVE_AGAIN = false;
 let LOADING = false;
+let PROBING = false;
 
 function safeInt(v){
   const n = parseInt(String(v ?? "0"),10);
@@ -243,6 +244,53 @@ async function saveNow(){
   }
 }
 
+async function toggleArrivalProbe(){
+  if(!ACTIVE || !USER || LOADING || SAVING) return;
+
+  const btn = $("arrivalProbeBtn");
+  const note = $("noteLine");
+
+  if(!PROBING){
+    const res = await api.startArrivalProbe();
+    if(!res?.ok){
+      setStatus("Probe error","bad");
+      if(note) note.textContent = res?.error || "Could not start Arrival Probe.";
+      return;
+    }
+
+    PROBING = true;
+    btn.textContent = "Stop & Save";
+    btn.classList.add("active");
+    setStatus("Arrival Probe running","warn");
+    if(note) note.textContent = "Perform one normal TSW + OLAS arrival now, then click Stop & Save.";
+    return;
+  }
+
+  btn.disabled = true;
+  setStatus("Saving probe…","warn");
+
+  const res = await api.stopArrivalProbe(ACTIVE.site_key, $("reportDate").value || today());
+
+  btn.disabled = false;
+  PROBING = false;
+  btn.textContent = "Arrival Probe";
+  btn.classList.remove("active");
+
+  if(!res?.ok){
+    setStatus("Probe save error","bad");
+    if(note) note.textContent = res?.error || "Could not save Arrival Probe.";
+    return;
+  }
+
+  setStatus("Probe saved","good");
+  if(note){
+    note.textContent =
+      "Arrival Probe saved to Downloads: " +
+      String(res.file_name || "TourPulse Arrival Probe") +
+      " • " + String(res.event_count || 0) + " app transitions captured.";
+  }
+}
+
 async function clearAll(){
   if(!ACTIVE || !USER || LOADING || SAVING) return;
 
@@ -317,6 +365,9 @@ async function signIn(){
 }
 
 async function signOut(){
+  if(PROBING){
+    await toggleArrivalProbe();
+  }
   clearTimeout(SAVE_TIMER);
   await api.signOut();
   USER=null;
@@ -357,16 +408,21 @@ $("grid").addEventListener("click",e=>{
 $("signInBtn").addEventListener("click",signIn);
 $("pin").addEventListener("keydown",e=>{ if(e.key==="Enter") signIn(); });
 $("emp").addEventListener("keydown",e=>{ if(e.key==="Enter") $("pin").focus(); });
+$("arrivalProbeBtn").addEventListener("click",toggleArrivalProbe);
 $("clearAllBtn").addEventListener("click",clearAll);
 $("signOutBtn").addEventListener("click",signOut);
 $("fullEodBtn").addEventListener("click",()=>api.openFullEod());
 
 $("siteSelect").addEventListener("change",async()=>{
+  if(PROBING) await toggleArrivalProbe();
   ACTIVE=CONFIGS.find(c=>c.site_key===$("siteSelect").value) || CONFIGS[0] || null;
   await loadEod();
 });
 
-$("reportDate").addEventListener("change",loadEod);
+$("reportDate").addEventListener("change",async()=>{
+  if(PROBING) await toggleArrivalProbe();
+  await loadEod();
+});
 
 setStatus("Sign in required");
 $("emp").focus();

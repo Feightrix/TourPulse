@@ -70,6 +70,8 @@
     .small{height:29px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:rgba(15,23,42,.68);font-size:8px;font-weight:850;cursor:pointer}
     .small.danger{border-color:rgba(185,28,28,.20);background:rgba(185,28,28,.045);color:#a61b1b}
     .small.danger:hover{background:rgba(185,28,28,.09)}
+    .small.probe{border-color:rgba(10,166,181,.22);background:rgba(10,166,181,.06);color:var(--teal-dark)}
+    .small.probe.active{border-color:rgba(217,119,6,.28);background:rgba(217,119,6,.08);color:#a15c06}
     .note{margin-top:7px;font-size:8px;line-height:1.35;color:var(--muted);text-align:center}
   </style>
 </head>
@@ -128,12 +130,13 @@
       <div class="footer">
         <div class="user" id="userLine">—</div>
         <div class="actions">
+          <button class="small probe" id="arrivalProbeBtn" type="button">Arrival Probe</button>
           <button class="small" id="fullEodBtn" type="button">Full EOD</button>
           <button class="small danger" id="clearAllBtn" type="button">Clear All</button>
           <button class="small" id="signOutBtn" type="button">Sign Out</button>
         </div>
       </div>
-      <div class="note">Changes save directly to TourPulse and feed the EOD Dashboard automatically.</div>
+      <div class="note" id="noteLine">Changes save directly to TourPulse and feed the EOD Dashboard automatically.</div>
     </div>
   </div>
   <script src="renderer.js"></script>

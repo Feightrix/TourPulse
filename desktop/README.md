@@ -13,6 +13,7 @@ The Windows Quick EOD app is a compact TourPulse entry client for MBO and SBR.
 - No Excel or Power Automate sync is required
 - Clear All requires a native confirmation and then saves zeros for every EOD value on the selected site/date
 - Opens the full TourPulse EOD page when needed
+- Arrival Probe can be run manually during one real TSW/OLAS check-in to capture foreground app transitions and save a redacted diagnostic JSON file to Downloads
 
 ## Local development
 
