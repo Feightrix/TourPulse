@@ -1046,7 +1046,7 @@
 
       const submitted = safeNum(k.submitted_count);
       const mapped = safeNum(k.mapped_count);
-      $("captureCompletion").textContent = submitted + " of " + mapped + " submitted";
+      $("captureCompletion").textContent = "LIVE  •  " + submitted + " of " + mapped + " submitted";
       $("submissionSummary").textContent = submitted + " of " + mapped + " submitted";
 
       $("kpiSeen").textContent = safeNum(k.arrivals_seen);
