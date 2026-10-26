@@ -1,5 +1,5 @@
 const { app, BrowserWindow, ipcMain, shell, dialog } = require("electron");
-const { spawn } = require("child_process");
+const { spawn, spawnSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
@@ -522,10 +522,43 @@ ipcMain.handle("app:get-log-path", async () => ({
 function configureWindowsStartup() {
   if (process.platform !== "win32" || !app.isPackaged) return;
 
-  try {
-    const launchPath = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
-    const startupArgs = ["--tourpulse-startup"];
+  const launchPath = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
+  const startupArgs = ["--tourpulse-startup"];
+  const runKey = "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+  const runName = "TourPulse Quick EOD";
+  const runValue = "\"" + launchPath + "\" --tourpulse-startup";
 
+  let registryOk = false;
+
+  try {
+    const add = spawnSync(
+      "reg.exe",
+      ["ADD", runKey, "/v", runName, "/t", "REG_SZ", "/d", runValue, "/f"],
+      { windowsHide: true, encoding: "utf8" }
+    );
+
+    const query = spawnSync(
+      "reg.exe",
+      ["QUERY", runKey, "/v", runName],
+      { windowsHide: true, encoding: "utf8" }
+    );
+
+    registryOk =
+      add.status === 0 &&
+      query.status === 0 &&
+      String(query.stdout || "").includes(launchPath);
+
+    log("windows startup registry", {
+      launchPath,
+      registered: registryOk,
+      addStatus: add.status,
+      queryStatus: query.status
+    });
+  } catch (err) {
+    log("windows startup registry warning", err);
+  }
+
+  try {
     app.setLoginItemSettings({
       openAtLogin: true,
       path: launchPath,
@@ -537,12 +570,13 @@ function configureWindowsStartup() {
       args: startupArgs
     });
 
-    log("windows startup registration", {
+    log("windows startup electron fallback", {
       launchPath,
-      openAtLogin: !!settings.openAtLogin
+      openAtLogin: !!settings.openAtLogin,
+      registryOk
     });
   } catch (err) {
-    log("windows startup registration warning", err);
+    log("windows startup electron fallback warning", err);
   }
 }
 

@@ -48,7 +48,39 @@ jobs:
           if ($p.HasExited) {
             throw "Quick EOD exited during smoke test with code $($p.ExitCode)"
           }
+
+          $runKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+          $runValue = (Get-ItemProperty -Path $runKey -Name "TourPulse Quick EOD" -ErrorAction Stop)."TourPulse Quick EOD"
+          if ($runValue -notlike "*TourPulse Quick EOD.exe*") {
+            throw "Quick EOD startup registry entry was not registered correctly: $runValue"
+          }
+
           Stop-Process -Id $p.Id -Force
+
+      - name: Create install-or-patch package
+        shell: powershell
+        run: |
+          $dist = Join-Path $PWD "desktop\dist"
+          $package = Join-Path $dist "TourPulse-Quick-EOD-Install-or-Patch"
+          if (Test-Path $package) { Remove-Item -Recurse -Force $package }
+          New-Item -ItemType Directory -Path $package | Out-Null
+
+          $portable = Get-ChildItem -Path $dist -Filter "TourPulse-Quick-EOD-*.exe" |
+            Where-Object { $_.Name -notmatch "Setup" } |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -First 1
+
+          if (-not $portable) { throw "Portable Quick EOD EXE was not found." }
+
+          Copy-Item $portable.FullName (Join-Path $package "TourPulse Quick EOD.exe")
+          Copy-Item (Join-Path $PWD "desktop\Install-or-Patch-TourPulse.cmd") $package
+          Copy-Item (Join-Path $PWD "desktop\Repair-TourPulse-Startup.cmd") $package
+
+          $zip = Join-Path $dist "TourPulse-Quick-EOD-Install-or-Patch-v1.7.0.zip"
+          if (Test-Path $zip) { Remove-Item -Force $zip }
+          Compress-Archive -Path (Join-Path $package "*") -DestinationPath $zip -CompressionLevel Optimal
+
+          if (!(Test-Path $zip)) { throw "Install-or-patch ZIP was not created." }
 
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
@@ -56,6 +88,7 @@ jobs:
           name: TourPulse-Quick-EOD-Windows
           path: |
             desktop/dist/TourPulse-Quick-EOD-*.exe
+            desktop/dist/TourPulse-Quick-EOD-Install-or-Patch-v1.7.0.zip
             desktop/dist/*.yml
           if-no-files-found: error
           retention-days: 30
