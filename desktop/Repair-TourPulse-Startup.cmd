@@ -25,22 +25,17 @@ if not exist "%TARGET%" (
   exit /b 2
 )
 
-reg add "%RUN_KEY%" /v "%APP_NAME%" /t REG_SZ /d "\"%TARGET%\" --tourpulse-startup" /f >nul 2>&1
-if errorlevel 1 goto :fail
-
 if not exist "%STARTUP_DIR%" mkdir "%STARTUP_DIR%" >nul 2>&1
 (
   echo @echo off
   echo start "" "%TARGET%" --tourpulse-startup
 ) > "%STARTUP_CMD%"
 
-reg query "%RUN_KEY%" /v "%APP_NAME%" >nul 2>&1
-if errorlevel 1 goto :fail
-
 start "" "%TARGET%"
 
 echo.
-echo TourPulse Windows startup has been repaired.
+echo TourPulse Windows startup has been repaired using the Windows Startup folder.
+echo The app will also attempt to register its HKCU Run entry when it opens.
 echo Target:
 echo   %TARGET%
 timeout /t 4 /nobreak >nul
