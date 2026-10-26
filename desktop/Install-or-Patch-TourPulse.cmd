@@ -40,19 +40,19 @@ if errorlevel 1 goto :fail
 copy /Y "%SOURCE_EXE%" "%INSTALL_EXE%" >nul
 if errorlevel 1 goto :fail
 
-reg add "%RUN_KEY%" /v "%APP_NAME%" /t REG_SZ /d "\"%INSTALL_EXE%\" --tourpulse-startup" /f >>"%LOG%" 2>&1
-if errorlevel 1 goto :fail
-
 if not exist "%STARTUP_DIR%" mkdir "%STARTUP_DIR%" >nul 2>&1
 (
   echo @echo off
   echo start "" "%INSTALL_EXE%" --tourpulse-startup
 ) > "%STARTUP_CMD%"
 
-reg query "%RUN_KEY%" /v "%APP_NAME%" >>"%LOG%" 2>&1
-if errorlevel 1 goto :fail
-
 start "" "%INSTALL_EXE%"
+timeout /t 3 /nobreak >nul 2>&1
+
+reg query "%RUN_KEY%" /v "%APP_NAME%" >>"%LOG%" 2>&1
+if errorlevel 1 (
+  echo [%date% %time%] HKCU Run verification unavailable; Startup-folder fallback remains active.>>"%LOG%"
+)
 
 echo.
 if /I "%MODE%"=="PATCH" (
