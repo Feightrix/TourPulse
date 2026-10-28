@@ -609,9 +609,92 @@
       body.tp-eod-dashboard .metricGrid{grid-template-columns:1fr;gap:12px;}
       body.tp-eod-dashboard .metricCard{min-height:145px;}
       body.tp-eod-dashboard .metricValue{font-size:39px;}
-      body.tp-eod-dashboard .performanceTable th,
-      body.tp-eod-dashboard .performanceTable td{padding:10px 8px;font-size:10px;}
-      body.tp-eod-dashboard .performanceTable th{font-size:8px;}
+      body.tp-eod-dashboard .performanceCard .dashCardHead{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:4px;
+      }
+      body.tp-eod-dashboard .performanceCard .dashCardHead h3{
+        font-size:11px;
+        white-space:nowrap;
+      }
+      body.tp-eod-dashboard .performanceCard .dashCardHead span{
+        font-size:9px;
+        white-space:nowrap;
+      }
+      body.tp-eod-dashboard .performanceTable{
+        display:block;
+        width:100%;
+      }
+      body.tp-eod-dashboard .performanceTable thead{
+        display:none;
+      }
+      body.tp-eod-dashboard .performanceTable tbody{
+        display:block;
+      }
+      body.tp-eod-dashboard .performanceTable tr{
+        display:grid;
+        grid-template-columns:repeat(4,minmax(0,1fr));
+        padding:11px 12px 10px;
+        border-bottom:1px solid rgba(15,23,42,.07);
+        background:#fff;
+      }
+      body.tp-eod-dashboard .performanceTable tr:last-child{
+        border-bottom:0;
+      }
+      body.tp-eod-dashboard .performanceTable tr.managerRow{
+        background:rgba(10,166,181,.065);
+      }
+      body.tp-eod-dashboard .performanceTable td{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        min-width:0;
+        padding:8px 4px 2px;
+        border:0;
+        background:transparent;
+        font-size:12px;
+        font-weight:950;
+        text-align:center;
+      }
+      body.tp-eod-dashboard .performanceTable tr.managerRow td{
+        background:transparent;
+      }
+      body.tp-eod-dashboard .performanceTable td:first-child{
+        grid-column:1 / -1;
+        display:block;
+        padding:0 0 8px;
+        text-align:left;
+      }
+      body.tp-eod-dashboard .performanceTable td:not(:first-child)::before{
+        display:block;
+        margin-bottom:4px;
+        color:rgba(15,23,42,.42);
+        font-size:7px;
+        font-weight:1000;
+        letter-spacing:.08em;
+        line-height:1;
+        text-transform:uppercase;
+      }
+      body.tp-eod-dashboard .performanceTable td:nth-child(2)::before{content:"Seen";}
+      body.tp-eod-dashboard .performanceTable td:nth-child(3)::before{content:"Booked";}
+      body.tp-eod-dashboard .performanceTable td:nth-child(4)::before{content:"Conv.";}
+      body.tp-eod-dashboard .performanceTable td:nth-child(5)::before{content:"BB";}
+      body.tp-eod-dashboard .personCell{
+        gap:8px;
+      }
+      body.tp-eod-dashboard .personName{
+        white-space:normal;
+        overflow:visible;
+        text-overflow:clip;
+        line-height:1.2;
+      }
+      body.tp-eod-dashboard .managerBadge{
+        margin-left:6px;
+        padding:3px 6px;
+        font-size:7px;
+      }
       body.tp-eod-dashboard .campaignRow{grid-template-columns:52px 1fr 60px;}
     }
   </style>
@@ -718,7 +801,7 @@
           </div>
 
           <div class="mainGrid">
-            <section class="dashCard">
+            <section class="dashCard performanceCard">
               <div class="dashCardHead">
                 <h3>Marketer Performance</h3>
                 <span id="submissionSummary">0 of 0 submitted</span>
